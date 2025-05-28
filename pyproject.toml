@@ -10,9 +10,17 @@ requires = ["hatchling"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
-platforms = ["osx-arm64"]
+platforms = ["osx-arm64", "linux-64"]
 
 [tool.pixi.pypi-dependencies]
 sparsemodesnet = { path = ".", editable = true }
 
 [tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+black = ">=25.1.0,<26"
+pytorch = ">=2.7.0,<3"
+numpy = ">=2.2.6,<3"
+
+[dependency-groups]
+test = ["pytest"]
