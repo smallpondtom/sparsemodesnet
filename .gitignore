@@ -2,3 +2,9 @@
 # pixi environments
 .pixi
 *.egg-info
+
+# Data
+/data
+
+# Mac
+.DS_Store

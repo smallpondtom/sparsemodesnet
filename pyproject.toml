@@ -21,6 +21,11 @@ sparsemodesnet = { path = ".", editable = true }
 black = ">=25.1.0,<26"
 pytorch = ">=2.7.0,<3"
 numpy = ">=2.2.6,<3"
+torchvision = ">=0.22.0,<0.23"
+pandas = ">=2.2.3,<3"
+matplotlib = ">=3.10.3,<4"
+tqdm = ">=4.67.1,<5"
+jupyter = ">=1.1.1,<2"
 
 [dependency-groups]
 test = ["pytest"]

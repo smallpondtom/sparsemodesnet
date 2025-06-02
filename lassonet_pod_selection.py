@@ -30,7 +30,7 @@ def generate_heat_equation_data(nx=100, nt=200, alpha=0.01, x_max=1.0, t_max=1.0
     dx = x[1] - x[0]
     dt = t_max / (nt - 1)
     if dt > dx**2 / (2 * alpha):
-        print("WARNING: dt may be too large for stability (heat eq).")
+        print("Warning: dt may be too large for stability (heat eq).")
 
     u = np.exp(-((x - x_max/2)**2 * 50.0))
     snapshots = [u.copy()]
@@ -190,6 +190,8 @@ class LassoNetAutoencoderPODRecon(nn.Module):
 
         layers.append(nn.Linear(hidden_units[-1], self.s, bias=True))
         self.net = nn.Sequential(*layers)
+        
+        # Is this actually an autoencoder???
 
     def forward(self, z_batch):
         """
@@ -198,7 +200,7 @@ class LassoNetAutoencoderPODRecon(nn.Module):
           z_hat_batch: (batch_size, s)
           x_hat_batch: (batch_size, d)
         """
-        skip = z_batch * self.b.unsqueeze(0)    # (batch, s)
+        skip = z_batch * self.b.unsqueeze(0)   # (batch, s)
         nn_out = self.net(z_batch)             # (batch, s)
         z_hat = skip + nn_out                  # (batch, s)
 
@@ -210,10 +212,12 @@ class LassoNetAutoencoderPODRecon(nn.Module):
     @staticmethod
     def _row_inf_norm(mat: torch.Tensor) -> torch.Tensor:
         """
-        Given mat: (s, h), return length-s vector of rowwise ℓ∞ norms.
+        Given mat: (s, h), return length-s vector of rowwise l-infinity norms.
         """
         return mat.abs().max(dim=1)[0]
 
+    # This doesn't seem to be a correct implmentation from the original paper.
+    # Could be wrong
     def proximal_step(self):
         """
         Algorithm 4 (Group Hierarchical Proximal) in POD-space:
