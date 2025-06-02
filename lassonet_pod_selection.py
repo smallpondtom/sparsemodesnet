@@ -182,7 +182,7 @@ def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
 
 def compute_pod_basis(X_np: np.ndarray, s: int = None):
     """
-    Given X_np ∈ R^{d×n}, compute first s left singular vectors V_s ∈ R^{d×s}.
+    Given X_np ∈ R^{d x n}, compute first s left singular vectors V_s ∈ R^{d x s}.
     If s is None, take s = min(d, n). Returns:
       V_s: (d, s), Sigma_s: (s,), Wt_s: (s, n).
     """
@@ -202,8 +202,8 @@ def compute_pod_basis(X_np: np.ndarray, s: int = None):
 class PODReconDataset(Dataset):
     """
     Given:
-      - Z_np ∈ R^{s×n} (POD coefficients = V_s^T X)
-      - X_np ∈ R^{d×n} (original snapshots)
+      - Z_np ∈ R^{s x n} (POD coefficients = V_s^T X)
+      - X_np ∈ R^{d x n} (original snapshots)
     Creates n samples; each sample i returns (z_i, x_i).
     """
 
@@ -493,7 +493,8 @@ def run_lassonet_pod_recon(X_np: np.ndarray,
     # 5) Identify selected POD modes
     b_opt = model.b.detach().cpu().numpy()  # (s,)
     selected_indices = np.where(np.abs(b_opt) > 1e-6)[0]
-    print(f"\nSelected POD‐mode indices (b_j ≠ 0): {selected_indices.tolist()}  "
+    print(f"\nFinal skip-weights b: {b_opt.tolist()}")
+    print(f"Selected POD-mode indices (b_j ≠ 0): {selected_indices.tolist()}  "
           f"(count = {len(selected_indices)} / {s})")
 
     # 6) Compute final reconstruction error
@@ -501,11 +502,13 @@ def run_lassonet_pod_recon(X_np: np.ndarray,
     with torch.no_grad():
         Z_tensor = torch.from_numpy(Z_np.T.astype(np.float32)).to(device)  # (n, s)
         z_hat_tensor, x_hat_tensor = model(Z_tensor)                       # (n, s), (n, d)
-        X_hat_np = x_hat_tensor.cpu().numpy().T                             # (d, n)
+        X_hat_np = x_hat_tensor.cpu().numpy().T                            # (d, n)
 
-    frob_error = np.linalg.norm(X_np - X_hat_np, 'fro')**2
+    frob_error = np.linalg.norm(X_np - X_hat_np, 'fro')
+    rel_frob_error = frob_error / np.linalg.norm(X_np, 'fro')
     mse_per_sample = frob_error / X_np.shape[1]
-    print(f"Final reconstruction ||X - X_hat||_F^2 = {frob_error:.6e},  MSE per sample = {mse_per_sample:.6e}")
+    print(f"Final relative reconstruction ||X - X_hat||_F / ||X||_F = {rel_frob_error:.6e}")
+    print(f"Final MSE per sample = {mse_per_sample:.6e}")
 
     return model, history, selected_indices
 
@@ -525,20 +528,11 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Plot for sanity check
-    sanity_check = False
-
-    # Hyperparameters
-    M = 5.0                   # hierarchy multiplier
-    lam = 1e-3                # ℓ₁ penalty on b
-    lr = 1e-3                 # learning rate
-    num_epochs = 100          # epochs
-    batch_size = 32           # batch size
-    hidden_units = [64, 32]   # hidden layer sizes in POD‐space
+    sanity_check = True
 
     # ---------- Heat Equation ----------
     X_heat, xspan, tspan = generate_heat_data(
-        nx=2**7, nt=2000, alpha=0.05, x_max=1.0, t_max=1.0)
-    d_h, n_h = X_heat.shape
+        nx=2**7, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     
     # Create 3D surface plot for Heat Equation (sanity check)
     if sanity_check:
@@ -552,26 +546,29 @@ if __name__ == "__main__":
         ax.set_zlabel('u(x,t)')
         ax.set_title('Heat Equation Solution')
         plt.colorbar(surf, shrink=0.5, aspect=5)
+        plt.savefig('figures/heat_data.png', dpi=300)
         plt.show()
+        plt.close(fig)
     
     # Train SparseModesNet on Heat Equation data
+    d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
     run_lassonet_pod_recon(
         X_np = X_heat,
         s = s_h,
-        hidden_units = hidden_units,
-        M = M,
-        lam = lam,
-        lr = lr,
-        num_epochs = num_epochs,
-        batch_size = batch_size,
+        hidden_units = [128, 64, 32],  # hidden layer sizes in POD‐space
+        M = 5.0,                       # hierarchy multiplier
+        lam = 1e-4,                    # ℓ₁ penalty on b
+        lr = 1e-3,                     # learning rate
+        num_epochs = 100,              # epochs
+        batch_size = 16,               # batch size
         device = device,
         label = "Heat Equation"
     )
 
     # ---------- Burgers' Equation ----------
     X_burgers, xspan, tspan = generate_burgers_data(
-        nx=2**7, nt=2000, nu=0.01, x_max=1.0, t_max=1.0)
+        nx=2**7, nt=1000, nu=0.01, x_max=1.0, t_max=1.0)
 
     # Create 3D surface plot for Burgers' Equation (sanity check)
     if sanity_check:
@@ -585,26 +582,28 @@ if __name__ == "__main__":
         ax.set_zlabel('u(x,t)')
         ax.set_title("Burgers' Equation Solution")
         plt.colorbar(surf, shrink=0.5, aspect=5)
+        plt.savefig('figures/burgers_data.png', dpi=300)
         plt.show()
-    
+        plt.close(fig)
+        
     # Train SparseModesNet on Burgers' Equation data 
     d_b, n_b = X_burgers.shape
     s_b = min(d_b, n_b)
     run_lassonet_pod_recon(
         X_np = X_burgers,
         s = s_b,
-        hidden_units = hidden_units,
-        M = M,
-        lam = lam,
-        lr = lr,
-        num_epochs = num_epochs,
-        batch_size = batch_size,
+        hidden_units = [128, 64, 32],       # hidden layer sizes in POD‐space
+        M = 10.0,                           # hierarchy multiplier
+        lam = 1e-4,                         # ℓ₁ penalty on b
+        lr = 1e-3,                          # learning rate
+        num_epochs = 100,                   # epochs
+        batch_size = 16,                    # batch size
         device = device,
         label = "Burgers' Equation"
     )
 
     # ---------- Kuramoto–Sivashinsky Equation ----------
-    X_ks, xspan, tspan = generate_kse_data(nx=2**10, nt=10000, L=100.0, t_max=200.0)
+    X_ks, xspan, tspan = generate_kse_data(nx=2**10, nt=4000, L=100.0, t_max=150.0)
         
     # Create flow-field for Kuramoto-Sivashinsky Equation
     if sanity_check:
@@ -616,7 +615,9 @@ if __name__ == "__main__":
         ax.set_title('Kuramoto-Sivashinsky Equation Solution')
         plt.colorbar(im, ax=ax, label='u(x,t)')
         plt.tight_layout()
+        plt.savefig('figures/kse_data.png', dpi=300)
         plt.show()
+        plt.close(fig)
         
     # Train SparseModesNet on Kuramoto-Sivashinsky Equation data
     d_ks, n_ks = X_ks.shape
@@ -624,12 +625,12 @@ if __name__ == "__main__":
     run_lassonet_pod_recon(
         X_np = X_ks,
         s = s_ks,
-        hidden_units = hidden_units,
-        M = M,
-        lam = lam,
-        lr = lr,
-        num_epochs = num_epochs,
-        batch_size = batch_size,
+        hidden_units = [256, 128, 64, 32],  # hidden layer sizes in POD‐space
+        M = 1.0,                            # hierarchy multiplier
+        lam = 1e-4,                         # ℓ₁ penalty on b
+        lr = 1e-3,                          # learning rate
+        num_epochs = 100,                   # epochs
+        batch_size = 16,                    # batch size
         device = device,
         label = "Kuramoto-Sivashinsky Equation"
     )
