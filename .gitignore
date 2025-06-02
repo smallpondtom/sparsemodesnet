@@ -8,3 +8,6 @@
 
 # Mac
 .DS_Store
+
+# Old files
+/__old__
