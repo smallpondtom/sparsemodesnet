@@ -1,30 +1,36 @@
 """
-lassonet_pod_selector_recon_with_KS.py
+lassonet_pod_selection.py
 
-Extends the previous LassoNet‐POD code to include a Kuramoto–Sivashinsky (KS) equation example.
-We train LassoNet in POD‐space (dimension s) but minimize reconstruction error in the original x‐space:
-    || x_i - V_s * (b ⊙ z_i + f_NN(z_i)) ||_2^2  +  λ ||b||_1.
+LassoNet-POD Mode Selection code. Includes the method code and examples for 
+Heat, Burgers, and Kuramoto-Sivashinsky equations.  We train LassoNet in 
+POD-space (dimension s) but minimize reconstruction error in the original space:
+
+   1/n ∑_{i=1}^n || x_i - V_s * (b ⊙ z_i + f_NN(z_i)) ||_2^2  +  λ ||b||_1.
 
 Supports CUDA, MPS (Apple Silicon), or CPU.
 
 To run:
-    python lassonet_pod_selector_recon_with_KS.py
+    python lassonet_pod_selection.py
 """
 
+#%%
 import numpy as np
+from scipy.integrate import odeint
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
 
+#%%
 # ------------------------------------------------------------
 # 1) Generate 1D PDE Data: Heat, Burgers, and Kuramoto–Sivashinsky
 # ------------------------------------------------------------
 
-def generate_heat_equation_data(nx=100, nt=200, alpha=0.01, x_max=1.0, t_max=1.0):
+def generate_heat_data(nx=100, nt=200, alpha=0.01, x_max=1.0, t_max=1.0):
     """
     Simulate 1D heat equation u_t = alpha * u_xx on [0, x_max], t ∈ [0, t_max].
-    Dirichlet BCs (u=0 at boundaries). Returns data ∈ R^{nx×nt}.
+    Dirichlet BCs (u=0 at boundaries). Returns data ∈ R^{nx x nt}.
     """
     x = np.linspace(0, x_max, nx)
     dx = x[1] - x[0]
@@ -44,61 +50,132 @@ def generate_heat_equation_data(nx=100, nt=200, alpha=0.01, x_max=1.0, t_max=1.0
         u = u_new
 
     data = np.column_stack(snapshots)  # shape (nx, nt)
-    return data
+    return data, x, np.linspace(0, t_max, nt)
 
-def generate_burgers_data(nx=100, nt=200, nu=0.001, x_max=1.0, t_max=1.0):
+
+def generate_burgers_data(nx=100, nt=200, nu=0.01, x_max=1.0, t_max=0.5):
     """
-    Simulate 1D viscous Burgers' equation u_t + u u_x = nu u_xx on [0, x_max], periodic BC.
-    Returns data ∈ R^{nx×nt}.
+    Simulate 1D viscous Burgers' equation u_t + u u_x = nu u_xx using FFT method.
+    Uses spectral differentiation for high accuracy and stability.
+    Returns data ∈ R^{nx x nt}.
     """
-    x = np.linspace(0, x_max, nx, endpoint=False)
-    dx = x[1] - x[0]
-    dt = t_max / (nt - 1)
+    
+    # Spatial discretization
+    dx = x_max / nx
+    x = np.linspace(0, x_max, nx, endpoint=False)  # Periodic domain
+    
+    # Temporal discretization
+    t = np.linspace(0, t_max, nt)
+    
+    # Wave number discretization for FFT
+    k = 2 * np.pi * np.fft.fftfreq(nx, d=dx)
+    
+    # Initial condition - smooth Gaussian-like profile
+    u0 = np.exp(-((x - x_max/2)**2) / (2 * (x_max/10)**2))
+    
+    # Define the Burgers system using FFT for spatial derivatives
+    def burgers_system(u, t, k, nu):
+        # Compute spatial derivatives in Fourier domain
+        u_hat = np.fft.fft(u)
+        u_hat_x = 1j * k * u_hat
+        u_hat_xx = -k**2 * u_hat
+        
+        # Transform back to spatial domain
+        u_x = np.fft.ifft(u_hat_x)
+        u_xx = np.fft.ifft(u_hat_xx)
+        
+        # Burgers equation: u_t = nu*u_xx - u*u_x
+        u_t = nu * u_xx - u * u_x
+        return u_t.real
+    
+    # Solve the PDE system using adaptive ODE solver
+    U = odeint(burgers_system, u0, t, args=(k, nu), mxstep=5000).T
+    
+    return U, x, t
 
-    u = -np.sin(2 * np.pi * x)
-    snapshots = [u.copy()]
-
-    for k in range(1, nt):
-        dudx = (np.roll(u, -1) - u) / dx
-        lap = (np.roll(u, -1) - 2*u + np.roll(u, 1)) / dx**2
-        u_new = u - dt * u * dudx + nu * dt * lap
-        snapshots.append(u_new.copy())
-        u = u_new
-
-    data = np.column_stack(snapshots)
-    return data
-
-def generate_ks_equation_data(nx=128, nt=500, L=32.0, t_max=50.0):
+def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
     """
-    Simulate 1D Kuramoto–Sivashinsky (KS) equation:
-        u_t + u u_x + u_xx + u_xxxx = 0
-    on [0, L] with periodic BCs, using finite differences.
-    Returns data ∈ R^{nx×nt} where each column is u(x, t_k).
+    Simulate 1D Kuramoto-Sivashinsky equation u_t + u*u_x + u_xx + u_xxxx = 0 using ETDRK4.
+    Uses Exponential Time Differencing Runge-Kutta 4th order for high accuracy and stability.
+    Returns data ∈ R^{nx x nt}.
     """
-    x = np.linspace(0, L, nx, endpoint=False)
-    dx = x[1] - x[0]
-    dt = t_max / (nt - 1)
+    # Spatial grid setup (normalized to [0,1] then scaled)
+    x = np.arange(1, nx+1) / nx
+    x_scaled = x * L  # Scale to actual domain [0, L]
+    
+    # Time discretization
+    h = t_max / (nt - 1)  # Time step
+    
+    # Initial condition
+    u = np.cos(x/16) * (1 + np.sin(x/16))
+    v = np.fft.fft(u)
+    
+    # Wave numbers
+    k = np.concatenate((np.arange(0, nx//2), [0], np.arange(-nx//2+1, 0))) / 16
+    
+    # Linear operator for KS equation: L = k^2 - k^4
+    L_op = k**2 - k**4
+    
+    # ETDRK4 coefficients
+    E = np.exp(h * L_op)
+    E_2 = np.exp(h * L_op / 2)
+    
+    # Contour integral parameters for ETDRK4 coefficients
+    M = 16
+    r = np.exp(1j * np.pi * (np.arange(1, M+1) - 0.5) / M)
+    LR = h * np.outer(L_op, np.ones(M)) + np.outer(np.ones(nx), r)
+    
+    # ETDRK4 coefficients computed via contour integrals
+    Q = h * np.real(np.mean((np.exp(LR/2) - 1) / LR, axis=1))
+    f1 = h * np.real(np.mean((-4 - LR + np.exp(LR) * (4 - 3*LR + LR**2)) / LR**3, axis=1))
+    f2 = h * np.real(np.mean((2 + LR + np.exp(LR) * (-2 + LR)) / LR**3, axis=1))
+    f3 = h * np.real(np.mean((-4 - 3*LR - LR**2 + np.exp(LR) * (4 - LR)) / LR**3, axis=1))
+    
+    # Handle potential division by zero at k=0
+    zero_idx = np.where(np.abs(L_op) < 1e-14)[0]
+    if len(zero_idx) > 0:
+        Q[zero_idx] = h
+        f1[zero_idx] = h
+        f2[zero_idx] = h/2
+        f3[zero_idx] = h
+    
+    # Nonlinear operator
+    g = -0.5j * k
+    
+    # Storage for solution
+    uu = np.zeros((nx, nt))
+    uu[:, 0] = u
+    
+    # Time stepping with ETDRK4
+    for n in range(1, nt):
+        # Stage 1
+        Nv = g * np.fft.fft(np.real(np.fft.ifft(v))**2)
+        a = E_2 * v + Q * Nv
+        
+        # Stage 2
+        Na = g * np.fft.fft(np.real(np.fft.ifft(a))**2)
+        b = E_2 * v + Q * Na
+        
+        # Stage 3
+        Nb = g * np.fft.fft(np.real(np.fft.ifft(b))**2)
+        c = E_2 * a + Q * (2*Nb - Nv)
+        
+        # Stage 4
+        Nc = g * np.fft.fft(np.real(np.fft.ifft(c))**2)
+        
+        # Final update
+        v = E * v + Nv * f1 + 2 * (Na + Nb) * f2 + Nc * f3
+        
+        # Store solution
+        u = np.real(np.fft.ifft(v))
+        uu[:, n] = u
+    
+    # Time array
+    t = np.linspace(0, t_max, nt)
+    
+    return uu, x_scaled, t
 
-    # Initial condition: small random perturbation around zero
-    np.random.seed(0)
-    u = 0.01 * np.random.randn(nx)
-    snapshots = [u.copy()]
-
-    for k in range(1, nt):
-        # Compute derivatives with periodic finite differences
-        u_x = (np.roll(u, -1) - np.roll(u, 1)) / (2 * dx)
-        u_xx = (np.roll(u, -1) - 2*u + np.roll(u, 1)) / dx**2
-        u_xxxx = (np.roll(u, -2) - 4*np.roll(u, -1) + 6*u - 4*np.roll(u, 1) + np.roll(u, 2)) / dx**4
-
-        # KS update: u_t = -u u_x - u_xx - u_xxxx
-        u_new = u + dt * (-u * u_x - u_xx - u_xxxx)
-
-        snapshots.append(u_new.copy())
-        u = u_new
-
-    data = np.column_stack(snapshots)  # (nx, nt)
-    return data
-
+#%%
 # ------------------------------------------------------------
 # 2) Compute POD Basis via SVD
 # ------------------------------------------------------------
@@ -117,6 +194,7 @@ def compute_pod_basis(X_np: np.ndarray, s: int = None):
     Wt_s = Vt[:r, :].astype(np.float32)
     return V_s, Sigma_s, Wt_s
 
+#%%
 # ------------------------------------------------------------
 # 3) Dataset that returns (z_i, x_i)
 # ------------------------------------------------------------
@@ -143,6 +221,7 @@ class PODReconDataset(Dataset):
     def __getitem__(self, idx):
         return self.Z[idx, :], self.X[idx, :]
 
+#%%
 # ------------------------------------------------------------
 # 4) LassoNet Autoencoder in POD-Space with Reconstruction Loss
 # ------------------------------------------------------------
@@ -293,6 +372,7 @@ class LassoNetAutoencoderPODRecon(nn.Module):
         """Return ℓ₁‐norm of b."""
         return self.b.abs().sum()
 
+#%%
 # ------------------------------------------------------------
 # 5) Training Loop (Reconstruction Loss)
 # ------------------------------------------------------------
@@ -352,6 +432,7 @@ def train_lassonet_pod_recon(model: LassoNetAutoencoderPODRecon,
 
     return history
 
+#%%
 # ------------------------------------------------------------
 # 6) Driver: Run LassoNet-POD-Recon on any X_np
 # ------------------------------------------------------------
@@ -367,8 +448,8 @@ def run_lassonet_pod_recon(X_np: np.ndarray,
                            device: str,
                            label: str):
     """
-    1) Compute POD basis V_s from X_np ∈ R^{d×n}.
-    2) Compute Z = V_s^T X_np ∈ R^{s×n}.
+    1) Compute POD basis V_s from X_np ∈ R^{d x n}.
+    2) Compute Z = V_s^T X_np ∈ R^{s x n}.
     3) Build dataset of (z_i, x_i), i=1..n.
     4) Instantiate LassoNetAutoencoderPODRecon(V_s, s, hidden_units, M, lam).
     5) Train with train_lassonet_pod_recon.
@@ -376,7 +457,7 @@ def run_lassonet_pod_recon(X_np: np.ndarray,
          - Identify indices j where b_j ≠ 0  → selected POD modes.
          - Compute final reconstruction X_hat = V_s Z_hat, report ‖X - X_hat‖_F^2 / n.
     """
-    print(f"\n=== LassoNet‐POD (recon) on {label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
+    print(f"\n=== LassoNet-POD (recon) on {label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
 
     # 1) Compute POD basis
     V_s_np, Sigma_s_np, Wt_s_np = compute_pod_basis(X_np, s=s)  # V_s_np: (d, s)
@@ -428,6 +509,7 @@ def run_lassonet_pod_recon(X_np: np.ndarray,
 
     return model, history, selected_indices
 
+#%%
 # ------------------------------------------------------------
 # 7) Entry Point: Run on Heat, Burgers, and KS
 # ------------------------------------------------------------
@@ -441,6 +523,9 @@ if __name__ == "__main__":
     else:
         device = 'cpu'
     print("Using device:", device)
+    
+    # Plot for sanity check
+    sanity_check = False
 
     # Hyperparameters
     M = 5.0                   # hierarchy multiplier
@@ -451,8 +536,25 @@ if __name__ == "__main__":
     hidden_units = [64, 32]   # hidden layer sizes in POD‐space
 
     # ---------- Heat Equation ----------
-    X_heat = generate_heat_equation_data(nx=100, nt=200, alpha=0.01, x_max=1.0, t_max=1.0)
+    X_heat, xspan, tspan = generate_heat_data(
+        nx=2**7, nt=2000, alpha=0.05, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
+    
+    # Create 3D surface plot for Heat Equation (sanity check)
+    if sanity_check:
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        X_mesh, T_mesh = np.meshgrid(xspan, tspan)
+        Z_mesh = X_heat.T  # Transpose to match meshgrid dimensions
+        surf = ax.plot_surface(X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
+        ax.set_xlabel('x')
+        ax.set_ylabel('t')
+        ax.set_zlabel('u(x,t)')
+        ax.set_title('Heat Equation Solution')
+        plt.colorbar(surf, shrink=0.5, aspect=5)
+        plt.show()
+    
+    # Train SparseModesNet on Heat Equation data
     s_h = min(d_h, n_h)
     run_lassonet_pod_recon(
         X_np = X_heat,
@@ -468,7 +570,24 @@ if __name__ == "__main__":
     )
 
     # ---------- Burgers' Equation ----------
-    X_burgers = generate_burgers_data(nx=128, nt=200, nu=0.001, x_max=1.0, t_max=1.0)
+    X_burgers, xspan, tspan = generate_burgers_data(
+        nx=2**7, nt=2000, nu=0.01, x_max=1.0, t_max=1.0)
+
+    # Create 3D surface plot for Burgers' Equation (sanity check)
+    if sanity_check:
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        X_mesh, T_mesh = np.meshgrid(xspan, tspan)
+        Z_mesh = X_burgers.T  # Transpose to match meshgrid dimensions
+        surf = ax.plot_surface(X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
+        ax.set_xlabel('x')
+        ax.set_ylabel('t')
+        ax.set_zlabel('u(x,t)')
+        ax.set_title("Burgers' Equation Solution")
+        plt.colorbar(surf, shrink=0.5, aspect=5)
+        plt.show()
+    
+    # Train SparseModesNet on Burgers' Equation data 
     d_b, n_b = X_burgers.shape
     s_b = min(d_b, n_b)
     run_lassonet_pod_recon(
@@ -481,11 +600,25 @@ if __name__ == "__main__":
         num_epochs = num_epochs,
         batch_size = batch_size,
         device = device,
-        label = "Burgers’ Equation"
+        label = "Burgers' Equation"
     )
 
     # ---------- Kuramoto–Sivashinsky Equation ----------
-    X_ks = generate_ks_equation_data(nx=128, nt=500, L=32.0, t_max=50.0)
+    X_ks, xspan, tspan = generate_kse_data(nx=2**10, nt=10000, L=100.0, t_max=200.0)
+        
+    # Create flow-field for Kuramoto-Sivashinsky Equation
+    if sanity_check:
+        fig, ax = plt.subplots(figsize=(12, 8))
+        im = ax.imshow(X_ks, aspect='auto', cmap='viridis', origin='lower',
+                        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]])
+        ax.set_xlabel('Time')
+        ax.set_ylabel('Space (x)')
+        ax.set_title('Kuramoto-Sivashinsky Equation Solution')
+        plt.colorbar(im, ax=ax, label='u(x,t)')
+        plt.tight_layout()
+        plt.show()
+        
+    # Train SparseModesNet on Kuramoto-Sivashinsky Equation data
     d_ks, n_ks = X_ks.shape
     s_ks = min(d_ks, n_ks)
     run_lassonet_pod_recon(
@@ -498,5 +631,5 @@ if __name__ == "__main__":
         num_epochs = num_epochs,
         batch_size = batch_size,
         device = device,
-        label = "Kuramoto–Sivashinsky Equation"
+        label = "Kuramoto-Sivashinsky Equation"
     )
