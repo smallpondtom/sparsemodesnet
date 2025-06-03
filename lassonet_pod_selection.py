@@ -18,9 +18,16 @@ import numpy as np
 from scipy.integrate import odeint
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import matplotlib.pyplot as plt
+
+#%%
+# try:
+#     from .prox import prox  # Relative import when used as module
+# except ImportError:
+#     from prox import prox   # Absolute import when run directly
 
 #%%
 # ------------------------------------------------------------
@@ -240,7 +247,7 @@ class LassoNetAutoencoderPODRecon(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, hidden_units: list,
                  M: float = 5.0, lam: float = 1e-3):
         """
-        pod_basis:  V_s ∈ R^{d×s}  (torch.Tensor)
+        pod_basis:  V_s ∈ R^{d x s}  (torch.Tensor)
         input_dim:  s (POD dimension)
         hidden_units:  e.g. [64, 32]
         M: hierarchy multiplier
@@ -271,6 +278,7 @@ class LassoNetAutoencoderPODRecon(nn.Module):
         self.net = nn.Sequential(*layers)
         
         # Is this actually an autoencoder???
+        # Try CNNs too for spatial correlation, might turn out to be better
 
     def forward(self, z_batch):
         """
@@ -294,83 +302,189 @@ class LassoNetAutoencoderPODRecon(nn.Module):
         Given mat: (s, h), return length-s vector of rowwise l-infinity norms.
         """
         return mat.abs().max(dim=1)[0]
-
-    # This doesn't seem to be a correct implmentation from the original paper.
-    # Could be wrong
+   
     def proximal_step(self):
         """
-        Algorithm 4 (Group Hierarchical Proximal) in POD-space:
-        For each j=0..s-1:
-          Let b_abs_j = |b_j|, W1 = self.first_layer.weight.data  (h, s),
-          W1_T = W1^T  (s, h), w_j = || W1_T[j, :] ||_∞.
-
-          If w_j ≤ M * b_abs_j:
-            b_new_j = max(0, b_abs_j - lam)
-            w_new_j = w_j
-          Else:
-            α = (M b_abs_j + w_j)/(M^2 + 1)
-            b_proj = α,     w_proj = M * α
-            b_new_j = max(0, b_proj - lam)
-            w_new_j = M * b_new_j
-
-          Then:
-            b_j ← sign(b_j) * b_new_j
-            Scale W1_T[j, :] so that || W1_T[j,:] ||_∞ = w_new_j.
-            (If w_j > 0: scale factor = w_new_j / w_j; else zero the row.)
-
-        Finally, write W1 = (W1_T)^T back to self.first_layer.weight.data.
+        Batched implementation of Algorithm 4 (Group‐Hierarchical Proximal) with λ̄ = 0,
+        corrected so that b_new = x_star * θ (no extra soft‐threshold on b).
         """
-        b_data = self.b.data.clone()               # (s,)
-        b_abs = b_data.abs()                       # (s,)
-        sign_b = b_data.sign()                     # (s,)
         lam = self.lam
-        M = self.M
+        M   = self.M
 
-        W1 = self.first_layer.weight.data.clone()  # (h, s)
-        W1_T = W1.t().contiguous()                 # (s, h)
-        w = LassoNetAutoencoderPODRecon._row_inf_norm(W1_T)  # (s,)
+        # 1) Gather first‐layer weights W1 ∈ ℝ^{h×s}, then transpose → W1_T ∈ ℝ^{s×h}
+        W1   = self.first_layer.weight.data           # (h, s)
+        W1_T = W1.t().contiguous()                    # (s, h), call h=K
 
-        b_new = torch.zeros_like(b_abs)
-        w_new = torch.zeros_like(w)
+        s, K = W1_T.shape  # s = #features, K = width of first hidden layer
 
-        mask_ok = (w <= M * b_abs)
-        # Case 1: w_j ≤ M * b_abs_j → soft-threshold on b_abs_j
-        b_case1 = torch.clamp(b_abs - lam, min=0.0)
-        w_case1 = w.clone()
-        b_new[mask_ok] = b_case1[mask_ok]
-        w_new[mask_ok] = w_case1[mask_ok]
+        # 2) Sort each row of |W1_T| in descending order (batched)
+        u_abs       = W1_T.abs()                                 # (s, K)
+        u_abs_sorted, _ = torch.sort(u_abs, dim=1, descending=True)  # (s, K)
 
-        # Case 2: w_j > M * b_abs_j → project onto w = M b_abs
-        mask_bad = ~mask_ok
-        if mask_bad.any():
-            b_bad = b_abs[mask_bad]
-            w_bad = w[mask_bad]
-            alpha = (M * b_bad + w_bad) / (M*M + 1.0)  # (|mask_bad|,)
-            b_proj = alpha
-            b_thr = torch.clamp(b_proj - lam, min=0.0)
-            w_thr = M * b_thr
-            b_new[mask_bad] = b_thr
-            w_new[mask_bad] = w_thr
+        # 3) Build partial sums a_s(m) = lam - M * sum_{i=1}^m u_abs_sorted[j,i-1]
+        zeros_m    = torch.zeros((s, 1), device=W1_T.device, dtype=W1_T.dtype)  # (s,1)
+        cumsum_vals = torch.cumsum(u_abs_sorted, dim=1)  # (s, K)
+        a_s = lam - M * torch.cat([zeros_m, cumsum_vals], dim=1)  # (s, K+1)
 
-        # Update skip‐weights b
-        b_updated = sign_b * b_new
-        self.b.data.copy_(b_updated)
+        # 4) ‖v‖₂ = |θ|, shape (s,)
+        theta_abs = self.b.data.abs()         # (s,)
 
-        # Scale rows of W1_T so ||W1_T[j,:]||_∞ = w_new[j]
-        W1_T_updated = W1_T.clone()  # (s, h)
-        scale = torch.zeros_like(w)  # (s,)
-        nz = (w > 0)
-        scale[nz] = w_new[nz] / w[nz]
-        W1_T_updated[nz, :] = W1_T[nz, :] * scale[nz].unsqueeze(1)
-        W1_T_updated[~nz, :] = 0.0
+        # 5) Broadcast |θ| into (s, K+1)
+        norm_v_col = theta_abs.unsqueeze(1).expand(-1, K+1)  # (s, K+1)
 
-        # Write back to first_layer.weight
-        W1_updated = W1_T_updated.t().contiguous()  # (h, s)
+        # 6) Build m_index = [0,1,...,K] for each of s rows
+        m_index = torch.arange(K+1, device=W1_T.device, dtype=W1_T.dtype).view(1, K+1)
+        m_index = m_index.expand(s, -1)  # (s, K+1)
+
+        # 7) Compute x_vals(m) = ReLU(1 - a_s / ‖v‖) / (1 + m*M^2)
+        x_vals = F.relu(1.0 - a_s / (norm_v_col + 1e-16)) / (1.0 + m_index * (M**2))  # (s, K+1)
+
+        # 8) Compute w_vals(m) = M * x_vals(m) * ‖v‖
+        w_vals = M * x_vals * norm_v_col  # (s, K+1)
+
+        # 9) Build “lower(m)” = [u_abs_sorted, 0], shape (s, K+1)
+        lower = torch.cat([u_abs_sorted, zeros_m], dim=1)  # (s, K+1)
+
+        # 10) Find index m* per row:  m*_j = sum_{m=0..K} [ lower[j,m] > w_vals[j,m] ]
+        cond = lower > w_vals          # (s, K+1), bool
+        idx  = torch.sum(cond, dim=1)  # (s,)  ← m* for each feature j
+
+        # 11) Gather x_star[j] = x_vals[j, idx[j]]  and  w_star[j] = w_vals[j, idx[j]]
+        row_idx = torch.arange(s, device=W1_T.device)
+        x_star  = x_vals[row_idx, idx]  # (s,)
+        w_star  = w_vals[row_idx, idx]  # (s,)
+
+        # 12) ***CORRECTED***  Update skip‐weights:  b_new[j] = x_star[j] * θ_j
+        # No extra soft‐threshold here, because λ was already used in building a_s→x_vals.
+        b_new = x_star * self.b.data     # (s,)
+
+        # 13) Coordinate‐wise clip each row of W1_T to ±w_star[j]:
+        W1_T_abs   = W1_T.abs()                       # (s, K)
+        w_star_col = w_star.unsqueeze(1).expand(-1, K)  # (s, K)
+        clipped_abs = torch.min(W1_T_abs, w_star_col)   # (s, K)
+        W1_T_new   = W1_T.sign() * clipped_abs          # (s, K)
+
+        # 14) Write back:
+        self.b.data.copy_(b_new)               # (s,)
+        W1_updated = W1_T_new.t().contiguous() # shape: (K, s) → transpose to (h, s)
         self.first_layer.weight.data.copy_(W1_updated)
 
+    # def proximal_step(self):
+    #     """
+    #     Algorithm 4 (Group Hierarchical Proximal) in POD-space:
+    #     For each j=0..s-1:
+    #       Let b_abs_j = |b_j|, W1 = self.first_layer.weight.data  (h, s),
+    #       W1_T = W1^T  (s, h), w_j = || W1_T[j, :] ||_∞.
+
+    #       If w_j ≤ M * b_abs_j:
+    #         b_new_j = max(0, b_abs_j - lam)
+    #         w_new_j = w_j
+    #       Else:
+    #         α = (M b_abs_j + w_j)/(M^2 + 1)
+    #         b_proj = α,     w_proj = M * α
+    #         b_new_j = max(0, b_proj - lam)
+    #         w_new_j = M * b_new_j
+
+    #       Then:
+    #         b_j ← sign(b_j) * b_new_j
+    #         Scale W1_T[j, :] so that || W1_T[j,:] ||_∞ = w_new_j.
+    #         (If w_j > 0: scale factor = w_new_j / w_j; else zero the row.)
+
+    #     Finally, write W1 = (W1_T)^T back to self.first_layer.weight.data.
+    #     """
+    #     b_data = self.b.data.clone()               # (s,)
+    #     b_abs = b_data.abs()                       # (s,)
+    #     sign_b = b_data.sign()                     # (s,)
+    #     lam = self.lam
+    #     M = self.M
+
+    #     W1 = self.first_layer.weight.data.clone()  # (h, s)
+    #     W1_T = W1.t().contiguous()                 # (s, h)
+    #     w = LassoNetAutoencoderPODRecon._row_inf_norm(W1_T)  # (s,)
+
+    #     b_new = torch.zeros_like(b_abs)
+    #     w_new = torch.zeros_like(w)
+
+    #     mask_ok = (w <= M * b_abs)
+    #     # Case 1: w_j ≤ M * b_abs_j → soft-threshold on b_abs_j
+    #     b_case1 = torch.clamp(b_abs - lam, min=0.0)
+    #     w_case1 = w.clone()
+    #     b_new[mask_ok] = b_case1[mask_ok]
+    #     w_new[mask_ok] = w_case1[mask_ok]
+
+    #     # Case 2: w_j > M * b_abs_j → project onto w = M b_abs
+    #     mask_bad = ~mask_ok
+    #     if mask_bad.any():
+    #         b_bad = b_abs[mask_bad]
+    #         w_bad = w[mask_bad]
+    #         alpha = (M * b_bad + w_bad) / (M*M + 1.0)  # (|mask_bad|,)
+    #         b_proj = alpha
+    #         b_thr = torch.clamp(b_proj - lam, min=0.0)
+    #         w_thr = M * b_thr
+    #         b_new[mask_bad] = b_thr
+    #         w_new[mask_bad] = w_thr
+
+    #     # Update skip‐weights b
+    #     b_updated = sign_b * b_new
+    #     self.b.data.copy_(b_updated)
+
+    #     # Scale rows of W1_T so ||W1_T[j,:]||_∞ = w_new[j]
+    #     W1_T_updated = W1_T.clone()  # (s, h)
+    #     scale = torch.zeros_like(w)  # (s,)
+    #     nz = (w > 0)
+    #     scale[nz] = w_new[nz] / w[nz]
+    #     W1_T_updated[nz, :] = W1_T[nz, :] * scale[nz].unsqueeze(1)
+    #     W1_T_updated[~nz, :] = 0.0
+
+    #     # Write back to first_layer.weight
+    #     W1_updated = W1_T_updated.t().contiguous()  # (h, s)
+    #     self.first_layer.weight.data.copy_(W1_updated)
+    
+    # def proximal_step(self):
+    #     """
+    #     Replace the closed-form with the authors' prox(...), setting lambda_bar=0.0.
+    #     For each j = 0..s-1:
+    #       1) v_j = [ b_j ]           (shape (1,))
+    #       2) u_j = W1_T[j, :]        (shape (h,))
+    #       3) (b_j', W1_T[j,:]') = prox(v_j, u_j, lambda_=lam, lambda_bar=0.0, M=M)
+    #       4) write them back
+    #     """
+    #     lam = self.lam
+    #     M = self.M
+
+    #     # 1) Collect the first‐layer weights W1 ∈ ℝ^{h×s}, then transpose → W1_T ∈ ℝ^{s×h}
+    #     W1 = self.first_layer.weight.data        # (h, s)
+    #     W1_T = W1.t().contiguous()               # (s, h)
+
+    #     # 2) Loop over features j = 0..s-1
+    #     for j in range(self.s):
+    #         # 2.1) Extract current skip‐weight θ_j as a (1,) tensor
+    #         v_j = self.b.data[j].view(1)          # shape (1,)
+
+    #         # 2.2) Extract the entire j-th column of W1 (i.e. j-th row of W1_T)
+    #         u_j = W1_T[j, :].clone()              # shape (h,)
+
+    #         # 2.3) Call prox(...) with lambda_bar = 0.0
+    #         #     (we use the same lam for the θ‐penalty, and no penalty on |u|)
+    #         v_star, u_star = prox(
+    #             v_j, u_j,
+    #             lambda_    = lam,
+    #             lambda_bar = 0.0,   # <-- note: set to 0, as in the paper
+    #             M          = M
+    #         )
+
+    #         # 2.4) Write back the updated skip‐weight and the updated W1_T[j, :]
+    #         self.b.data[j] = v_star.squeeze()        # new θ_j
+    #         W1_T[j, :]     = u_star.squeeze().clone()  # new first-layer column
+
+    #     # 3) Transpose W1_T back to (h, s) and copy into the model
+    #     W1_updated = W1_T.t().contiguous()  # (h, s)
+    #     self.first_layer.weight.data.copy_(W1_updated)
+
     def l1_norm_b(self):
-        """Return ℓ₁‐norm of b."""
+        """Return ℓ₁-norm of b."""
         return self.b.abs().sum()
+    
 
 #%%
 # ------------------------------------------------------------
@@ -547,7 +661,7 @@ if __name__ == "__main__":
         ax.set_title('Heat Equation Solution')
         plt.colorbar(surf, shrink=0.5, aspect=5)
         plt.savefig('figures/heat_data.png', dpi=300)
-        plt.show()
+        # plt.show()
         plt.close(fig)
     
     # Train SparseModesNet on Heat Equation data
@@ -556,9 +670,9 @@ if __name__ == "__main__":
     run_lassonet_pod_recon(
         X_np = X_heat,
         s = s_h,
-        hidden_units = [128, 64, 32],  # hidden layer sizes in POD‐space
-        M = 5.0,                       # hierarchy multiplier
-        lam = 1e-4,                    # ℓ₁ penalty on b
+        hidden_units = [256, 128, 64, 32],  # hidden layer sizes in POD‐space
+        M = 0.1,                       # hierarchy multiplier
+        lam = 1e-3,                    # ℓ₁ penalty on b
         lr = 1e-3,                     # learning rate
         num_epochs = 100,              # epochs
         batch_size = 16,               # batch size
@@ -566,71 +680,72 @@ if __name__ == "__main__":
         label = "Heat Equation"
     )
 
-    # ---------- Burgers' Equation ----------
-    X_burgers, xspan, tspan = generate_burgers_data(
-        nx=2**7, nt=1000, nu=0.01, x_max=1.0, t_max=1.0)
 
-    # Create 3D surface plot for Burgers' Equation (sanity check)
-    if sanity_check:
-        fig = plt.figure(figsize=(12, 8))
-        ax = fig.add_subplot(111, projection='3d')
-        X_mesh, T_mesh = np.meshgrid(xspan, tspan)
-        Z_mesh = X_burgers.T  # Transpose to match meshgrid dimensions
-        surf = ax.plot_surface(X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
-        ax.set_xlabel('x')
-        ax.set_ylabel('t')
-        ax.set_zlabel('u(x,t)')
-        ax.set_title("Burgers' Equation Solution")
-        plt.colorbar(surf, shrink=0.5, aspect=5)
-        plt.savefig('figures/burgers_data.png', dpi=300)
-        plt.show()
-        plt.close(fig)
-        
-    # Train SparseModesNet on Burgers' Equation data 
-    d_b, n_b = X_burgers.shape
-    s_b = min(d_b, n_b)
-    run_lassonet_pod_recon(
-        X_np = X_burgers,
-        s = s_b,
-        hidden_units = [128, 64, 32],       # hidden layer sizes in POD‐space
-        M = 10.0,                           # hierarchy multiplier
-        lam = 1e-4,                         # ℓ₁ penalty on b
-        lr = 1e-3,                          # learning rate
-        num_epochs = 100,                   # epochs
-        batch_size = 16,                    # batch size
-        device = device,
-        label = "Burgers' Equation"
-    )
+    # # ---------- Burgers' Equation ----------
+    # X_burgers, xspan, tspan = generate_burgers_data(
+    #     nx=2**7, nt=1000, nu=0.01, x_max=1.0, t_max=1.0)
 
-    # ---------- Kuramoto–Sivashinsky Equation ----------
-    X_ks, xspan, tspan = generate_kse_data(nx=2**10, nt=4000, L=100.0, t_max=150.0)
+    # # Create 3D surface plot for Burgers' Equation (sanity check)
+    # if sanity_check:
+    #     fig = plt.figure(figsize=(12, 8))
+    #     ax = fig.add_subplot(111, projection='3d')
+    #     X_mesh, T_mesh = np.meshgrid(xspan, tspan)
+    #     Z_mesh = X_burgers.T  # Transpose to match meshgrid dimensions
+    #     surf = ax.plot_surface(X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
+    #     ax.set_xlabel('x')
+    #     ax.set_ylabel('t')
+    #     ax.set_zlabel('u(x,t)')
+    #     ax.set_title("Burgers' Equation Solution")
+    #     plt.colorbar(surf, shrink=0.5, aspect=5)
+    #     plt.savefig('figures/burgers_data.png', dpi=300)
+    #     # plt.show()
+    #     plt.close(fig)
         
-    # Create flow-field for Kuramoto-Sivashinsky Equation
-    if sanity_check:
-        fig, ax = plt.subplots(figsize=(12, 8))
-        im = ax.imshow(X_ks, aspect='auto', cmap='viridis', origin='lower',
-                        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]])
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Space (x)')
-        ax.set_title('Kuramoto-Sivashinsky Equation Solution')
-        plt.colorbar(im, ax=ax, label='u(x,t)')
-        plt.tight_layout()
-        plt.savefig('figures/kse_data.png', dpi=300)
-        plt.show()
-        plt.close(fig)
+    # # Train SparseModesNet on Burgers' Equation data 
+    # d_b, n_b = X_burgers.shape
+    # s_b = min(d_b, n_b)
+    # run_lassonet_pod_recon(
+    #     X_np = X_burgers,
+    #     s = s_b,
+    #     hidden_units = [128, 64, 32],       # hidden layer sizes in POD‐space
+    #     M = 10.0,                           # hierarchy multiplier
+    #     lam = 1e-4,                         # ℓ₁ penalty on b
+    #     lr = 1e-3,                          # learning rate
+    #     num_epochs = 100,                   # epochs
+    #     batch_size = 16,                    # batch size
+    #     device = device,
+    #     label = "Burgers' Equation"
+    # )
+
+    # # ---------- Kuramoto–Sivashinsky Equation ----------
+    # X_ks, xspan, tspan = generate_kse_data(nx=2**10, nt=4000, L=100.0, t_max=150.0)
         
-    # Train SparseModesNet on Kuramoto-Sivashinsky Equation data
-    d_ks, n_ks = X_ks.shape
-    s_ks = min(d_ks, n_ks)
-    run_lassonet_pod_recon(
-        X_np = X_ks,
-        s = s_ks,
-        hidden_units = [256, 128, 64, 32],  # hidden layer sizes in POD‐space
-        M = 1.0,                            # hierarchy multiplier
-        lam = 1e-4,                         # ℓ₁ penalty on b
-        lr = 1e-3,                          # learning rate
-        num_epochs = 100,                   # epochs
-        batch_size = 16,                    # batch size
-        device = device,
-        label = "Kuramoto-Sivashinsky Equation"
-    )
+    # # Create flow-field for Kuramoto-Sivashinsky Equation
+    # if sanity_check:
+    #     fig, ax = plt.subplots(figsize=(12, 8))
+    #     im = ax.imshow(X_ks, aspect='auto', cmap='viridis', origin='lower',
+    #                     extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]])
+    #     ax.set_xlabel('Time')
+    #     ax.set_ylabel('Space (x)')
+    #     ax.set_title('Kuramoto-Sivashinsky Equation Solution')
+    #     plt.colorbar(im, ax=ax, label='u(x,t)')
+    #     plt.tight_layout()
+    #     plt.savefig('figures/kse_data.png', dpi=300)
+    #     # plt.show()
+    #     plt.close(fig)
+        
+    # # Train SparseModesNet on Kuramoto-Sivashinsky Equation data
+    # d_ks, n_ks = X_ks.shape
+    # s_ks = min(d_ks, n_ks)
+    # run_lassonet_pod_recon(
+    #     X_np = X_ks,
+    #     s = s_ks,
+    #     hidden_units = [256, 128, 64, 32],  # hidden layer sizes in POD‐space
+    #     M = 1.0,                            # hierarchy multiplier
+    #     lam = 1e-4,                         # ℓ₁ penalty on b
+    #     lr = 1e-3,                          # learning rate
+    #     num_epochs = 100,                   # epochs
+    #     batch_size = 16,                    # batch size
+    #     device = device,
+    #     label = "Kuramoto-Sivashinsky Equation"
+    # )
