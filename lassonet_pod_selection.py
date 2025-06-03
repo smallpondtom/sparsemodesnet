@@ -305,8 +305,8 @@ class LassoNetAutoencoderPODRecon(nn.Module):
    
     def proximal_step(self):
         """
-        Batched implementation of Algorithm 4 (Group‐Hierarchical Proximal) with λ̄ = 0,
-        corrected so that b_new = x_star * θ (no extra soft‐threshold on b).
+        Batched implementation of Algorithm 4 (Group-Hierarchical Proximal) with λ̄ = 0,
+        corrected so that b_new = x_star * θ (no extra soft-threshold on b).
         """
         lam = self.lam
         M   = self.M
