@@ -21,14 +21,17 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Regularization parameter selection method
-    lambda_method = 'cv'  # 'path', 'cv', or 'stability'
+    lambda_method = 'stability'  # 'path', 'cv', or 'stability'
+    
+    # Stopping criterion for the regularization path
+    stop_method = 'elbow'
 
     # Common hyperparameters
-    hidden_units_heat = [256, 128, 64, 32]
+    hidden_units_heat = [128, 64, 32]
 
     # Parameter‐grid for CV or SS (you can customize)
     lambdas_cv = np.logspace(-6, -2, 10)    # 10 values from 1e-6 to 1e-2
-    lambdas_ss = np.logspace(-6, 0, 12)     # 12 values from 1e-6 to 1e0
+    lambdas_ss = np.logspace(-3, -2, 12)     # 12 values from 1e-6 to 1e0
     
     # Sanity check flag (plotting)
     sanity_check = False
@@ -51,18 +54,18 @@ if __name__ == "__main__":
         ax.set_title('Heat Equation Solution')
         plt.colorbar(surf, shrink=0.5, aspect=5)
         plt.savefig('../figures/heat_data.png', dpi=300)
-        # plt.show()
+        plt.show()
         plt.close(fig)
 
     model_heat, info_heat, selected_h, freq_tab = run_sparsemodesnet_with_lambda_selection(
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 0.1,
+        M               = 2.0,
         lambda_method   = lambda_method,
         lam0            = 1e-6,         # only used if path
         epsilon         = 0.10,         # only used if path
-        B_path          = 20,           # epochs per λ for path or final fit
+        B_path          = 100,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
@@ -70,9 +73,12 @@ if __name__ == "__main__":
         lambdas_ss      = lambdas_ss,   # only used if stability
         B_ss            = 10,           # subsamples per λ for stability
         pi_thresh       = 0.6,          # threshold for stability
-        num_epochs_sub  = 20,           # epochs per subsample for stability
+        num_epochs_sub  = 80,           # epochs per subsample for stability
+        stop_method     = stop_method,
+        aic_alpha       = 0.5,          # significance level for AIC
         lr              = 1e-3,
-        batch_size      = 16,
+        optimizer       = 'Adam',
+        batch_size      = 32,
         device          = device,
         label           = "Heat Equation"
     )
