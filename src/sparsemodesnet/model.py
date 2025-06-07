@@ -13,8 +13,8 @@ class SparseModesNet(nn.Module):
         ||W^(1)[j,:]||_∞ ≤ M |b_j|  for all j ∈ {0..s-1}.
     """
 
-    def __init__(self, pod_basis: torch.Tensor, input_dim: int, hidden_units: list,
-                 M: float = 5.0, lam: float = 1e-3):
+    def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
+                 hidden_units: list, M: float = 5.0, lam: float = 1e-3):
         """
         pod_basis:  V_s ∈ R^{d x s}  (torch.Tensor)
         input_dim:  s (POD dimension)

@@ -267,7 +267,17 @@ def run_sparsemodesnet_with_lambda_selection(X_np: np.ndarray,
     frob_error     = np.linalg.norm(X_np - X_hat_np, 'fro')
     rel_frob_error = frob_error / np.linalg.norm(X_np, 'fro')
     mse_per_sample = frob_error / X_np.shape[1]
-    print(f"Final relative reconstruction ||X - X_hat||_F / ||X||_F = {rel_frob_error:.6e}")
-    print(f"Final MSE per sample = {mse_per_sample:.6e}")
+    print(f"Final relative reconstruction of SparseModesNet: ||X - X_hat||_F / ||X||_F = {rel_frob_error:.6e}")
+    print(f"Final MSE per sample of SparseModesNet: = {mse_per_sample:.6e}")
+    
+    # Compute the error when using only selected modes
+    V_selected = V_s_np[:, selected_indices]  # (d, k)
+    frob_error_selected = np.linalg.norm(
+        X_np - V_selected @ (V_selected.T @ X_np), 'fro'
+    ) 
+    rel_frob_error_selected = frob_error_selected / np.linalg.norm(X_np, 'fro')
+    mse_per_sample_selected = frob_error_selected / X_np.shape[1]
+    print(f"Relative error using only selected modes: {rel_frob_error_selected:.6e}")
+    print(f"MSE per sample using only selected modes: {mse_per_sample_selected:.6e}")
 
     return model_final, {'history_full': history_full, 'lambda_star': lam_star}, selected_indices, freq_table
