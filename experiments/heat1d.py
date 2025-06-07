@@ -26,7 +26,7 @@ if __name__ == "__main__":
     lambda_method = 'stability'  # 'path', 'cv', or 'stability'
     
     # Stopping criterion for the regularization path
-    stop_method = 'constraint'
+    stop_method = 'aic'
 
     # Common hyperparameters
     hidden_units_heat = [128, 8256]
@@ -77,7 +77,8 @@ if __name__ == "__main__":
         pi_thresh       = 0.7,          # threshold for stability
         num_epochs_sub  = 80,           # epochs per subsample for stability
         stop_method     = stop_method,
-        aic_alpha       = 0.5,          # significance level for AIC
+        aic_alpha       = 0.1,          # significance level for AIC
+        K_max           = 10,           # max modes for constraint stopping
         lr              = 1e-3,
         optimizer       = 'Adam',
         batch_size      = 32,

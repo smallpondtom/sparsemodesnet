@@ -119,6 +119,7 @@ def run_sparsemodesnet_with_lambda_selection(X_np: np.ndarray,
                                              # new: stopping criterion for path
                                              stop_method: str = 'aic',
                                              aic_alpha: float = 2.0,
+                                             K_max: int = None,  # max modes for constraint
                                              # common:
                                              lr: float = 1e-3,
                                              batch_size: int = 16,
@@ -165,7 +166,8 @@ def run_sparsemodesnet_with_lambda_selection(X_np: np.ndarray,
             lam_star, k_star, err_star = pick_aic(path_history_cv, n_samples, aic_alpha)
             print(f"[CV-AIC, α={aic_alpha:.1e}] Picked λ={lam_star:.3e}, k={k_star}, err={err_star:.6e}")
         elif stop_method == 'constraint':
-            K_max = s // 2
+            if K_max is None:
+                K_max = s // 2
             lam_star, k_star, err_star = pick_max_modes(path_history_cv, K_max)
             print(f"[CV-Constraint] Picked λ={lam_star:.3e}, k={k_star}, err={err_star:.6e}")
         else:
@@ -195,7 +197,8 @@ def run_sparsemodesnet_with_lambda_selection(X_np: np.ndarray,
             lam_star, k_star, err_star = pick_aic(path_history_ss, n_samples, aic_alpha)
             print(f"[SS-AIC, α={aic_alpha:.2e}] Picked λ={lam_star:.3e}, k={k_star}, err={err_star:.6e}")
         elif stop_method == 'constraint':
-            K_max = s // 2
+            if K_max is None:
+                K_max = s // 2
             lam_star, k_star, err_star = pick_max_modes(path_history_ss, K_max)
             print(f"[SS-Constraint] Picked λ={lam_star:.3e}, k={k_star}, err={err_star:.6e}")
         else:
@@ -225,7 +228,8 @@ def run_sparsemodesnet_with_lambda_selection(X_np: np.ndarray,
             lam_star, k_star, err_star = pick_aic(path_history, n_samples, aic_alpha)
             print(f"[Path-AIC, α={aic_alpha:.2e}] Picked λ={lam_star:.3e}, k={k_star}, err={err_star:.6e}")
         elif stop_method == 'constraint':
-            K_max = s // 2
+            if K_max is None:
+                K_max = s // 2
             lam_star, k_star, err_star = pick_max_modes(path_history, K_max)
             print(f"[Path-Constraint] Picked λ={lam_star:.3e}, k={k_star}, err={err_star:.6e}")
         else:
