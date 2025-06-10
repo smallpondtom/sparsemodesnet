@@ -26,14 +26,15 @@ if __name__ == "__main__":
     lambda_method = 'stability'  # 'path', 'cv', or 'stability'
     
     # Stopping criterion for the regularization path
-    stop_method = 'aic'
+    stop_method = 'constraint'
 
     # Common hyperparameters
     hidden_units_heat = [128, 8256]
+    # hidden_units_heat = [20, 120, 400]
 
     # Parameter‐grid for CV or SS (you can customize)
     lambdas_cv = np.logspace(-6, -2, 10)      # 10 values from 1e-6 to 1e-2
-    lambdas_ss = np.logspace(-2.1, -1.2, 12)  # 12 values from 1e-6 to 1e0
+    lambdas_ss = np.logspace(-2.5, -1.2, 12)  # 12 values from 1e-6 to 1e0
     
     # Sanity check flag (plotting)
     sanity_check = False
@@ -42,6 +43,7 @@ if __name__ == "__main__":
     X_heat, xspan_h, tspan_h = generate_heat_data(nx=2**7, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
+    # s_h = 20
     
     # Create 3D surface plot for Heat Equation (sanity check)
     if sanity_check:
@@ -64,11 +66,12 @@ if __name__ == "__main__":
         s               = s_h,
         hidden_units    = hidden_units_heat,
         M               = 2.0,
+        nonzero_thresh  = 1e-7,
         lambda_method   = lambda_method,
         lam0            = 1e-6,         # only used if path
         epsilon         = 0.10,         # only used if path
-        B_path          = 100,           # epochs per λ for path or final fit
-        max_iters       = 100,          # max iterations for path
+        B_path          = 100,          # epochs per λ for path or final fit
+        max_iters       = 20,           # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
         num_epochs_cv   = 20,           # for cv

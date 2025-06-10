@@ -56,6 +56,6 @@ def train_sparsemodesnet(model: SparseModesNet,
 
         # Print every 20 epochs or first:
         if (epoch % 20 == 0) or (epoch == 1):
-            print(f"  λ={model.lam:.3e} | Epoch {epoch:3d} | Recon MSE={epoch_loss:.6e} | ‖b‖₁={epoch_l1:.6e}")
+            print(f"  λ={model.lam:.3e} | Epoch {epoch:3d} | Recon MSE={epoch_loss:.6e} | ‖ω‖₁={epoch_l1:.6e}")
 
     return history
