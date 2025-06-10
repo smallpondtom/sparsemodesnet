@@ -161,8 +161,8 @@ def run_sparsemodesnet_with_lambda_selection(
             optimizer        = optimizer,
             device           = device
         )
-        n_samples = X_np.shape[1]
-        lam_star, r_star, err_star = pick_aic(path_history, n_samples)
+        d, n_samples = X_np.shape
+        lam_star, r_star, err_star = pick_aic(path_history, n_samples, d)
         print(f"[CV-AIC] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
         freq_table = path_history
     elif lambda_method == 'stability':

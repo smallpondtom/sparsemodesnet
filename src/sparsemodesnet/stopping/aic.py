@@ -1,14 +1,14 @@
 import math
 from typing import List, Dict
 
-def pick_aic(path_history: List[Dict], n_samples: int) -> tuple[float, int, float]:
+def pick_aic(path_history: List[Dict], n_samples: int, d: int) -> tuple[float, int, float]:
     get_r = lambda h: h['r']
     best_score = math.inf
     best_tuple = (path_history[0]['lambda'], get_r(path_history[0]), path_history[0]['rel_error'])
     for h in path_history:
         r = get_r(h)
         mse = h['val_error']  # the MSE
-        aic = n_samples * math.log(mse) + 2 * r 
+        aic = n_samples * d * math.log(mse) + 2 * r 
         if n_samples < 100:   # small sample size correction (AICc)
             aic += 2 * r * (r + 1) / (n_samples - r - 1)  
             
