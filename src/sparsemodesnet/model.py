@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class SoftplusParameterization(nn.Module):
+    def forward(self, X):
+        return F.softplus(X)
 class SparseModesNet(nn.Module):
     """
     LassoNet in POD-space (R^s → R^s), but loss computed in original x-space:
@@ -31,7 +34,11 @@ class SparseModesNet(nn.Module):
         self.lam = float(lam)
 
         # Skip‐weights ω ∈ R^s
-        self.omega = nn.Parameter(torch.ones(self.s))
+        # self.omega = nn.Parameter(torch.ones(self.s))
+        self.omega_raw = nn.Parameter(torch.ones(self.s) * 0.1)
+        
+        # Softplus parameterization to ensure omega > 0
+        self.softplus = SoftplusParameterization()
 
         # Build f_NN in POD-space (can't have biases to kill zero features)
         self.first_layer = nn.Linear(self.s, hidden_units[0], bias=False)
@@ -41,6 +48,11 @@ class SparseModesNet(nn.Module):
             layers.append(nn.ReLU(inplace=True))
         layers.append(nn.Linear(hidden_units[-1], self.s, bias=False))
         self.net = nn.Sequential(*layers)
+        
+    @property
+    def omega(self):
+        """Get the positive omega values using softplus"""
+        return self.softplus(self.omega_raw)
 
     def forward(self, z_batch):
         """
@@ -114,7 +126,8 @@ class SparseModesNet(nn.Module):
         a_s = lam - M * torch.cat([zeros_m, cumsum_vals], dim=1)  # (s, K+1)
 
         # 4) ‖v‖₂ = |θ|, shape (s,)
-        theta_abs = self.omega.data.abs()  # (s,)
+        # theta_abs = self.omega.data.abs()  # (s,)
+        theta_abs = self.omega.abs()  # (s,)
 
         # 5) Broadcast |θ| into (s, K+1)
         norm_v_col = theta_abs.unsqueeze(1).expand(-1, K+1)  # (s, K+1)
@@ -152,6 +165,13 @@ class SparseModesNet(nn.Module):
         W1_T_new   = W1_T.sign() * clipped_abs          # (s, K)
 
         # 14) Write back:
-        self.omega.data.copy_(b_new)               # (s,)
+        # self.omega.data.copy_(b_new)               # (s,)
         W1_updated = W1_T_new.t().contiguous() # shape: (K, s) → transpose to (h, s)
         self.first_layer.weight.data.copy_(W1_updated)
+        
+        with torch.no_grad():
+            # Convert back to unconstrained space using inverse softplus
+            # softplus^(-1)(x) = log(exp(x) - 1) for x > 0
+            # For numerical stability, use: log(exp(x) - 1) ≈ x - log(2) for large x
+            new_omega_raw = torch.log(torch.exp(b_new) - 1 + 1e-8)
+            self.omega_raw.data = new_omega_raw
