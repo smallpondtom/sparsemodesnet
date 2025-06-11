@@ -61,6 +61,11 @@ def select_lambda_stability(X_np: np.ndarray,
         freqs_i = counts[:, i] / float(B)
         stable_count_i = int((freqs_i >= pi_thresh).sum())
         print(f"  → λ = {lam:.3e} | stable features = {stable_count_i} (freq ≥ {pi_thresh})")
+        
+        if stable_count_i == 0:
+            print(f"  → All features dropped out at λ = {lam:.3e}; ")
+            print("  → Stopping SS path early (no features stable at λ > λ*)\n")
+            break
 
     # 2) aggregate into selection probabilities
     freqs   = counts / float(B)           # (s, m)
@@ -74,6 +79,7 @@ def select_lambda_stability(X_np: np.ndarray,
 
     path_history_ss = []
     lambda_star = None
+    r_star = 0
     S_stable_count = len(S_stable)
     set_diff_min = np.inf
     set_diff_min_lam = None
@@ -90,8 +96,8 @@ def select_lambda_stability(X_np: np.ndarray,
         train_sparsemodesnet(model_full, dl_full,
                              num_epochs_ss if final_epochs is None else final_epochs,
                              lr, optimizer, device)
-        b_full = model_full.b.detach().cpu().numpy()
-        S_full = set(np.where(np.abs(b_full) > nonzero_thresh)[0])
+        omega_full = model_full.omega.detach().cpu().numpy()
+        S_full = set(np.where(np.abs(omega_full) > nonzero_thresh)[0])
         
         # Record values for fallback method 
         S_full_count = len(S_full) 
@@ -99,6 +105,7 @@ def select_lambda_stability(X_np: np.ndarray,
         if set_diff_i < set_diff_min:
             set_diff_min = set_diff_i
             set_diff_min_lam = lam
+            r_star = S_full_count
             
         path_history_ss.append({
             'lambda': lam,
@@ -109,6 +116,7 @@ def select_lambda_stability(X_np: np.ndarray,
         print(f"    → selected {len(S_full)} features; need ≥ {len(S_stable)}")
         if S_stable.issubset(S_full):
             lambda_star = lam
+            r_star = S_stable_count
             print(f"  → λ* = {lam:.3e} (covers stable set)\n")
             break
     
@@ -132,7 +140,7 @@ def select_lambda_stability(X_np: np.ndarray,
     #                      lr, optimizer, device)
 
     # print("Final model ready.\n")
-    return lambda_star, path_history_ss, S_stable, freqs
+    return lambda_star, r_star, path_history_ss, S_stable, freqs
 
 
 # def select_lambda_stability(X_np: np.ndarray,

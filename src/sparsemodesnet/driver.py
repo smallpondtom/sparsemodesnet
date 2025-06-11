@@ -24,13 +24,12 @@ def run_sparsemodesnet(X_np: np.ndarray,
                        max_iters: int,
                        batch_size: int,
                        optimizer: str,
-                       device: str,
-                       label: str):
+                       device: str):
     """
     The original warm-start λ→(1+ε)λ routine that stops when ω=0.
     Exactly the same code we provided earlier in step (3).
     """
-    print(f"\n=== LassoNet-POD (path) on {label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
+    # print(f"\n=== LassoNet-POD (path) on {label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
 
     U_s_np, _, _ = compute_pod_basis(X_np, s=s)   # (d, s)
     Z_np = U_s_np.T.dot(X_np)                     # (s, n)
@@ -42,14 +41,6 @@ def run_sparsemodesnet(X_np: np.ndarray,
     dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np)
     dataloader_full = DataLoader(dataset_full, batch_size=batch_size, shuffle=True, drop_last=False)
 
-    model = SparseModesNet(
-        pod_basis    = U_s_tensor,
-        input_dim    = s,
-        hidden_units = hidden_units,
-        M            = M,
-        lam          = lam0
-    ).to(device)
-
     lam = lam0
     prev_nonzero = s
     path_history = []
@@ -58,8 +49,15 @@ def run_sparsemodesnet(X_np: np.ndarray,
     while True:
         iter_count += 1
         print(f"\n-- Path iteration {iter_count}, λ = {lam:.3e}  (r(λ) prev = {prev_nonzero})")
-        model.lam = float(lam)
-
+        
+        model = SparseModesNet(
+            pod_basis    = U_s_tensor,
+            input_dim    = s,
+            hidden_units = hidden_units,
+            M            = M,
+            lam          = lam
+        ).to(device)
+        
         history = train_sparsemodesnet(model, dataloader_full, B, lr, optimizer, device)
         omega_opt = model.omega.detach().cpu().numpy()
         nonzero_idxs = np.where(np.abs(omega_opt) > nonzero_thresh)[0]
@@ -80,7 +78,7 @@ def run_sparsemodesnet(X_np: np.ndarray,
             'l1_b': np.mean(history['l1_b'])
         })
 
-        print(f"  → at λ={lam:.3e}:  nonzero={curr_nonzero}, rel_err={rel_frob_error:.6e}")
+        print(f"  → at λ={lam:.3e}:  r(λ)={curr_nonzero}, rel_err={rel_frob_error:.6e}")
 
         if curr_nonzero == 0:
             print("All skip-weights have zeroed out. Stopping path.\n")
@@ -95,7 +93,7 @@ def run_sparsemodesnet(X_np: np.ndarray,
 
     omega_opt_final = model.omega.detach().cpu().numpy()
     selected_indices = np.where(np.abs(omega_opt_final) > nonzero_thresh)[0]
-    return model, path_history, selected_indices
+    return path_history, selected_indices
 
 
 def run_sparsemodesnet_with_lambda_selection(
@@ -167,7 +165,7 @@ def run_sparsemodesnet_with_lambda_selection(
         freq_table = path_history
     elif lambda_method == 'stability':
         assert lambdas_ss is not None, "Must pass a grid 'lambdas_ss' for stability selection."
-        lam_star, path_history, S_stable, freqs = select_lambda_stability(
+        lam_star, r_star, path_history, S_stable, freqs = select_lambda_stability(
             X_np             = X_np,
             s                = s,
             hidden_units     = hidden_units,
@@ -190,7 +188,7 @@ def run_sparsemodesnet_with_lambda_selection(
             warnings.warn(
                 f"Method {lambda_method!r} does not exist. Using 'path' method instead." 
             )
-        _, path_history, _ = run_sparsemodesnet(
+        path_history, _ = run_sparsemodesnet(
             X_np           = X_np,
             s              = s,
             hidden_units   = hidden_units,
@@ -204,7 +202,6 @@ def run_sparsemodesnet_with_lambda_selection(
             batch_size     = batch_size,
             optimizer      = optimizer,
             device         = device,
-            label          = label
         )
         lam_star, r_star, err_star = pick_elbow(path_history)
         print(f"[Path-Elbow] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
@@ -214,9 +211,9 @@ def run_sparsemodesnet_with_lambda_selection(
     if r_star == 0:
         print("No modes selected at λ*. Using last entry in path such that r(λ)≤r_max.")
         if r_max is not None: # Find first lambda where nonzero_count < r_max
-            print(f"Searching for first λ with nonzero_count < {r_max} ...")
+            print(f"Searching for first λ with nonzero_count <= {r_max} ...")
             nonzero_counts = np.array([entry['nonzero_count'] for entry in path_history])
-            valid_indices = np.where(nonzero_counts < r_max)[0]
+            valid_indices = np.where(nonzero_counts <= r_max)[0]
             if len(valid_indices) > 0:
                 idx = valid_indices[0]
                 lam_star = path_history[idx]['lambda']

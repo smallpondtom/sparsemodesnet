@@ -25,16 +25,13 @@ if __name__ == "__main__":
     # Regularization parameter selection method
     lambda_method = 'stability'  # 'path', 'cv', or 'stability'
     
-    # Stopping criterion for the regularization path
-    stop_method = 'constraint'
-
     # Common hyperparameters
-    hidden_units_heat = [128, 8256]
-    # hidden_units_heat = [20, 120, 400]
+    # hidden_units_heat = [128, 8256]
+    hidden_units_heat = [20, 120, 400]
 
     # Parameter‐grid for CV or SS (you can customize)
-    lambdas_cv = np.logspace(-6, -2, 10)      # 10 values from 1e-6 to 1e-2
-    lambdas_ss = np.logspace(-2.5, -1.2, 12)  # 12 values from 1e-6 to 1e0
+    lambdas_cv = np.logspace(-2.5, -1.2, 10)  
+    lambdas_ss = np.logspace(-2.1, -1.0, 50)  
     
     # Sanity check flag (plotting)
     sanity_check = False
@@ -65,29 +62,86 @@ if __name__ == "__main__":
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 2.0,
-        nonzero_thresh  = 1e-7,
+        M               = 5.0,
         lambda_method   = lambda_method,
-        lam0            = 1e-6,         # only used if path
-        epsilon         = 0.10,         # only used if path
+        optimizer       = 'Adam',
+        nonzero_thresh  = 1e-6,
+        r_max           = 10,           # max modes for constraint stopping
+        lam0            = 1e-4,         # only used if path
+        epsilon         = 0.20,         # only used if path
         B_path          = 100,          # epochs per λ for path or final fit
-        max_iters       = 20,           # max iterations for path
+        max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
-        num_epochs_cv   = 20,           # for cv
+        num_epochs_cv   = 80,           # for cv
         lambdas_ss      = lambdas_ss,   # only used if stability
-        B_ss            = 10,           # subsamples per λ for stability
-        pi_thresh       = 0.7,          # threshold for stability
-        num_epochs_sub  = 80,           # epochs per subsample for stability
-        stop_method     = stop_method,
-        aic_alpha       = 0.1,          # significance level for AIC
-        K_max           = 10,           # max modes for constraint stopping
+        B_ss            = 5,            # subsamples per λ for stability
+        pi_thresh       = 0.75,         # threshold for stability
+        num_epochs_ss   = 80,           # epochs per subsample for stability
+        final_epochs_ss = 100,          # epochs for final fit after stability
         lr              = 1e-3,
-        optimizer       = 'Adam',
-        batch_size      = 32,
+        batch_size      = 64,
         device          = device,
         label           = "Heat Equation"
     )
+    
+    #%% Plot L-curve
+    if lambda_method == 'path':
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.set_xlabel('L1 Regularization Term (||ω||₁)')
+        ax.set_ylabel('Relative Error')
+        ax.set_title('L-curve for Heat Equation')
+        ax.grid(True, alpha=0.3)
+        for freq in freq_tab:
+            ax.loglog(freq['l1_b'], freq['rel_error'], 'o-', markersize=6, linewidth=2)
+        plt.tight_layout()
+        plt.savefig('../figures/heat_lcurve.png', dpi=300)
+        plt.show()
+        plt.close(fig)
+    
+    #%% Plot the λ vs selected modes and λ vs relative error
+    if lambda_method == 'path':
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
+        # Extract data
+        lambdas = [freq['lambda'] for freq in freq_tab]
+        num_modes = [freq['nonzero_count'] for freq in freq_tab]
+        rel_errors = [freq['rel_error'] for freq in freq_tab]
+        # Plot 1: λ vs relative error
+        ax1.loglog(lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
+        ax1.set_xlabel('Regularization Parameter (λ)', fontsize=16)
+        ax1.set_ylabel('Relative Error', fontsize=16)
+        ax1.set_title('λ vs Relative Error', fontsize=18)
+        ax1.tick_params(axis='both', which='major', labelsize=14)
+        ax1.grid(True, alpha=0.3)
+        # Plot 2: λ vs selected modes
+        ax2.semilogx(lambdas, num_modes, 'o-', markersize=8, linewidth=2, color='blue')
+        ax2.set_xlabel('Regularization Parameter (λ)', fontsize=16)
+        ax2.set_ylabel('Number of Selected Modes', fontsize=16)
+        ax2.set_title('λ vs Number of Selected Modes', fontsize=18)
+        ax2.tick_params(axis='both', which='major', labelsize=14)
+        ax2.grid(True, alpha=0.3)
+        # Plot 3: Superimposed plot with dual y-axes
+        color1 = 'blue'
+        color2 = 'red'
+        ax3.set_xlabel('Regularization Parameter (λ)', fontsize=16)
+        ax3.set_ylabel('Number of Selected Modes', color=color1, fontsize=16)
+        line1 = ax3.semilogx(lambdas, num_modes, 'o-', markersize=8, linewidth=2, color=color1, label='Selected Modes')
+        ax3.tick_params(axis='both', which='major', labelsize=14, labelcolor='black')
+        ax3.tick_params(axis='y', labelcolor=color1)
+        ax3.grid(True, alpha=0.3)
+        ax3_twin = ax3.twinx()
+        ax3_twin.set_ylabel('Relative Error', color=color2, fontsize=16)
+        line2 = ax3_twin.loglog(lambdas, rel_errors, 's-', markersize=8, linewidth=2, color=color2, label='Relative Error')
+        ax3_twin.tick_params(axis='y', labelcolor=color2, labelsize=14)
+        ax3.set_title('λ vs Selected Modes & Relative Error', fontsize=18)
+        # Add legend
+        lines = line1 + line2
+        labels = [l.get_label() for l in lines]
+        ax3.legend(lines, labels, loc='center left', fontsize=16)
+        plt.tight_layout()
+        plt.savefig('../figures/heat_lambda_analysis.png', dpi=300)
+        plt.show()
+        plt.close(fig)
 
     #%% Plot the reconstructed flow fields (heatmap)
     V, _, _ = np.linalg.svd(X_heat, full_matrices=False)
