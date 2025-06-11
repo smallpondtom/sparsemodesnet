@@ -5,6 +5,16 @@ import torch.nn.functional as F
 class SoftplusParameterization(nn.Module):
     def forward(self, X):
         return F.softplus(X)
+    
+# Helper class for reshaping in sequential
+class Reshape(nn.Module):
+    def __init__(self, shape):
+        super().__init__()
+        self.shape = shape
+    
+    def forward(self, x):
+        return x.view(self.shape)
+    
 class SparseModesNet(nn.Module):
     """
     LassoNet in POD-space (R^s → R^s), but loss computed in original x-space:
@@ -15,39 +25,121 @@ class SparseModesNet(nn.Module):
       Minimize ∑ ||x_i - x_hat_i||^2 + λ ||ω||_1, subject to the hierarchy constraint:
         ||W^(1)[j,:]||_∞ ≤ M |ω_j| for all j ∈ {0..s-1}.
     """
-
+    
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
-                 hidden_units: list, M: float = 5.0, lam: float = 1e-3):
+                hidden_units: list, M: float = 5.0, lam: float = 1e-3, 
+                network_type: str = 'feedforward', **conv_kwargs):
         """
         pod_basis:  U_s ∈ R^{d x s}  (torch.Tensor)
         input_dim:  s (POD dimension)
         hidden_units:  e.g. [s, s(s+1)/2, s(s+1)(s+2)/6] (quadratic, cubic, etc.)
         M: hierarchy multiplier
         lam: ℓ₁ penalty on ω
+        network_type: 'feedforward' or 'convolutional'
+        conv_kwargs: additional arguments for convolutional network
+            - kernel_size: int, default 3
+            - num_channels: list, e.g. [16, 32, 16]
+            - padding: str, default 'same'
         """
         super(SparseModesNet, self).__init__()
 
         self.U_s = pod_basis  # (d, s)
         self.d, self.s = pod_basis.shape
+        self.network_type = network_type
 
         self.M = float(M)
         self.lam = float(lam)
 
         # Skip‐weights ω ∈ R^s
-        # self.omega = nn.Parameter(torch.ones(self.s))
         self.omega_raw = nn.Parameter(torch.ones(self.s) * 0.1)
         
         # Softplus parameterization to ensure omega > 0
         self.softplus = SoftplusParameterization()
 
-        # Build f_NN in POD-space (can't have biases to kill zero features)
+        # Build f_NN in POD-space based on network type
+        if network_type == 'feedforward':
+            self.net = self._build_feedforward_network(hidden_units)
+        elif network_type == 'convolutional':
+            self.net = self._build_convolutional_network(hidden_units, **conv_kwargs)
+        else:
+            raise ValueError(f"Unsupported network_type: {network_type}. Use 'feedforward' or 'convolutional'.")
+
+    def _build_feedforward_network(self, hidden_units):
+        """Build standard feedforward network"""
         self.first_layer = nn.Linear(self.s, hidden_units[0], bias=False)
         layers = [self.first_layer, nn.ReLU(inplace=True)]
+        
         for i in range(1, len(hidden_units)):
             layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
             layers.append(nn.ReLU(inplace=True))
+        
         layers.append(nn.Linear(hidden_units[-1], self.s, bias=False))
-        self.net = nn.Sequential(*layers)
+        return nn.Sequential(*layers)
+
+    def _build_convolutional_network(self, hidden_units, kernel_size=3, 
+                                     num_channels=None, padding='same'):
+        """Build 1D convolutional network for POD coefficients"""
+        if num_channels is None:
+            num_channels = [16, 32, 16]  # Default channel progression
+        
+        layers = []
+        
+        # Input projection: (batch, s) -> (batch, channels[0], s)
+        layers.append(nn.Linear(self.s, num_channels[0] * self.s, bias=False))
+        layers.append(Reshape((-1, num_channels[0], self.s)))
+        
+        # Convolutional layers
+        for i in range(len(num_channels) - 1):
+            layers.append(nn.Conv1d(
+                num_channels[i], num_channels[i+1], 
+                kernel_size=kernel_size, 
+                padding=padding, 
+                bias=False
+            ))
+            layers.append(nn.ReLU(inplace=True))
+        
+        # Output projection: (batch, channels[-1], s) -> (batch, s)
+        layers.append(nn.AdaptiveAvgPool1d(1))  # Global average pooling
+        layers.append(nn.Flatten())
+        layers.append(nn.Linear(num_channels[-1], self.s, bias=False))
+        
+        # Store first layer for proximal step
+        self.first_layer = layers[0]  # The input projection layer
+        
+        return nn.Sequential(*layers)
+
+    # def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
+    #              hidden_units: list, M: float = 5.0, lam: float = 1e-3):
+    #     """
+    #     pod_basis:  U_s ∈ R^{d x s}  (torch.Tensor)
+    #     input_dim:  s (POD dimension)
+    #     hidden_units:  e.g. [s, s(s+1)/2, s(s+1)(s+2)/6] (quadratic, cubic, etc.)
+    #     M: hierarchy multiplier
+    #     lam: ℓ₁ penalty on ω
+    #     """
+    #     super(SparseModesNet, self).__init__()
+
+    #     self.U_s = pod_basis  # (d, s)
+    #     self.d, self.s = pod_basis.shape
+
+    #     self.M = float(M)
+    #     self.lam = float(lam)
+
+    #     # Skip‐weights ω ∈ R^s
+    #     # self.omega = nn.Parameter(torch.ones(self.s))
+    #     self.omega_raw = nn.Parameter(torch.ones(self.s) * 0.1)
+        
+    #     # Softplus parameterization to ensure omega > 0
+    #     self.softplus = SoftplusParameterization()
+
+    #     # Build f_NN in POD-space (can't have biases to kill zero features)
+    #     self.first_layer = nn.Linear(self.s, hidden_units[0], bias=False)
+    #     layers = [self.first_layer, nn.ReLU(inplace=True)]
+    #     for i in range(1, len(hidden_units)):
+    #         layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
+    #         layers.append(nn.ReLU(inplace=True))
+    #     layers.append(nn.Linear(hidden_units[-1], self.s, bias=False))
+    #     self.net = nn.Sequential(*layers)
         
     @property
     def omega(self):

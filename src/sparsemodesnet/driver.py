@@ -24,10 +24,11 @@ def run_sparsemodesnet(X_np: np.ndarray,
                        max_iters: int,
                        batch_size: int,
                        optimizer: str,
-                       device: str):
+                       device: str,
+                       network_type: str = 'feedforward',  # Add this
+                       **conv_kwargs):  # Add this
     """
-    The original warm-start λ→(1+ε)λ routine that stops when ω=0.
-    Exactly the same code we provided earlier in step (3).
+    The original warm-start λ→(1+ε)λ routine with support for convolutional networks.
     """
     # print(f"\n=== LassoNet-POD (path) on {label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
 
@@ -55,7 +56,9 @@ def run_sparsemodesnet(X_np: np.ndarray,
             input_dim    = s,
             hidden_units = hidden_units,
             M            = M,
-            lam          = lam
+            lam          = lam,
+            network_type = network_type,  # Add this
+            **conv_kwargs  # Add this
         ).to(device)
         
         history = train_sparsemodesnet(model, dataloader_full, B, lr, optimizer, device)
@@ -105,6 +108,8 @@ def run_sparsemodesnet_with_lambda_selection(
     optimizer: str = 'Adam',
     nonzero_thresh: float = 1e-6,
     r_max: int = None, 
+    # Network architecture options
+    network_type: str = 'feedforward',  # Add this parameter
     # for “path”:
     lam0: float = 1e-6,
     epsilon: float = 0.1,
@@ -124,7 +129,8 @@ def run_sparsemodesnet_with_lambda_selection(
     lr: float = 1e-3,
     batch_size: int = 16,
     device: str = 'cpu',
-    label: str = ''):
+    label: str = '',
+    **conv_kwargs):  # Add this parameter for conv network options
     """
     Runs LassoNet-POD-Recon but first picks λ via one of three methods:
       • lambda_method='path'      → warm-start path (the original behavior)
@@ -157,7 +163,9 @@ def run_sparsemodesnet_with_lambda_selection(
             k_folds          = k_folds,
             batch_size       = batch_size,
             optimizer        = optimizer,
-            device           = device
+            device           = device,
+            network_type     = network_type,  # Add this
+            **conv_kwargs  # Add this
         )
         d, n_samples = X_np.shape
         lam_star, r_star, err_star = pick_aic(path_history, n_samples, d)
@@ -179,7 +187,9 @@ def run_sparsemodesnet_with_lambda_selection(
             final_epochs     = final_epochs_ss if final_epochs_ss is not None else num_epochs_ss,
             batch_size       = batch_size,
             optimizer        = optimizer,
-            device           = device
+            device           = device,
+            network_type     = network_type,  # Add this
+            **conv_kwargs  # Add this
         )
         print(f"[SS] Picked λ={lam_star:.3e}, S_stable={S_stable}")
         freq_table = {'path_history': path_history, 'stable_modes': S_stable, 'freqs': freqs}
@@ -202,6 +212,8 @@ def run_sparsemodesnet_with_lambda_selection(
             batch_size     = batch_size,
             optimizer      = optimizer,
             device         = device,
+            network_type   = network_type,  # Add this
+            **conv_kwargs  # Add this
         )
         lam_star, r_star, err_star = pick_elbow(path_history)
         print(f"[Path-Elbow] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
@@ -240,7 +252,9 @@ def run_sparsemodesnet_with_lambda_selection(
         input_dim    = s,
         hidden_units = hidden_units,
         M            = M,
-        lam          = float(lam_star)
+        lam          = float(lam_star),
+        network_type = network_type,  # Add this
+        **conv_kwargs  # Add this
     ).to(device)
 
     history_full = train_sparsemodesnet(

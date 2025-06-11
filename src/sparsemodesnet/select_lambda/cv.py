@@ -19,9 +19,11 @@ def select_lambda_cv(X_np: np.ndarray,
                      k_folds: int,
                      batch_size: int,
                      optimizer: str,
-                     device: str):
+                     device: str,
+                     network_type: str = 'feedforward',  # Add this parameter
+                     **conv_kwargs):  # Add this parameter
     """
-    Performs k-fold CV over a grid of λ values. Returns the λ with lowest average val-MSE.
+    Performs k-fold CV over a grid of λ values with support for convolutional networks.
     """
     print("\n=== Cross-Validation λ-Selection ===")
     d, n = X_np.shape
@@ -58,7 +60,9 @@ def select_lambda_cv(X_np: np.ndarray,
                 input_dim    = s,
                 hidden_units = hidden_units,
                 M            = M,
-                lam          = float(lam)
+                lam          = float(lam),
+                network_type = network_type,  # Add this
+                **conv_kwargs  # Add this
             ).to(device)
 
             # Train for num_epochs_cv
@@ -93,7 +97,9 @@ def select_lambda_cv(X_np: np.ndarray,
             input_dim    = s,
             hidden_units = hidden_units,
             M            = M,
-            lam          = float(lam)
+            lam          = float(lam),
+            network_type = network_type,  # Add this
+            **conv_kwargs  # Add this
         ).to(device)
         train_sparsemodesnet(model_full, dl_full, final_full_epochs, lr, optimizer, device)
         with torch.no_grad():

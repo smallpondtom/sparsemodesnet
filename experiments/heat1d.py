@@ -26,8 +26,8 @@ if __name__ == "__main__":
     lambda_method = 'stability'  # 'path', 'cv', or 'stability'
     
     # Common hyperparameters
-    # hidden_units_heat = [128, 8256]
-    hidden_units_heat = [20, 120, 400]
+    hidden_units_heat = [128, 8256]
+    # hidden_units_heat = [20, 120, 400]
 
     # Parameter‐grid for CV or SS (you can customize)
     lambdas_cv = np.logspace(-2.5, -1.2, 10)  
@@ -64,6 +64,10 @@ if __name__ == "__main__":
         hidden_units    = hidden_units_heat,
         M               = 5.0,
         lambda_method   = lambda_method,
+        network_type    = 'convolutional',    # Specify network type
+        kernel_size     = 8,                  # Conv-specific parameters
+        num_channels    = [64, 128, 64],      # Conv-specific parameters
+        padding         = 'same',             # Conv-specific parameters
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-6,
         r_max           = 10,           # max modes for constraint stopping

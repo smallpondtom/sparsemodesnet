@@ -20,14 +20,11 @@ def select_lambda_stability(X_np: np.ndarray,
                             final_epochs: int,
                             batch_size: int,
                             optimizer: str,
-                            device: str):
+                            device: str,
+                            network_type: str = 'feedforward',  # Add this parameter
+                            **conv_kwargs):  # Add this parameter
     """
-    Canonical stability-selection:
-        1) subsample B times for each λ, accumulate counts
-        2) compute Π_j(λ), Π_j^max and form S_stable
-        3) pick λ* = largest λ whose full-data S(λ) ⊇ S_stable
-        4) retrain final model at λ* on full data
-    Returns: model_final, lambda_star, S_stable, freqs
+    Canonical stability-selection with support for convolutional networks
     """
     print("\n=== Stability Selection λ-Selection ===")
     d, n = X_np.shape
@@ -40,7 +37,7 @@ def select_lambda_stability(X_np: np.ndarray,
     # 1) subsample loop
     cutoff_idx = 0
     for i, lam in enumerate(lambdas):
-        print(f" SS testing λ = {lam:.3e} ...")
+        print(f" SS testing λ = {lam:.3e}. Currently {i}/{m} ...")
         for _ in range(B):
             subsamp = np.random.choice(n, size=n//2, replace=False)
             ds_sub = PODReconDataset(Z_np=Z_np[:, subsamp], X_np=X_np[:, subsamp])
@@ -51,7 +48,9 @@ def select_lambda_stability(X_np: np.ndarray,
                 input_dim    = s,
                 hidden_units = hidden_units,
                 M            = M,
-                lam          = float(lam)
+                lam          = float(lam),
+                network_type = network_type,  # Add this
+                **conv_kwargs  # Add this
             ).to(device)
             train_sparsemodesnet(model_ss, dl_sub, num_epochs_ss, lr, optimizer, device)
 
@@ -89,7 +88,7 @@ def select_lambda_stability(X_np: np.ndarray,
     
     # for i, lam in enumerate(reversed(lambdas)):  # assuming lambdas are sorted ascending
     # Start from the lambda at cutoff_idx, going in reverse order
-    for i in range(len(lambdas) - 1 - cutoff_idx, -1, -1):
+    for i in range(max(cutoff_idx, m-1), 0, -1):
         lam = lambdas[i]
         
         print(f"  Testing λ = {lam:.3e} on full data ...")
@@ -98,7 +97,9 @@ def select_lambda_stability(X_np: np.ndarray,
             input_dim    = s,
             hidden_units = hidden_units,
             M            = M,
-            lam          = float(lam)
+            lam          = float(lam),
+            network_type = network_type,  # Add this
+            **conv_kwargs  # Add this
         ).to(device)
         train_sparsemodesnet(model_full, dl_full,
                              num_epochs_ss if final_epochs is None else final_epochs,
