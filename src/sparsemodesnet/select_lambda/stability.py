@@ -38,6 +38,7 @@ def select_lambda_stability(X_np: np.ndarray,
     counts = np.zeros((s, m), dtype=int)
 
     # 1) subsample loop
+    cutoff_idx = 0
     for i, lam in enumerate(lambdas):
         print(f" SS testing λ = {lam:.3e} ...")
         for _ in range(B):
@@ -63,6 +64,7 @@ def select_lambda_stability(X_np: np.ndarray,
         print(f"  → λ = {lam:.3e} | stable features = {stable_count_i} (freq ≥ {pi_thresh})")
         
         if stable_count_i == 0:
+            cutoff_idx = i
             print(f"  → All features dropped out at λ = {lam:.3e}; ")
             print("  → Stopping SS path early (no features stable at λ > λ*)\n")
             break
@@ -84,7 +86,12 @@ def select_lambda_stability(X_np: np.ndarray,
     set_diff_min = np.inf
     set_diff_min_lam = None
     print("Finding largest λ that recovers all stable features on full data...")
-    for i, lam in enumerate(reversed(lambdas)):  # assuming lambdas are sorted ascending
+    
+    # for i, lam in enumerate(reversed(lambdas)):  # assuming lambdas are sorted ascending
+    # Start from the lambda at cutoff_idx, going in reverse order
+    for i in range(len(lambdas) - 1 - cutoff_idx, -1, -1):
+        lam = lambdas[i]
+        
         print(f"  Testing λ = {lam:.3e} on full data ...")
         model_full = SparseModesNet(
             pod_basis    = torch.from_numpy(V_s_np).to(device),
