@@ -76,22 +76,58 @@ class SparseModesNet(nn.Module):
         layers.append(nn.Linear(hidden_units[-1], self.s, bias=False))
         return nn.Sequential(*layers)
 
+    # def _build_convolutional_network(self, hidden_units, kernel_size=3, 
+    #                                  num_channels=None, padding='same'):
+    #     """Build 1D convolutional network for POD coefficients"""
+    #     if num_channels is None:
+    #         num_channels = [16, 32, 16]  # Default channel progression
+        
+    #     layers = []
+        
+    #     # Input projection: (batch, s) -> (batch, channels[0], s)
+    #     layers.append(nn.Linear(self.s, num_channels[0] * self.s, bias=False))
+    #     layers.append(Reshape((-1, num_channels[0], self.s)))
+        
+    #     # Convolutional layers
+    #     for i in range(len(num_channels) - 1):
+    #         layers.append(nn.Conv1d(
+    #             num_channels[i], num_channels[i+1], 
+    #             kernel_size=kernel_size, 
+    #             padding=padding, 
+    #             bias=False
+    #         ))
+    #         layers.append(nn.ReLU(inplace=True))
+        
+    #     # Output projection: (batch, channels[-1], s) -> (batch, s)
+    #     layers.append(nn.AdaptiveAvgPool1d(1))  # Global average pooling
+    #     layers.append(nn.Flatten())
+    #     layers.append(nn.Linear(num_channels[-1], self.s, bias=False))
+        
+    #     # Store first layer for proximal step
+    #     self.first_layer = layers[0]  # The input projection layer
+        
+    #     return nn.Sequential(*layers)
+    
     def _build_convolutional_network(self, hidden_units, kernel_size=3, 
                                      num_channels=None, padding='same'):
-        """Build 1D convolutional network for POD coefficients"""
+        """Build 1D convolutional network for POD coefficients with proper LassoNet structure"""
         if num_channels is None:
             num_channels = [16, 32, 16]  # Default channel progression
         
         layers = []
         
-        # Input projection: (batch, s) -> (batch, channels[0], s)
-        layers.append(nn.Linear(self.s, num_channels[0] * self.s, bias=False))
-        layers.append(Reshape((-1, num_channels[0], self.s)))
+        # Input reshape: (batch, s) -> (batch, 1, s) for 1D conv
+        layers.append(Reshape((-1, 1, self.s)))
         
-        # Convolutional layers
-        for i in range(len(num_channels) - 1):
+        # First conv layer - this is our "first_layer" for hierarchical constraint
+        self.first_conv = nn.Conv1d(1, num_channels[0], kernel_size=kernel_size, padding=padding, bias=False)
+        layers.append(self.first_conv)
+        layers.append(nn.ReLU(inplace=True))
+        
+        # Subsequent convolutional layers
+        for i in range(1, len(num_channels)):
             layers.append(nn.Conv1d(
-                num_channels[i], num_channels[i+1], 
+                num_channels[i-1], num_channels[i], 
                 kernel_size=kernel_size, 
                 padding=padding, 
                 bias=False
@@ -99,12 +135,12 @@ class SparseModesNet(nn.Module):
             layers.append(nn.ReLU(inplace=True))
         
         # Output projection: (batch, channels[-1], s) -> (batch, s)
-        layers.append(nn.AdaptiveAvgPool1d(1))  # Global average pooling
-        layers.append(nn.Flatten())
+        layers.append(nn.AdaptiveAvgPool1d(1))  # Global average pooling -> (batch, channels[-1], 1)
+        layers.append(nn.Flatten())             # -> (batch, channels[-1])
         layers.append(nn.Linear(num_channels[-1], self.s, bias=False))
         
-        # Store first layer for proximal step
-        self.first_layer = layers[0]  # The input projection layer
+        # Store first layer for proximal step - this is crucial for LassoNet
+        self.first_layer = self.first_conv
         
         return nn.Sequential(*layers)
 
@@ -145,7 +181,7 @@ class SparseModesNet(nn.Module):
     def omega(self):
         """Get the positive omega values using softplus"""
         return self.softplus(self.omega_raw)
-
+    
     def forward(self, z_batch):
         """
         z_batch: (batch_size, s)
@@ -190,8 +226,209 @@ class SparseModesNet(nn.Module):
         Given mat: (s, h), return length-s vector of rowwise l-infinity norms.
         """
         return mat.abs().max(dim=1)[0]
+    
+    # def proximal_step_conv(self):
+    #     """
+    #     Proximal step for convolutional networks following external ConvLassoNet approach
+    #     """
+    #     with torch.no_grad():
+    #         if self.network_type != 'convolutional':
+    #             return  # Only apply to conv networks
+                
+    #         # Find the second conv layer (first layer after first_conv)
+    #         second_conv = None
+    #         conv_layers = [layer for layer in self.net if isinstance(layer, nn.Conv1d)]
+            
+    #         if len(conv_layers) >= 2:
+    #             second_conv = conv_layers[1]  # Second conv layer
+    #         else:
+    #             # If only one conv layer, use the final linear layer
+    #             for layer in self.net:
+    #                 if isinstance(layer, nn.Linear):
+    #                     second_conv = layer
+    #                     break
+            
+    #         if second_conv is None:
+    #             return  # No suitable layer found
+            
+    #         # Get dimensions
+    #         out_channels = self.first_conv.out_channels
+    #         num_omega = len(self.omega)
+            
+    #         # Apply hierarchical constraint per output channel of first conv
+    #         for j in range(min(out_channels, num_omega)):
+    #             # Current omega weight for channel j
+    #             omega_j = self.omega[j].abs()
+                
+    #             if isinstance(second_conv, nn.Conv1d):
+    #                 # For conv-to-conv connection
+    #                 # Get all weights that depend on channel j from first conv
+    #                 dependent_weights = second_conv.weight[:, j, :].flatten()
+    #             else:
+    #                 # For conv-to-linear connection (after pooling)
+    #                 # This is more complex - simplified approach
+    #                 if hasattr(second_conv, 'weight') and second_conv.weight.dim() == 2:
+    #                     # Linear layer weights: (out_features, in_features)
+    #                     # After global pooling, each channel contributes to all outputs
+    #                     if j < second_conv.weight.shape[1]:
+    #                         dependent_weights = second_conv.weight[:, j]
+    #                     else:
+    #                         continue
+    #                 else:
+    #                     continue
+                
+    #             # Apply hierarchical proximal operator
+    #             # Similar to hier_prox but simplified
+    #             lambda_eff = self.lam  # Effective lambda
+                
+    #             # Soft threshold omega
+    #             omega_thresh = torch.relu(omega_j - lambda_eff)
+                
+    #             # Constrain dependent weights: ||dependent_weights||∞ ≤ M * |omega_thresh|
+    #             weight_norm = torch.max(torch.abs(dependent_weights))
+    #             threshold = self.M * omega_thresh
+                
+    #             if weight_norm > threshold:
+    #                 if threshold > 0:
+    #                     scale_factor = threshold / weight_norm
+    #                     dependent_weights *= scale_factor
+    #                 else:
+    #                     dependent_weights.zero_()
+                
+    #             # Write back the updated weights
+    #             if isinstance(second_conv, nn.Conv1d):
+    #                 second_conv.weight.data[:, j, :] = dependent_weights.view(second_conv.weight[:, j, :].shape)
+    #             else:
+    #                 if j < second_conv.weight.shape[1]:
+    #                     second_conv.weight.data[:, j] = dependent_weights
+                
+    #             # Update omega using inverse softplus
+    #             if omega_thresh > 0:
+    #                 new_omega_raw_j = torch.log(torch.exp(omega_thresh) - 1 + 1e-8)
+    #             else:
+    #                 new_omega_raw_j = torch.log(torch.tensor(1e-8))  # Very small value
+                
+    #             self.omega_raw.data[j] = new_omega_raw_j
+                
+                
+    def _proximal_step_conv(self):
+        """
+        Efficient batched proximal step for convolutional networks
+        """
+        with torch.no_grad():
+            if self.network_type != 'convolutional':
+                return
+                
+            # Find the second layer (conv or linear)
+            second_layer = None
+            conv_layers = [layer for layer in self.net if isinstance(layer, nn.Conv1d)]
+            
+            if len(conv_layers) >= 2:
+                second_layer = conv_layers[1]  # Second conv layer
+                is_conv_to_conv = True
+            else:
+                # Find first linear layer after conv
+                for layer in self.net:
+                    if isinstance(layer, nn.Linear):
+                        second_layer = layer
+                        is_conv_to_conv = False
+                        break
+            
+            if second_layer is None:
+                return
+            
+            # Get current omega values and dimensions
+            omega_abs = self.omega.abs()  # (s,)
+            out_channels = self.first_conv.out_channels
+            num_features = min(out_channels, len(omega_abs))
+            
+            if num_features == 0:
+                return
+            
+            if is_conv_to_conv:
+                # Conv-to-conv: shape (out_ch2, out_ch1, kernel_size)
+                dependent_weights = second_layer.weight[:, :num_features, :]
+                orig_shape = dependent_weights.shape
+                # Fix: Use reshape instead of view, and ensure contiguity
+                dependent_weights = dependent_weights.permute(1, 0, 2).contiguous()  # (num_features, out_ch2, kernel_size)
+                dependent_weights = dependent_weights.reshape(num_features, -1)  # (num_features, out_ch2*kernel_size)
+            else:
+                # Conv-to-linear: after global pooling, shape (out_features, num_features)
+                if second_layer.weight.shape[1] >= num_features:
+                    dependent_weights = second_layer.weight[:, :num_features].t()  # (num_features, out_features)
+                else:
+                    return
+            
+            num_features, K = dependent_weights.shape
+            
+            # Apply hierarchical constraint per feature (vectorized)
+            # For each feature j: ||dependent_weights[j,:]||∞ ≤ M * |omega[j]|
+            
+            # 1) Get infinity norms per feature
+            weight_norms = torch.max(torch.abs(dependent_weights), dim=1)[0]  # (num_features,)
+            
+            # 2) Compute thresholds
+            thresholds = self.M * omega_abs[:num_features]  # (num_features,)
+            
+            # 3) Find features that need scaling
+            needs_scaling = weight_norms > thresholds
+            
+            # 4) Compute scale factors (vectorized)
+            scale_factors = torch.ones_like(weight_norms)
+            valid_thresholds = thresholds > 1e-12  # Avoid division by zero
+            scale_factors[needs_scaling & valid_thresholds] = (
+                thresholds[needs_scaling & valid_thresholds] / 
+                weight_norms[needs_scaling & valid_thresholds]
+            )
+            scale_factors[needs_scaling & ~valid_thresholds] = 0.0
+            
+            # 5) Apply scaling (vectorized)
+            dependent_weights *= scale_factors.unsqueeze(1)
+            
+            # 6) Write back the results
+            if is_conv_to_conv:
+                # Reshape back to original conv format
+                out_ch2, kernel_size = orig_shape[0], orig_shape[2]
+                # Fix: Use reshape and ensure proper reshaping
+                dependent_weights_reshaped = dependent_weights.reshape(num_features, out_ch2, kernel_size)
+                dependent_weights_reshaped = dependent_weights_reshaped.permute(1, 0, 2)  # (out_ch2, num_features, kernel_size)
+                second_layer.weight.data[:, :num_features, :] = dependent_weights_reshaped
+            else:
+                # Linear layer
+                second_layer.weight.data[:, :num_features] = dependent_weights.t()
+            
+            # **Key Fix: Update omega using the hierarchical relationship**
+            # Instead of direct soft thresholding, use the constraint relationship
+            # If weights were scaled, omega should be updated to maintain the constraint
+            
+            # Compute new effective omega values based on actual weight norms
+            new_weight_norms = torch.max(torch.abs(dependent_weights), dim=1)[0]
+            
+            # Omega should satisfy: M * omega >= weight_norm
+            # So: omega >= weight_norm / M
+            # But we also want to minimize omega (L1 penalty), so:
+            # omega = max(weight_norm / M, soft_threshold(omega_old, lambda/M))
+            
+            soft_thresh_omega = torch.relu(omega_abs[:num_features] - self.lam / self.M)
+            new_omega_vals = torch.max(new_weight_norms / self.M, soft_thresh_omega)
+            
+            # Update omega_raw using inverse softplus (vectorized)
+            new_omega_raw = torch.log(torch.exp(new_omega_vals) - 1 + 1e-8)
+            self.omega_raw.data[:num_features] = new_omega_raw
 
     def proximal_step(self):
+        """
+        Main proximal step that handles both feedforward and convolutional networks
+        """
+        if self.network_type == 'feedforward':
+            self._proximal_step_feedforward()
+        elif self.network_type == 'convolutional':
+            self._proximal_step_conv()
+        else:
+            raise ValueError(f"Unknown network_type: {self.network_type}")
+
+    
+    def _proximal_step_feedforward(self):
         """
         Batched implementation of Algorithm 4 (Group-Hierarchical Proximal) with λ̄ = 0,
         corrected so that ω_new = x_star * θ (no extra soft-threshold on ω).
@@ -267,3 +504,81 @@ class SparseModesNet(nn.Module):
             # For numerical stability, use: log(exp(x) - 1) ≈ x - log(2) for large x
             new_omega_raw = torch.log(torch.exp(b_new) - 1 + 1e-8)
             self.omega_raw.data = new_omega_raw
+
+
+    # def proximal_step(self):
+    #     """
+    #     Batched implementation of Algorithm 4 (Group-Hierarchical Proximal) with λ̄ = 0,
+    #     corrected so that ω_new = x_star * θ (no extra soft-threshold on ω).
+        
+    #     Note: The `v`, `θ`, and `u` notations are presented in the origina paper,
+    #     but here we use `omega` for θ. To clarify confusion with the notation,
+    #     please refer to the original paper.
+    #     """
+    #     lam = self.lam
+    #     M   = self.M
+
+    #     # 1) Gather first‐layer weights W1 ∈ ℝ^{h×s}, then transpose → W1_T ∈ ℝ^{s×h}
+    #     W1   = self.first_layer.weight.data           # (h, s)
+    #     W1_T = W1.t().contiguous()                    # (s, h), call h=K
+
+    #     s, K = W1_T.shape  # s = #features, K = width of first hidden layer
+
+    #     # 2) Sort each row of |W1_T| in descending order (batched)
+    #     u_abs_sorted, _ = W1_T.abs().sort(dim=1, descending=True)  # (s, K)
+
+    #     # 3) Build partial sums a_s(m) = lam - M * sum_{i=1}^m u_abs_sorted[j,i-1]
+    #     zeros_m     = torch.zeros((s, 1), device=W1_T.device, dtype=W1_T.dtype)  # (s,1)
+    #     cumsum_vals = torch.cumsum(u_abs_sorted, dim=1)  # (s, K)
+    #     a_s = lam - M * torch.cat([zeros_m, cumsum_vals], dim=1)  # (s, K+1)
+
+    #     # 4) ‖v‖₂ = |θ|, shape (s,)
+    #     # theta_abs = self.omega.data.abs()  # (s,)
+    #     theta_abs = self.omega.abs()  # (s,)
+
+    #     # 5) Broadcast |θ| into (s, K+1)
+    #     norm_v_col = theta_abs.unsqueeze(1).expand(-1, K+1)  # (s, K+1)
+
+    #     # 6) Build m_index = [0,1,...,K] for each of s rows
+    #     m_index = torch.arange(K+1, device=W1_T.device, dtype=W1_T.dtype).view(1, K+1)
+    #     m_index = m_index.expand(s, -1)  # (s, K+1)
+
+    #     # 7) Compute x_vals(m) = ReLU(1 - a_s / ‖v‖) / (1 + m*M^2)
+    #     x_vals = F.relu(1.0 - a_s / (norm_v_col + 1e-16)) / (1.0 + m_index * (M**2))  # (s, K+1)
+
+    #     # 8) Compute w_vals(m) = M * x_vals(m) * ‖v‖
+    #     w_vals = M * x_vals * norm_v_col  # (s, K+1)
+
+    #     # 9) Build “lower(m)” = [u_abs_sorted, 0], shape (s, K+1)
+    #     lower = torch.cat([u_abs_sorted, zeros_m], dim=1)  # (s, K+1)
+
+    #     # 10) Find index m* per row:  m*_j = sum_{m=0..K} [ lower[j,m] > w_vals[j,m] ]
+    #     cond = lower > w_vals          # (s, K+1), bool
+    #     idx  = torch.sum(cond, dim=1)  # (s,)  ← m* for each feature j
+
+    #     # 11) Gather x_star[j] = x_vals[j, idx[j]]  and  w_star[j] = w_vals[j, idx[j]]
+    #     row_idx = torch.arange(s, device=W1_T.device)
+    #     x_star  = x_vals[row_idx, idx]  # (s,)
+    #     w_star  = w_vals[row_idx, idx]  # (s,)
+
+    #     # 12) ***CORRECTED***  Update skip‐weights:  b_new[j] = x_star[j] * θ_j
+    #     # No extra soft‐threshold here, because λ was already used in building a_s→x_vals.
+    #     b_new = x_star * self.omega.data  # (s,)
+
+    #     # 13) Coordinate‐wise clip each row of W1_T to ±w_star[j]:
+    #     W1_T_abs   = W1_T.abs()                         # (s, K)
+    #     w_star_col = w_star.unsqueeze(1).expand(-1, K)  # (s, K)
+    #     clipped_abs = torch.min(W1_T_abs, w_star_col)   # (s, K)
+    #     W1_T_new   = W1_T.sign() * clipped_abs          # (s, K)
+
+    #     # 14) Write back:
+    #     # self.omega.data.copy_(b_new)               # (s,)
+    #     W1_updated = W1_T_new.t().contiguous() # shape: (K, s) → transpose to (h, s)
+    #     self.first_layer.weight.data.copy_(W1_updated)
+        
+    #     with torch.no_grad():
+    #         # Convert back to unconstrained space using inverse softplus
+    #         # softplus^(-1)(x) = log(exp(x) - 1) for x > 0
+    #         # For numerical stability, use: log(exp(x) - 1) ≈ x - log(2) for large x
+    #         new_omega_raw = torch.log(torch.exp(b_new) - 1 + 1e-8)
+    #         self.omega_raw.data = new_omega_raw
