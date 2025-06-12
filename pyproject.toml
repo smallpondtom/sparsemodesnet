@@ -1,8 +1,8 @@
 [project]
-dependencies = []
 name = "sparsemodesnet"
 requires-python = ">= 3.11"
 version = "0.1.0"
+dependencies = ["kneeliverse>=1.0,<2"]
 
 [build-system]
 build-backend = "hatchling.build"
@@ -27,6 +27,7 @@ matplotlib = ">=3.10.3,<4"
 tqdm = ">=4.67.1,<5"
 jupyter = ">=1.1.1,<2"
 scipy = ">=1.15.2,<2"
+kneed = ">=0.8.5,<0.9"
 
 [dependency-groups]
 test = ["pytest"]

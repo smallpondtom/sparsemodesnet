@@ -101,6 +101,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/keyutils-1.6.1-h166bdaf_0.tar.bz2
       - conda: https://conda.anaconda.org/conda-forge/linux-64/kiwisolver-1.4.8-py312h84d6215_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/kneed-0.8.5-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/krb5-1.21.3-h659f571_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/lcms2-2.17-h717163a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ld_impl_linux-64-2.43-h712a8e2_4.conda
@@ -294,6 +295,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.22.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstandard-0.23.0-py312h66e93f0_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
+      - pypi: https://files.pythonhosted.org/packages/95/55/6efa749fb23fa091a640d3d94ff217948cbdcc2e4e4f64b6449d127fa83e/kneeliverse-1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/13/9b/984a8c5a504cb7017b50cd3ef3487dab21abe0fa228c94672ae13a8d2c52/pyUTSAlgorithms-0.1.3-py3-none-any.whl
       - pypi: ./
       osx-arm64:
       - conda: https://conda.anaconda.org/conda-forge/noarch/anyio-4.9.0-pyh29332c3_0.conda
@@ -374,6 +377,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_server-2.27.3-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/jupyterlab_widgets-3.0.15-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/kiwisolver-1.4.7-py313hf9c7212_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/kneed-0.8.5-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/krb5-1.21.3-h237132a_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/lcms2-2.17-h7eeda09_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/lerc-4.0.0-hd64df32_1.conda
@@ -517,6 +521,8 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.22.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstandard-0.23.0-py313h90d716c_2.conda
       - conda: https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-h6491c7d_2.conda
+      - pypi: https://files.pythonhosted.org/packages/95/55/6efa749fb23fa091a640d3d94ff217948cbdcc2e4e4f64b6449d127fa83e/kneeliverse-1.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/13/9b/984a8c5a504cb7017b50cd3ef3487dab21abe0fa228c94672ae13a8d2c52/pyUTSAlgorithms-0.1.3-py3-none-any.whl
       - pypi: ./
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-3_kmp_llvm.conda
@@ -2087,6 +2093,27 @@ packages:
   - pkg:pypi/kiwisolver?source=hash-mapping
   size: 61424
   timestamp: 1725459552592
+- conda: https://conda.anaconda.org/conda-forge/noarch/kneed-0.8.5-pyhd8ed1ab_1.conda
+  sha256: dea0274cf6408001a9f9a7fe2e952254d7bab553d5a5dee125ed7aa01e9b172c
+  md5: 6f5e2b85865fa8b0294249b42bff52b9
+  depends:
+  - numpy >=1.14.2
+  - python >=3.9
+  - scipy >=1.0.0
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/kneed?source=hash-mapping
+  size: 15808
+  timestamp: 1735348057213
+- pypi: https://files.pythonhosted.org/packages/95/55/6efa749fb23fa091a640d3d94ff217948cbdcc2e4e4f64b6449d127fa83e/kneeliverse-1.0-py3-none-any.whl
+  name: kneeliverse
+  version: '1.0'
+  sha256: c0d7b48418d2614d57f5c203eab02a412cafb5ceee76ea552321987a4561801d
+  requires_dist:
+  - numpy>=1.23
+  - pyutsalgorithms>=0.1.2
+  requires_python: '>=3.8'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/krb5-1.21.3-h659f571_0.conda
   sha256: 99df692f7a8a5c27cd14b5fb1374ee55e756631b9c3d659ed3ee60830249b238
   md5: 3f43953b7d3fb3aaa1d0d0723d91e368
@@ -4570,6 +4597,13 @@ packages:
   - pkg:pypi/pytz?source=compressed-mapping
   size: 189015
   timestamp: 1742920947249
+- pypi: https://files.pythonhosted.org/packages/13/9b/984a8c5a504cb7017b50cd3ef3487dab21abe0fa228c94672ae13a8d2c52/pyUTSAlgorithms-0.1.3-py3-none-any.whl
+  name: pyutsalgorithms
+  version: 0.1.3
+  sha256: 8b5fd175bda2cf3aeb8f05967aad2de7106a561cb950cc858d5bf99d8d9fe06b
+  requires_dist:
+  - numpy>=1.23
+  requires_python: '>=3.8'
 - conda: https://conda.anaconda.org/conda-forge/linux-64/pyyaml-6.0.2-py312h178313f_2.conda
   sha256: 159cba13a93b3fe084a1eb9bda0a07afc9148147647f0d437c3c3da60980503b
   md5: cf2485f39740de96e2a7f2bb18ed2fee
@@ -4991,7 +5025,9 @@ packages:
 - pypi: ./
   name: sparsemodesnet
   version: 0.1.0
-  sha256: 266e2dc57a983118179dcac51543ab3137578a1f7c170299df91eaf3fd9c7879
+  sha256: 2ef3719204ad5e59e686a5bd59fe88b62b73949d4f6022c78f0146b219a60100
+  requires_dist:
+  - kneeliverse>=1.0,<2
   requires_python: '>=3.11'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/stack_data-0.6.3-pyhd8ed1ab_1.conda
