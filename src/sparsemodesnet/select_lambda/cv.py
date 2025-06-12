@@ -37,10 +37,13 @@ def select_lambda_cv(X_np: np.ndarray,
     folds = np.array_split(indices, k_folds)
 
     path_history_cv = []
+    total_lambdas = len(lambdas)
+    ct = 1
 
     for lam in lambdas:
         val_errors = []
-        print(f" CV testing λ = {lam:.3e} ...")
+        r_folds = []
+        print(f" CV testing λ = {lam:.3e}. Currently {ct}/{total_lambdas} ...")
         for fold_idx in range(k_folds):
             # train indices = all except this fold
             val_idx = folds[fold_idx]
@@ -80,41 +83,64 @@ def select_lambda_cv(X_np: np.ndarray,
                     _, x_hat_b = model_cv(z_b)
                     total_err += mse_loss(x_hat_b, x_b).item()
                     total_samples += x_b.shape[0]
+                    
+                # Calculate the number of non-zero modes in the optimal omega
+                omega_opt = model_cv.omega.detach().cpu().numpy()
+                r_fold = int((np.abs(omega_opt) > nonzero_thresh).sum())
+                r_folds.append(r_fold)
+
+            # Compute validation MSE
             val_mse = total_err / total_samples
             val_errors.append(val_mse)
-
+            
+        # Average over folds      
         avg_val_error = np.mean(val_errors)
-        print(f"avg val-MSE = {avg_val_error:.6e}")
-
-        # Now, train on the full data (briefly) to get k(λ) and rel_error
-        final_full_epochs = num_epochs_cv
-        Z_full = Z_np.T  # (n, s)
-        X_full = X_np.T  # (n, d)
-        ds_full = PODReconDataset(Z_np=Z_full.T, X_np=X_full.T)
-        dl_full = DataLoader(ds_full, batch_size=batch_size, shuffle=True, drop_last=False)
-        model_full = SparseModesNet(
-            pod_basis    = torch.from_numpy(U_s_np.astype(np.float32)).to(device),
-            input_dim    = s,
-            hidden_units = hidden_units,
-            M            = M,
-            lam          = float(lam),
-            network_type = network_type,  # Add this
-            **conv_kwargs  # Add this
-        ).to(device)
-        train_sparsemodesnet(model_full, dl_full, final_full_epochs, lr, optimizer, device)
-        with torch.no_grad():
-            omega_opt = model_full.omega.detach().cpu().numpy()
-            r_full = int((np.abs(omega_opt) > nonzero_thresh).sum())
-            Z_tensor_full = torch.from_numpy(Z_full.astype(np.float32)).to(device)
-            _, x_hat_full = model_full(Z_tensor_full)
-            X_hat_full_np = x_hat_full.cpu().numpy().T
-            frob_err = np.linalg.norm(X_np - X_hat_full_np, 'fro')
-            rel_err = frob_err / np.linalg.norm(X_np, 'fro')
+        avg_r = int(np.mean(r_folds))
+        print(f" avg val-MSE = {avg_val_error:.6e}, avg r = {avg_r}")
+        
+        # Store results for this lambda    
         path_history_cv.append({
             'lambda': lam,
-            'val_error': avg_val_error,
-            'r': r_full,
-            'rel_error': rel_err
+            'error': avg_val_error,
+            'nonzero_count': avg_r,
         })
+        
+        if avg_r == 0:
+            print("All skip-weights have zeroed out. Stopping path.\n")
+            break
+        
+        # Increment the counter for the current lambda 
+        ct += 1
+
+        # # Now, train on the full data (briefly) to get k(λ) and rel_error
+        # final_full_epochs = num_epochs_cv
+        # Z_full = Z_np.T  # (n, s)
+        # X_full = X_np.T  # (n, d)
+        # ds_full = PODReconDataset(Z_np=Z_full.T, X_np=X_full.T)
+        # dl_full = DataLoader(ds_full, batch_size=batch_size, shuffle=True, drop_last=False)
+        # model_full = SparseModesNet(
+        #     pod_basis    = torch.from_numpy(U_s_np.astype(np.float32)).to(device),
+        #     input_dim    = s,
+        #     hidden_units = hidden_units,
+        #     M            = M,
+        #     lam          = float(lam),
+        #     network_type = network_type,  # Add this
+        #     **conv_kwargs  # Add this
+        # ).to(device)
+        # train_sparsemodesnet(model_full, dl_full, final_full_epochs, lr, optimizer, device)
+        # with torch.no_grad():
+        #     omega_opt = model_full.omega.detach().cpu().numpy()
+        #     r_full = int((np.abs(omega_opt) > nonzero_thresh).sum())
+        #     Z_tensor_full = torch.from_numpy(Z_full.astype(np.float32)).to(device)
+        #     _, x_hat_full = model_full(Z_tensor_full)
+        #     X_hat_full_np = x_hat_full.cpu().numpy().T
+        #     frob_err = np.linalg.norm(X_np - X_hat_full_np, 'fro')
+        #     rel_err = frob_err / np.linalg.norm(X_np, 'fro')
+        # path_history_cv.append({
+        #     'lambda': lam,
+        #     'val_error': avg_val_error,
+        #     'r': r_full,
+        #     'rel_error': rel_err
+        # })
 
     return path_history_cv

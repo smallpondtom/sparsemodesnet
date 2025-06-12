@@ -1,4 +1,6 @@
 import numpy as np
+import kneeliverse.dfdt as dfdt
+import kneeliverse.zmethod as zmethod
 import warnings
 import torch
 from torch.utils.data import DataLoader
@@ -77,7 +79,7 @@ def run_sparsemodesnet(X_np: np.ndarray,
             'lambda': lam,
             'nonzero_count': curr_nonzero,
             'selected_idxs': nonzero_idxs.copy(),
-            'rel_error': rel_frob_error,
+            'error': rel_frob_error,
             'l1_b': np.mean(history['l1_b'])
         })
 
@@ -94,9 +96,10 @@ def run_sparsemodesnet(X_np: np.ndarray,
             print(f"Reached max_iters={max_iters} on λ-path; stopping early.\n")
             break
 
-    omega_opt_final = model.omega.detach().cpu().numpy()
-    selected_indices = np.where(np.abs(omega_opt_final) > nonzero_thresh)[0]
-    return path_history, selected_indices
+    # omega_opt_final = model.omega.detach().cpu().numpy()
+    # selected_indices = np.where(np.abs(omega_opt_final) > nonzero_thresh)[0]
+    # return path_history, selected_indices
+    return path_history
 
 
 def run_sparsemodesnet_with_lambda_selection(
@@ -105,6 +108,7 @@ def run_sparsemodesnet_with_lambda_selection(
     hidden_units: list,
     M: float,
     lambda_method: str,
+    knee_method: str = 'dfdt', 
     optimizer: str = 'Adam',
     nonzero_thresh: float = 1e-6,
     r_max: int = None, 
@@ -167,9 +171,9 @@ def run_sparsemodesnet_with_lambda_selection(
             network_type     = network_type,  # Add this
             **conv_kwargs  # Add this
         )
-        d, n_samples = X_np.shape
-        lam_star, r_star, err_star = pick_aic(path_history, n_samples, d)
-        print(f"[CV-AIC] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
+        # d, n_samples = X_np.shape
+        # lam_star, r_star, err_star = pick_aic(path_history, n_samples, d)
+        # print(f"[CV-AIC] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
         freq_table = path_history
     elif lambda_method == 'stability':
         assert lambdas_ss is not None, "Must pass a grid 'lambdas_ss' for stability selection."
@@ -198,7 +202,7 @@ def run_sparsemodesnet_with_lambda_selection(
             warnings.warn(
                 f"Method {lambda_method!r} does not exist. Using 'path' method instead." 
             )
-        path_history, _ = run_sparsemodesnet(
+        path_history = run_sparsemodesnet(
             X_np           = X_np,
             s              = s,
             hidden_units   = hidden_units,
@@ -215,12 +219,34 @@ def run_sparsemodesnet_with_lambda_selection(
             network_type   = network_type,  # Add this
             **conv_kwargs  # Add this
         )
-        lam_star, r_star, err_star = pick_elbow(path_history)
-        print(f"[Path-Elbow] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
+        
+        # lam_star, r_star, err_star = pick_elbow(path_history)
+        
+        # print(f"[Path-Elbow] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
         freq_table = path_history
         
-    # Fallback if r_star is still 0 (no modes selected) 
-    if r_star == 0:
+    # Organize data to compute the best λ from the L-curve
+    lam = np.array([h['lambda'] for h in path_history])
+    loglam = np.log(lam)
+    rs = np.array([h['nonzero_count'] for h in path_history])
+    # Normalize both arrays to [0, 1] range
+    loglam_max, loglam_min = loglam.max(), loglam.min()
+    llam_norm = (loglam - loglam_min) / (loglam_max - loglam_min)
+    rs_norm = (rs - rs.min()) / (rs.max() - rs.min())
+    data = np.column_stack((llam_norm, rs_norm))
+    # Compute the (multiple) knee points 
+    if knee_method == 'dfdt':
+        # using DFDT method    
+        knee_idx = dfdt.multi_knee(data)
+        print(f"Found knees using DFDT method: {knee_idx}")
+    elif knee_method == 'zmethod':
+        # using Z-method
+        knee_idx = zmethod.knees2(data)
+        print(f"Found knees using Z-method: {knee_idx}")
+    else:
+        raise ValueError(f"Unknown knee_method: {knee_method}. Use 'dfdt' or 'zmethod'.")
+    if len(knee_idx) == 0:
+        # Fallback if knee algorithms don't work (no modes selected) 
         print("No modes selected at λ*. Using last entry in path such that r(λ)≤r_max.")
         if r_max is not None: # Find first lambda where nonzero_count < r_max
             print(f"Searching for first λ with nonzero_count <= {r_max} ...")
@@ -230,19 +256,36 @@ def run_sparsemodesnet_with_lambda_selection(
                 idx = valid_indices[0]
                 lam_star = path_history[idx]['lambda']
                 r_star = path_history[idx]['nonzero_count']
-                err_star = path_history[idx]['rel_error']
+                err_star = path_history[idx]['error']
             else: # If no entry found, use the last one
                 lam_star = path_history[-1]['lambda']
                 r_star = path_history[-1]['nonzero_count']
-                err_star = path_history[-1]['rel_error']
+                err_star = path_history[-1]['error']
         else: # If r_max not specified, use the last entry from path
             print("r_max not specified. Using last entry from path.")
             lam_star = path_history[-1]['lambda']
             r_star = path_history[-1]['nonzero_count']
-            err_star = path_history[-1]['rel_error']
+            err_star = path_history[-1]['error']
             
         print(f"[Fallback] λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
-            
+    else:
+        knee_ = llam_norm[knee_idx]
+        lam_stars = np.exp(knee_ * (loglam_max - loglam_min) + loglam_min)
+        r_stars = rs[knee_idx]
+        err_stars = np.array([path_history[i]['error'] for i in knee_idx])
+        # Pick the first one less than or equal to the budget r_max
+        mask = np.where(r_stars <= r_max, 1, 0)  # mask for r <= rmax
+        i_star = np.nonzero(lam_stars * mask)[0][0]
+        lam_star = lam_stars[i_star]
+        r_star = r_stars[i_star]
+        err_star = err_stars[i_star]
+        if lambda_method == 'path':
+            print(f"[Path] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
+        elif lambda_method == 'stability':
+            print(f"[SS] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
+        elif lambda_method == 'cv':
+            print(f"[CV] Picked λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
+        
     print(f"\n→ Final training on full data with λ = {lam_star:.3e} ...")
     dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np)
     dataloader_full = DataLoader(dataset_full, batch_size=batch_size, shuffle=True, drop_last=False)

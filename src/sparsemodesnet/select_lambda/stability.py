@@ -37,7 +37,7 @@ def select_lambda_stability(X_np: np.ndarray,
     # 1) subsample loop
     cutoff_idx = 0
     for i, lam in enumerate(lambdas):
-        print(f" SS testing λ = {lam:.3e}. Currently {i}/{m} ...")
+        print(f" SS testing λ = {lam:.3e}. Currently {i+1}/{m} ...")
         for _ in range(B):
             subsamp = np.random.choice(n, size=n//2, replace=False)
             ds_sub = PODReconDataset(Z_np=Z_np[:, subsamp], X_np=X_np[:, subsamp])
