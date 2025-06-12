@@ -3,7 +3,7 @@ This is experimental code!!
 
 We use snippets from this tutorial: https://github.com/ozx1812/MNIST-PyTorch/blob/master/mnist_mlp_pytorch.py
 """
-
+#%%
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ test_dl = torch.utils.data.DataLoader(test_data, batch_size=batch_size, drop_las
 
 # obtain one batch of training images
 dataiter = iter(test_dl)
-images, labels = dataiter.next()
+images, labels = next(dataiter)
 
 # loss function
 loss = torch.nn.CrossEntropyLoss()
@@ -195,3 +195,5 @@ fig, axs = plt.subplots(4,4)
 fig.suptitle(f'Linear weights of convolution output for digit {label}')
 plot_skip(model, label, cmap=plt.cm.cividis, vmin=-v_, vmax=v_)
 #fig.savefig(f'plots/conv_skip_{label}.png', dpi = 400)
+
+# %%
