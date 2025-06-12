@@ -2,6 +2,8 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import kneed
+import kneeliverse
 
 # Add parent directory to path
 import sys
@@ -23,14 +25,14 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Regularization parameter selection method
-    lambda_method = 'stability'  # 'path', 'cv', or 'stability'
+    lambda_method = 'cv'  # 'path', 'cv', or 'stability'
     
     # Common hyperparameters
     hidden_units_heat = [128, 8256]
     # hidden_units_heat = [20, 120, 400]
 
     # Parameter‐grid for CV or SS (you can customize)
-    lambdas_cv = np.logspace(-2.5, -1.2, 10)  
+    lambdas_cv = np.logspace(-2.1, -0.8, 12)  
     lambdas_ss = np.logspace(-2.1, -1.0, 50)  
     
     # Sanity check flag (plotting)
@@ -64,30 +66,131 @@ if __name__ == "__main__":
         hidden_units    = hidden_units_heat,
         M               = 5.0,
         lambda_method   = lambda_method,
-        network_type    = 'convolutional',    # Specify network type
-        kernel_size     = 8,                  # Conv-specific parameters
+        knee_method     = 'dfdt',
+        network_type    = 'feedforward',    # Specify network type
+        kernel_size     = 5,                  # Conv-specific parameters
         num_channels    = [64, 128, 64],      # Conv-specific parameters
         padding         = 'same',             # Conv-specific parameters
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-6,
         r_max           = 10,           # max modes for constraint stopping
-        lam0            = 1e-4,         # only used if path
+        lam0            = 1e-3,         # only used if path
         epsilon         = 0.20,         # only used if path
-        B_path          = 100,          # epochs per λ for path or final fit
+        B_path          = 80,          # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
         num_epochs_cv   = 80,           # for cv
         lambdas_ss      = lambdas_ss,   # only used if stability
-        B_ss            = 5,            # subsamples per λ for stability
+        B_ss            = 2,            # subsamples per λ for stability
         pi_thresh       = 0.75,         # threshold for stability
-        num_epochs_ss   = 80,           # epochs per subsample for stability
+        num_epochs_ss   = 20,           # epochs per subsample for stability
         final_epochs_ss = 100,          # epochs for final fit after stability
         lr              = 1e-3,
         batch_size      = 64,
         device          = device,
         label           = "Heat Equation"
     )
+    
+    # #%% Get the data to compute knees 
+    # lambdas = np.array([freq['lambda'] for freq in freq_tab])
+    # loglam = np.log(lambdas)
+    # loglam_max, loglam_min = loglam.max(), loglam.min()
+    # rs = np.array([freq['nonzero_count'] for freq in freq_tab])
+    # rs_max, rs_min = max(rs), min(rs)
+    # llam_norm = []
+    # rs_norm = []
+    # for lam, r in zip(loglam, rs):
+    #     llam_norm.append((lam - loglam_min) / (loglam_max - loglam_min))
+    #     rs_norm.append((r - rs_min) / (rs_max - rs_min))
+    # llam_norm = np.array(llam_norm)
+    # rs_norm = np.array(rs_norm)
+    # data = np.stack((llam_norm, rs_norm), axis=1)
+    
+    # #%% curvature 
+    # knee_curv_idx = kneeliverse.curvature.multi_knee(data)
+    # knee_curv = llam_norm[knee_curv_idx]
+    # lam_knee_curv = np.exp(knee_curv * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by curvature at λ ≃", lam_knee_curv)
+    # print("Number of selected modes at knee:", rs[knee_curv_idx])
+    
+    # #%% dfdt
+    # knee_dfdt_idx = kneeliverse.dfdt.multi_knee(data)
+    # knee_dfdt = llam_norm[knee_dfdt_idx]
+    # lam_knee_dfdt = np.exp(knee_dfdt * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by dfdt at λ ≃", lam_knee_dfdt)
+    # print("Number of selected modes at knee:", rs[knee_dfdt_idx])    
+    # knee_ = llam_norm[knee_dfdt_idx]
+    # lam_stars = np.exp(knee_ * (loglam_max - loglam_min) + loglam_min)
+    # r_stars = rs[knee_dfdt_idx]
+    # # Pick the first one less than or equal to the budget r_max
+    # mask = np.where(r_stars <= 10, 1, 0)  # mask for r <= rmax
+    # i_star = np.nonzero(lam_stars * mask)[0][0]
+    # print(i_star)
+    # lam_star = lam_stars[i_star]
+    # r_star = r_stars[i_star]
+    # print("Optimal λ* at r ≤ 10 is λ* ≃", lam_star)
+    
+    # #%% kneedle
+    # knee_kneedle_idx = kneeliverse.kneedle.multi_knee(data, t1=0.1, t2=10)
+    # knee_kneedle = llam_norm[knee_kneedle_idx]
+    # lam_knee_kneedle = np.exp(knee_kneedle * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by Kneedle at λ ≃", lam_knee_kneedle)
+    # print("Number of selected modes at knee:", rs[knee_kneedle_idx])
+    
+    # #%% lmethod 
+    # knee_lmethod_idx = kneeliverse.lmethod.multi_knee(data, t1=0.001, t2=5)
+    # knee_lmethod = llam_norm[knee_lmethod_idx]
+    # lam_knee_lmethod = np.exp(knee_lmethod * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by Lmethod at λ ≃", lam_knee_lmethod)
+    # print("Number of selected modes at knee:", rs[knee_lmethod_idx])
+    
+    # #%% menger
+    # knee_menger_idx = kneeliverse.menger.multi_knee(data, t1=0.001, t2=5)
+    # knee_menger = llam_norm[knee_menger_idx]
+    # lam_knee_menger = np.exp(knee_menger * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by Menger at λ ≃", lam_knee_menger)
+    # print("Number of selected modes at knee:", rs[knee_menger_idx])
+    
+    # #%% z-method
+    # knee_zmethod_idx = kneeliverse.zmethod.knees2(data)
+    # knee_zmethod = llam_norm[knee_zmethod_idx]
+    # lam_knee_zmethod = np.exp(knee_zmethod * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by Z-method at λ ≃", lam_knee_zmethod)
+    # print("Number of selected modes at knee:", rs[knee_zmethod_idx])
+    
+    # #%% Plot the knee plot using Kneed
+    # # normalize log‐λ and k to [0,1]
+    # lambdas = [freq['lambda'] for freq in freq_tab]
+    # loglam = np.log(lambdas)
+    # loglam_max, loglam_min = loglam.max(), loglam.min()
+    # rs = [freq['l1_b'] for freq in freq_tab]
+    # rs_max, rs_min = max(rs), min(rs)
+    # llam_norm = []
+    # rs_norm = []
+    # for lam, r in zip(loglam, rs):
+    #     llam_norm.append((lam - loglam_min) / (loglam_max - loglam_min))
+    #     rs_norm.append((r - rs_min) / (rs_max - rs_min))
+    # kl = kneed.KneeLocator(
+    #     rs_norm, llam_norm, S=10, curve='convex', direction='decreasing',
+    #     interp_method='polynomial', polynomial_degree=9
+    # )
+    # # kl.knee is in normalized x; map back to λ:
+    # lam_knee = np.exp(kl.knee_y * (loglam_max - loglam_min) + loglam_min)
+    # print("Elbow by Kneedle at λ ≃", lam_knee) 
+    # # Plotting
+    # kl.plot_knee_normalized()
+    
+    # #%%
+    # rs = np.array([freq['nonzero_count'] for freq in freq_tab])
+    # dks   = np.diff(rs)
+    # dlogl = np.diff(loglam)
+    # slopes = dks / dlogl
+    # rmax = 10
+    # mask = np.where(rs[1:] <= rmax, 1, 0)  # mask for r <= rmax
+    # i_elbow = np.argmin(slopes * mask)     # most negative slope
+    # lambda_elbow = lambdas[i_elbow+1]
+    # print("Elbow at λ ≃", lambda_elbow)
     
     #%% Plot L-curve
     if lambda_method == 'path':
