@@ -10,10 +10,10 @@ def generate_burgers_data(nx=100, nt=200, nu=0.01, x_max=1.0, t_max=0.5):
     
     # Spatial discretization
     dx = x_max / nx
-    x = np.linspace(0, x_max, nx, endpoint=False)  # Periodic domain
+    x = np.linspace(0, x_max, nx, endpoint=False, dtype=np.float64)  # Periodic domain
     
     # Temporal discretization
-    t = np.linspace(0, t_max, nt)
+    t = np.linspace(0, t_max, nt, dtype=np.float64)
     
     # Wave number discretization for FFT
     k = 2 * np.pi * np.fft.fftfreq(nx, d=dx)

@@ -7,7 +7,7 @@ def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
     Returns data ∈ R^{nx x nt}.
     """
     # Spatial grid setup (normalized to [0,1] then scaled)
-    x = np.arange(1, nx+1) / nx
+    x = np.arange(1, nx+1, dtype=np.float64) / nx
     x_scaled = x * L  # Scale to actual domain [0, L]
     
     # Time discretization
@@ -18,7 +18,13 @@ def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
     v = np.fft.fft(u)
     
     # Wave numbers
-    k = np.concatenate((np.arange(0, nx//2), [0], np.arange(-nx//2+1, 0))) / 16
+    k = np.concatenate(
+        (
+            np.arange(0, nx//2, dtype=np.float64), 
+            [0.0], 
+            np.arange(-nx//2+1, 0, dtype=np.float64)
+        )
+    ) / 16
     
     # Linear operator for KS equation: L = k^2 - k^4
     L_op = k**2 - k**4
@@ -29,8 +35,8 @@ def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
     
     # Contour integral parameters for ETDRK4 coefficients
     Mcnt = 16
-    r = np.exp(1j * np.pi * (np.arange(1, Mcnt+1) - 0.5) / Mcnt)
-    LR = h * np.outer(L_op, np.ones(Mcnt)) + np.outer(np.ones(nx), r)
+    r = np.exp(1j * np.pi * (np.arange(1, Mcnt+1, dtype=np.float64) - 0.5) / Mcnt)
+    LR = h * np.outer(L_op, np.ones(Mcnt, dtype=np.float64)) + np.outer(np.ones(nx), r)
     
     # ETDRK4 coefficients computed via contour integrals
     Q  = h * np.real(np.mean((np.exp(LR/2) - 1) / LR, axis=1))
@@ -50,7 +56,7 @@ def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
     g = -0.5j * k
     
     # Storage for solution
-    uu = np.zeros((nx, nt))
+    uu = np.zeros((nx, nt), dtype=np.float64)
     uu[:, 0] = u
     
     # Time stepping with ETDRK4
@@ -78,7 +84,7 @@ def generate_kse_data(nx=256, nt=200, L=32*np.pi, t_max=150.0):
         uu[:, n] = u
     
     # Time array
-    t = np.linspace(0, t_max, nt)
+    t = np.linspace(0, t_max, nt, dtype=np.float64)
     
     return uu, x_scaled, t
 
