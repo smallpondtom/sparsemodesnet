@@ -9,7 +9,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.heat1d import generate_heat_data
-from sparsemodesnet import run_sparsemodesnet_with_lambda_selection
+from sparsemodesnet import run_sparsemodesnet
 from sparsemodesnet.pod import compute_pod_basis
 
 #%%
@@ -24,24 +24,24 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Regularization parameter selection method
-    lambda_method = 'path'  # 'path', 'cv', or 'stability'
+    reg_path = 'dense2sparse'  # 'dense2sparse' or 'cv'
     
     # Common hyperparameters
-    # hidden_units_heat = [128, 8256]
-    hidden_units_heat = [20, 210, 400]
+    hidden_units_heat = [128, 8256]
+    # hidden_units_heat = [20, 210, 400]
 
-    # Parameter‐grid for CV or SS (you can customize)
+    # Parameter‐grid for CV
     lambdas_cv = np.logspace(-2.1, -0.8, 12)  
-    lambdas_ss = np.logspace(-2.1, -1.0, 50)  
     
     # Sanity check flag (plotting)
     sanity_check = False
 
     # ---------- Heat Equation ----------
-    X_heat, xspan_h, tspan_h = generate_heat_data(nx=2**7, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
+    X_heat, xspan_h, tspan_h = generate_heat_data(
+        nx=2**7, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
-    s_h = 20
+    # s_h = 20
     
     ## Create 3D surface plot for Heat Equation (sanity check)
     if sanity_check:
@@ -49,7 +49,8 @@ if __name__ == "__main__":
         ax = fig.add_subplot(111, projection='3d')
         X_mesh, T_mesh = np.meshgrid(xspan_h, tspan_h)
         Z_mesh = X_heat.T  # Transpose to match meshgrid dimensions
-        surf = ax.plot_surface(X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
+        surf = ax.plot_surface(
+            X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
         ax.set_xlabel('x')
         ax.set_ylabel('t')
         ax.set_zlabel('u(x,t)')
@@ -60,34 +61,25 @@ if __name__ == "__main__":
         plt.close(fig)
 
     #%% Train
-    model_heat, info_heat, selected_h, freq_tab = run_sparsemodesnet_with_lambda_selection(
+    model_heat, info_heat, selected_h, freq_tab = run_sparsemodesnet(
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
         M               = 1.0,
-        lambda_method   = lambda_method,
-        knee_method     = 'dfdt',
-        network_type    = 'feedforward',    # Specify network type
-        kernel_size     = 5,                  # Conv-specific parameters
-        num_channels    = [64, 128, 64],      # Conv-specific parameters
-        padding         = 'same',             # Conv-specific parameters
+        reg_path        = reg_path,
+        lr              = 1e-3,
+        batch_size      = 64,
+        knee_method     = 'zmethod',
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-14,
-        r_max           = 10,           # max modes for constraint stopping
-        lam0            = 1e-5,         # only used if path
+        r_max           = 100,          # max modes for constraint stopping
+        lam0            = 1e-4,         # only used if path
         epsilon         = 0.20,         # only used if path
-        B_path          = 120,          # epochs per λ for path or final fit
+        B_path          = 80,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
-        num_epochs_cv   = 200,           # for cv
-        lambdas_ss      = lambdas_ss,   # only used if stability
-        B_ss            = 2,            # subsamples per λ for stability
-        pi_thresh       = 0.75,         # threshold for stability
-        num_epochs_ss   = 20,           # epochs per subsample for stability
-        final_epochs_ss = 100,          # epochs for final fit after stability
-        lr              = 1e-3,
-        batch_size      = 64,
+        num_epochs_cv   = 80,           # for cv
         device          = device,
         label           = "Heat Equation"
     )
@@ -127,7 +119,7 @@ if __name__ == "__main__":
     plt.show()
     
     #%% Plot the λ vs selected modes and λ vs relative error
-    if lambda_method == 'path':
+    if reg_path == 'dense2sparse':
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
         # Extract data
         lambdas    = [freq['lambda']        for freq in freq_tab]
@@ -148,7 +140,7 @@ if __name__ == "__main__":
         ax2.tick_params(axis='both', which='major', labelsize=14)
         ax2.grid(True, alpha=0.3)
         # Plot 3: # Modes vs Relative Error
-        ax3.plot(num_modes, rel_errors, 'o-', markersize=8, linewidth=2, color='green')
+        ax3.semilogy(num_modes, rel_errors, 'o-', markersize=8, linewidth=2, color='green')
         ax3.set_xlabel('Number of POD Modes', fontsize=16)
         ax3.set_ylabel('Relative Error', fontsize=16)
         ax3.set_title('# Modes vs Relative Error', fontsize=18)
@@ -162,7 +154,7 @@ if __name__ == "__main__":
     
     
     #%% Plot L-curve
-    if lambda_method == 'path':
+    if reg_path == 'dense2sparse':
         fig, ax = plt.subplots(figsize=(8, 6))
         ax.set_xlabel('L1 Regularization Term (||ω||₁)')
         ax.set_ylabel('Relative Error')
@@ -176,7 +168,7 @@ if __name__ == "__main__":
         plt.close(fig)
     
     #%% Plot the λ vs selected modes and λ vs relative error
-    if lambda_method == 'path':
+    if reg_path == 'dense2sparse':
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
         # Extract data
         lambdas = [freq['lambda'] for freq in freq_tab]

@@ -16,14 +16,16 @@ def train_sparsemodesnet(model: SparseModesNet,
     if optimizer == 'Adam':
         optimizer = optim.Adam(model.parameters(), lr=lr)
     elif optimizer == 'SGD':
-        optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9, nesterov=True)
+        optimizer = optim.SGD(
+            model.parameters(), lr=lr, momentum=0.9, nesterov=True)
     else:
         raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
     mse_loss = nn.MSELoss()
     lr_schedule = optim.lr_scheduler.StepLR(
-        optimizer, step_size=num_epochs // 5,  # Reduce learning rate every 10 epochs
+        optimizer, 
+        step_size=num_epochs // 5,  # Reduce learning rate every 5 epochs
         gamma=0.5
-    ) # learning rate scheduler
+    )  # learning rate scheduler
 
     history = {'loss': [], 'l1_b': []}
 
@@ -47,18 +49,20 @@ def train_sparsemodesnet(model: SparseModesNet,
 
             batch_size = x_batch.shape[0]
             epoch_loss += loss.item() * batch_size
-            epoch_l1  += model.l1_norm_b().item() * batch_size
+            epoch_l1  += model.l1_norm_omega().item() * batch_size
             n_samples += batch_size
             
         lr_schedule.step()  # Update learning rate
+        lr_new = optimizer.param_groups[0]['lr']
 
         epoch_loss /= n_samples
         epoch_l1  /= n_samples
         history['loss'].append(epoch_loss)
         history['l1_b'].append(epoch_l1)
 
-        # Print every 20 epochs or first:
-        if (epoch % 20 == 0) or (epoch == 1):
-            print(f"  λ={model.lam:.3e} | Epoch {epoch:3d} | Recon MSE={epoch_loss:.6e} | ‖ω‖₁={epoch_l1:.6e}")
+        # Print every 10 epochs or first:
+        if (epoch % 10 == 0) or (epoch == 1):
+            print(f"  λ={model.lam:.3e} | Epoch {epoch:3d} | lr={lr_new:.4e} | "
+              f"Recon MSE={epoch_loss:.6e} | ‖ω‖₁={epoch_l1:.6e}")
 
     return history

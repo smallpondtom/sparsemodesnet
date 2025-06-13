@@ -6,17 +6,8 @@ from .model import SparseModesNet
 from .pod import compute_pod_basis
 from .dataset import PODReconDataset
 from .train import train_sparsemodesnet
-from .driver import run_sparsemodesnet, run_sparsemodesnet_with_lambda_selection
-
-# Import lambda selection methods
-from .select_lambda.cv import select_lambda_cv
-from .select_lambda.stability import select_lambda_stability
-
-# Import stopping criteria
-from .stopping.elbow import pick_elbow
-from .stopping.aic import pick_aic
-from .stopping.bic import pick_bic
-from .stopping.maxmodes import pick_max_modes
+from .driver import run_sparsemodesnet, run_sparsemodesnet_d2s
+from .cv import run_sparsemodesnet_cv
 
 __all__ = [
     # Core components
@@ -27,17 +18,8 @@ __all__ = [
     
     # Main driver functions
     'run_sparsemodesnet',
-    'run_sparsemodesnet_with_lambda_selection',
-    
-    # Lambda selection methods
-    'select_lambda_cv',
-    'select_lambda_stability',
-    
-    # Stopping criteria
-    'pick_elbow',
-    'pick_aic', 
-    'pick_bic',
-    'pick_max_modes'
+    'run_sparsemodesnet_d2s',
+    'run_sparsemodesnet_cv',
 ]
 
 __version__ = "0.1.0"

@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 
 from sparsemodesnet.pod import compute_pod_basis
 from sparsemodesnet.dataset import PODReconDataset
-from sparsemodesnet.model import SparseModesNet
+from sparsemodesnet.__old__.model import SparseModesNet
 from sparsemodesnet.train import train_sparsemodesnet
 
 def select_lambda_stability(X_np: np.ndarray,
