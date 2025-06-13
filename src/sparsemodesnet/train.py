@@ -20,7 +20,10 @@ def train_sparsemodesnet(model: SparseModesNet,
     else:
         raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
     mse_loss = nn.MSELoss()
-    lr_schedule = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5) # learning rate scheduler
+    lr_schedule = optim.lr_scheduler.StepLR(
+        optimizer, step_size=num_epochs // 5,  # Reduce learning rate every 10 epochs
+        gamma=0.5
+    ) # learning rate scheduler
 
     history = {'loss': [], 'l1_b': []}
 

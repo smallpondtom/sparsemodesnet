@@ -2,8 +2,6 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-import kneed
-import kneeliverse
 
 # Add parent directory to path
 import sys
@@ -12,6 +10,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.heat1d import generate_heat_data
 from sparsemodesnet import run_sparsemodesnet_with_lambda_selection
+from sparsemodesnet.pod import compute_pod_basis
 
 #%%
 if __name__ == "__main__":
@@ -25,11 +24,11 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Regularization parameter selection method
-    lambda_method = 'cv'  # 'path', 'cv', or 'stability'
+    lambda_method = 'path'  # 'path', 'cv', or 'stability'
     
     # Common hyperparameters
-    hidden_units_heat = [128, 8256]
-    # hidden_units_heat = [20, 120, 400]
+    # hidden_units_heat = [128, 8256]
+    hidden_units_heat = [20, 210, 400]
 
     # Parameter‐grid for CV or SS (you can customize)
     lambdas_cv = np.logspace(-2.1, -0.8, 12)  
@@ -42,9 +41,9 @@ if __name__ == "__main__":
     X_heat, xspan_h, tspan_h = generate_heat_data(nx=2**7, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
-    # s_h = 20
+    s_h = 20
     
-    # Create 3D surface plot for Heat Equation (sanity check)
+    ## Create 3D surface plot for Heat Equation (sanity check)
     if sanity_check:
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
@@ -60,11 +59,12 @@ if __name__ == "__main__":
         plt.show()
         plt.close(fig)
 
+    #%% Train
     model_heat, info_heat, selected_h, freq_tab = run_sparsemodesnet_with_lambda_selection(
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 5.0,
+        M               = 1.0,
         lambda_method   = lambda_method,
         knee_method     = 'dfdt',
         network_type    = 'feedforward',    # Specify network type
@@ -72,15 +72,15 @@ if __name__ == "__main__":
         num_channels    = [64, 128, 64],      # Conv-specific parameters
         padding         = 'same',             # Conv-specific parameters
         optimizer       = 'Adam',
-        nonzero_thresh  = 1e-6,
+        nonzero_thresh  = 1e-14,
         r_max           = 10,           # max modes for constraint stopping
-        lam0            = 1e-3,         # only used if path
+        lam0            = 1e-5,         # only used if path
         epsilon         = 0.20,         # only used if path
-        B_path          = 80,          # epochs per λ for path or final fit
+        B_path          = 120,          # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
-        num_epochs_cv   = 80,           # for cv
+        num_epochs_cv   = 200,           # for cv
         lambdas_ss      = lambdas_ss,   # only used if stability
         B_ss            = 2,            # subsamples per λ for stability
         pi_thresh       = 0.75,         # threshold for stability
@@ -92,105 +92,74 @@ if __name__ == "__main__":
         label           = "Heat Equation"
     )
     
-    # #%% Get the data to compute knees 
-    # lambdas = np.array([freq['lambda'] for freq in freq_tab])
-    # loglam = np.log(lambdas)
-    # loglam_max, loglam_min = loglam.max(), loglam.min()
-    # rs = np.array([freq['nonzero_count'] for freq in freq_tab])
-    # rs_max, rs_min = max(rs), min(rs)
-    # llam_norm = []
-    # rs_norm = []
-    # for lam, r in zip(loglam, rs):
-    #     llam_norm.append((lam - loglam_min) / (loglam_max - loglam_min))
-    #     rs_norm.append((r - rs_min) / (rs_max - rs_min))
-    # llam_norm = np.array(llam_norm)
-    # rs_norm = np.array(rs_norm)
-    # data = np.stack((llam_norm, rs_norm), axis=1)
     
-    # #%% curvature 
-    # knee_curv_idx = kneeliverse.curvature.multi_knee(data)
-    # knee_curv = llam_norm[knee_curv_idx]
-    # lam_knee_curv = np.exp(knee_curv * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by curvature at λ ≃", lam_knee_curv)
-    # print("Number of selected modes at knee:", rs[knee_curv_idx])
+    #%% Plot the first 20 modes of the POD b# recompute just the first 20 POD modes
+    U_s20, _, _ = compute_pod_basis(X_heat, s=s_h)
+    fig, axes = plt.subplots(4, 5, figsize=(15, 8))
+    for i, ax in enumerate(axes.flatten()):
+        ax.plot(xspan_h, U_s20[:, i])
+        ax.set_title(f"Mode {i+1}")
+        ax.grid(True)
+
+    plt.tight_layout()
+    plt.savefig('../figures/heat_pod_modes.png', dpi=300)
+    plt.show()
     
-    # #%% dfdt
-    # knee_dfdt_idx = kneeliverse.dfdt.multi_knee(data)
-    # knee_dfdt = llam_norm[knee_dfdt_idx]
-    # lam_knee_dfdt = np.exp(knee_dfdt * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by dfdt at λ ≃", lam_knee_dfdt)
-    # print("Number of selected modes at knee:", rs[knee_dfdt_idx])    
-    # knee_ = llam_norm[knee_dfdt_idx]
-    # lam_stars = np.exp(knee_ * (loglam_max - loglam_min) + loglam_min)
-    # r_stars = rs[knee_dfdt_idx]
-    # # Pick the first one less than or equal to the budget r_max
-    # mask = np.where(r_stars <= 10, 1, 0)  # mask for r <= rmax
-    # i_star = np.nonzero(lam_stars * mask)[0][0]
-    # print(i_star)
-    # lam_star = lam_stars[i_star]
-    # r_star = r_stars[i_star]
-    # print("Optimal λ* at r ≤ 10 is λ* ≃", lam_star)
+    #%% Plot the POD modes vs the reconstruction error 
+    U, S, _ = np.linalg.svd(X_heat, full_matrices=False)
+    Us_20 = U[:, :s_h].astype(np.float64)  # First s_h POD modes
+    fig, ax = plt.subplots(figsize=(8, 6))
+    proj_err = []
+    X_heat_f64 = X_heat.astype(np.float64)
+    Us_20_f64 = Us_20.astype(np.float64)
+    for i in range(s_h):
+        proj_err.append(
+            np.linalg.norm(X_heat_f64 - Us_20_f64[:, :i+1] @ (Us_20_f64[:, :i+1].T @ X_heat_f64), 'fro') 
+            / np.linalg.norm(X_heat_f64, 'fro')
+        )
+    ax.semilogy(range(1, s_h+1), proj_err)
+    ax.set_xlabel('Number of POD Modes')
+    ax.set_ylabel('projection error (relative)')
+    ax.set_title(f'POD Mode {i+1} vs Projection Errors')
+    ax.grid(True)
+    plt.tight_layout()
+    plt.savefig(f'../figures/heat_pod_mode_vs_recon.png', dpi=300)
+    plt.show()
     
-    # #%% kneedle
-    # knee_kneedle_idx = kneeliverse.kneedle.multi_knee(data, t1=0.1, t2=10)
-    # knee_kneedle = llam_norm[knee_kneedle_idx]
-    # lam_knee_kneedle = np.exp(knee_kneedle * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by Kneedle at λ ≃", lam_knee_kneedle)
-    # print("Number of selected modes at knee:", rs[knee_kneedle_idx])
+    #%% Plot the λ vs selected modes and λ vs relative error
+    if lambda_method == 'path':
+        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
+        # Extract data
+        lambdas    = [freq['lambda']        for freq in freq_tab]
+        num_modes  = [freq['nonzero_count'] for freq in freq_tab]
+        rel_errors = [freq['error']         for freq in freq_tab]
+        # Plot 1: λ vs relative error
+        ax1.loglog(lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
+        ax1.set_xlabel('Regularization Parameter (λ)', fontsize=16)
+        ax1.set_ylabel('Relative Error', fontsize=16)
+        ax1.set_title('λ vs Relative Error', fontsize=18)
+        ax1.tick_params(axis='both', which='major', labelsize=14)
+        ax1.grid(True, alpha=0.3)
+        # Plot 2: λ vs selected modes
+        ax2.semilogx(lambdas, num_modes, 'o-', markersize=8, linewidth=2, color='blue')
+        ax2.set_xlabel('Regularization Parameter (λ)', fontsize=16)
+        ax2.set_ylabel('Number of POD Modes', fontsize=16)
+        ax2.set_title('λ vs # Modes', fontsize=18)
+        ax2.tick_params(axis='both', which='major', labelsize=14)
+        ax2.grid(True, alpha=0.3)
+        # Plot 3: # Modes vs Relative Error
+        ax3.plot(num_modes, rel_errors, 'o-', markersize=8, linewidth=2, color='green')
+        ax3.set_xlabel('Number of POD Modes', fontsize=16)
+        ax3.set_ylabel('Relative Error', fontsize=16)
+        ax3.set_title('# Modes vs Relative Error', fontsize=18)
+        ax3.tick_params(axis='both', which='major', labelsize=14)
+        ax3.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig('../figures/heat_path_summary.png', dpi=300)
+        plt.show()
+        plt.close(fig)
     
-    # #%% lmethod 
-    # knee_lmethod_idx = kneeliverse.lmethod.multi_knee(data, t1=0.001, t2=5)
-    # knee_lmethod = llam_norm[knee_lmethod_idx]
-    # lam_knee_lmethod = np.exp(knee_lmethod * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by Lmethod at λ ≃", lam_knee_lmethod)
-    # print("Number of selected modes at knee:", rs[knee_lmethod_idx])
-    
-    # #%% menger
-    # knee_menger_idx = kneeliverse.menger.multi_knee(data, t1=0.001, t2=5)
-    # knee_menger = llam_norm[knee_menger_idx]
-    # lam_knee_menger = np.exp(knee_menger * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by Menger at λ ≃", lam_knee_menger)
-    # print("Number of selected modes at knee:", rs[knee_menger_idx])
-    
-    # #%% z-method
-    # knee_zmethod_idx = kneeliverse.zmethod.knees2(data)
-    # knee_zmethod = llam_norm[knee_zmethod_idx]
-    # lam_knee_zmethod = np.exp(knee_zmethod * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by Z-method at λ ≃", lam_knee_zmethod)
-    # print("Number of selected modes at knee:", rs[knee_zmethod_idx])
-    
-    # #%% Plot the knee plot using Kneed
-    # # normalize log‐λ and k to [0,1]
-    # lambdas = [freq['lambda'] for freq in freq_tab]
-    # loglam = np.log(lambdas)
-    # loglam_max, loglam_min = loglam.max(), loglam.min()
-    # rs = [freq['l1_b'] for freq in freq_tab]
-    # rs_max, rs_min = max(rs), min(rs)
-    # llam_norm = []
-    # rs_norm = []
-    # for lam, r in zip(loglam, rs):
-    #     llam_norm.append((lam - loglam_min) / (loglam_max - loglam_min))
-    #     rs_norm.append((r - rs_min) / (rs_max - rs_min))
-    # kl = kneed.KneeLocator(
-    #     rs_norm, llam_norm, S=10, curve='convex', direction='decreasing',
-    #     interp_method='polynomial', polynomial_degree=9
-    # )
-    # # kl.knee is in normalized x; map back to λ:
-    # lam_knee = np.exp(kl.knee_y * (loglam_max - loglam_min) + loglam_min)
-    # print("Elbow by Kneedle at λ ≃", lam_knee) 
-    # # Plotting
-    # kl.plot_knee_normalized()
-    
-    # #%%
-    # rs = np.array([freq['nonzero_count'] for freq in freq_tab])
-    # dks   = np.diff(rs)
-    # dlogl = np.diff(loglam)
-    # slopes = dks / dlogl
-    # rmax = 10
-    # mask = np.where(rs[1:] <= rmax, 1, 0)  # mask for r <= rmax
-    # i_elbow = np.argmin(slopes * mask)     # most negative slope
-    # lambda_elbow = lambdas[i_elbow+1]
-    # print("Elbow at λ ≃", lambda_elbow)
     
     #%% Plot L-curve
     if lambda_method == 'path':
@@ -200,7 +169,7 @@ if __name__ == "__main__":
         ax.set_title('L-curve for Heat Equation')
         ax.grid(True, alpha=0.3)
         for freq in freq_tab:
-            ax.loglog(freq['l1_b'], freq['rel_error'], 'o-', markersize=6, linewidth=2)
+            ax.loglog(freq['l1_b'], freq['error'], 'o-', markersize=6, linewidth=2)
         plt.tight_layout()
         plt.savefig('../figures/heat_lcurve.png', dpi=300)
         plt.show()
@@ -212,7 +181,7 @@ if __name__ == "__main__":
         # Extract data
         lambdas = [freq['lambda'] for freq in freq_tab]
         num_modes = [freq['nonzero_count'] for freq in freq_tab]
-        rel_errors = [freq['rel_error'] for freq in freq_tab]
+        rel_errors = [freq['error'] for freq in freq_tab]
         # Plot 1: λ vs relative error
         ax1.loglog(lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
         ax1.set_xlabel('Regularization Parameter (λ)', fontsize=16)
