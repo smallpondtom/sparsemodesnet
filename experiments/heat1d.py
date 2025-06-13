@@ -33,12 +33,15 @@ if __name__ == "__main__":
     # Parameter‐grid for CV
     lambdas_cv = np.logspace(-2.1, -0.8, 12)  
     
+    # number of grids
+    n_grids = 2**7
+    
     # Sanity check flag (plotting)
     sanity_check = False
 
     # ---------- Heat Equation ----------
     X_heat, xspan_h, tspan_h = generate_heat_data(
-        nx=2**7, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
+        nx=n_grids, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
     # s_h = 20
@@ -106,7 +109,9 @@ if __name__ == "__main__":
     Us_20_f64 = Us_20.astype(np.float64)
     for i in range(s_h):
         proj_err.append(
-            np.linalg.norm(X_heat_f64 - Us_20_f64[:, :i+1] @ (Us_20_f64[:, :i+1].T @ X_heat_f64), 'fro') 
+            np.linalg.norm(
+                X_heat_f64 - Us_20_f64[:, :i+1] 
+                @ (Us_20_f64[:, :i+1].T @ X_heat_f64), 'fro') 
             / np.linalg.norm(X_heat_f64, 'fro')
         )
     ax.semilogy(range(1, s_h+1), proj_err)
@@ -126,21 +131,24 @@ if __name__ == "__main__":
         num_modes  = [freq['nonzero_count'] for freq in freq_tab]
         rel_errors = [freq['error']         for freq in freq_tab]
         # Plot 1: λ vs relative error
-        ax1.loglog(lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
+        ax1.loglog(
+            lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
         ax1.set_xlabel('Regularization Parameter (λ)', fontsize=16)
         ax1.set_ylabel('Relative Error', fontsize=16)
         ax1.set_title('λ vs Relative Error', fontsize=18)
         ax1.tick_params(axis='both', which='major', labelsize=14)
         ax1.grid(True, alpha=0.3)
         # Plot 2: λ vs selected modes
-        ax2.semilogx(lambdas, num_modes, 'o-', markersize=8, linewidth=2, color='blue')
+        ax2.semilogx(
+            lambdas, num_modes, 'o-', markersize=8, linewidth=2, color='blue')
         ax2.set_xlabel('Regularization Parameter (λ)', fontsize=16)
         ax2.set_ylabel('Number of POD Modes', fontsize=16)
         ax2.set_title('λ vs # Modes', fontsize=18)
         ax2.tick_params(axis='both', which='major', labelsize=14)
         ax2.grid(True, alpha=0.3)
         # Plot 3: # Modes vs Relative Error
-        ax3.semilogy(num_modes, rel_errors, 'o-', markersize=8, linewidth=2, color='green')
+        ax3.semilogy(
+            num_modes, rel_errors, 'o-', markersize=8, linewidth=2, color='green')
         ax3.set_xlabel('Number of POD Modes', fontsize=16)
         ax3.set_ylabel('Relative Error', fontsize=16)
         ax3.set_title('# Modes vs Relative Error', fontsize=18)
@@ -193,13 +201,16 @@ if __name__ == "__main__":
         color2 = 'red'
         ax3.set_xlabel('Regularization Parameter (λ)', fontsize=16)
         ax3.set_ylabel('Number of Selected Modes', color=color1, fontsize=16)
-        line1 = ax3.semilogx(lambdas, num_modes, 'o-', markersize=8, linewidth=2, color=color1, label='Selected Modes')
-        ax3.tick_params(axis='both', which='major', labelsize=14, labelcolor='black')
+        line1 = ax3.semilogx(lambdas, num_modes, 'o-', markersize=8, 
+                             linewidth=2, color=color1, label='Selected Modes')
+        ax3.tick_params(axis='both', which='major', 
+                        labelsize=14, labelcolor='black')
         ax3.tick_params(axis='y', labelcolor=color1)
         ax3.grid(True, alpha=0.3)
         ax3_twin = ax3.twinx()
         ax3_twin.set_ylabel('Relative Error', color=color2, fontsize=16)
-        line2 = ax3_twin.loglog(lambdas, rel_errors, 's-', markersize=8, linewidth=2, color=color2, label='Relative Error')
+        line2 = ax3_twin.loglog(lambdas, rel_errors, 's-', markersize=8, 
+                                linewidth=2, color=color2, label='Relative Error')
         ax3_twin.tick_params(axis='y', labelcolor=color2, labelsize=14)
         ax3.set_title('λ vs Selected Modes & Relative Error', fontsize=18)
         # Add legend
@@ -218,7 +229,8 @@ if __name__ == "__main__":
     X_pod_recon = V_selected @ V_selected.T @ X_heat
     
     # Fix: Convert numpy array to tensor and move to correct device
-    Z_input = torch.from_numpy((V[:, :s_h].T @ X_heat).T.astype(np.float32)).to(device)
+    Z_input = torch.from_numpy(
+        (V[:, :s_h].T @ X_heat).T.astype(np.float32)).to(device)
     with torch.no_grad():
         model_heat.eval()
         _, X_sparse_recon_tensor = model_heat(Z_input)
@@ -272,11 +284,13 @@ if __name__ == "__main__":
 
     #%% Test the model on a new sample
     # Generate new test data with different parameters
-    X_test, xspan_test, tspan_test = generate_heat_data(nx=2**7, nt=800, alpha=0.02, x_max=1.0, t_max=0.8)
+    X_test, xspan_test, tspan_test = generate_heat_data(
+        nx=n_grids, nt=800, alpha=0.02, x_max=1.0, t_max=0.8)
 
     # Project test data onto the learned POD basis
     V_test, _, _ = np.linalg.svd(X_test, full_matrices=False)
-    Z_test = torch.from_numpy((V[:, :s_h].T @ X_test).T.astype(np.float32)).to(device)
+    Z_test = torch.from_numpy(
+        (V[:, :s_h].T @ X_test).T.astype(np.float32)).to(device)
 
     # POD reconstruction using selected modes
     X_test_pod_recon = V_selected @ V_selected.T @ X_test

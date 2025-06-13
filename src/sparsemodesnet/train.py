@@ -40,7 +40,7 @@ def train_sparsemodesnet(model: SparseModesNet,
             x_batch = x_batch.to(device)  # (batch, d)
 
             optimizer.zero_grad()
-            z_hat_batch, x_hat_batch = model(z_batch)  # (batch, d)
+            _, x_hat_batch = model(z_batch)  # (batch, d)
             loss = mse_loss(x_hat_batch, x_batch)
             loss.backward()
             optimizer.step()

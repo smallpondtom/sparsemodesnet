@@ -148,6 +148,6 @@ class SparseModesNet(nn.Module):
         W1_T_new    = W1_T.sign() * clipped_abs          # (s, K)
 
         # 14) Write back:
-        self.omega.data.copy_(b_new)               # (s,)
+        self.omega.data.copy_(b_new)           # (s,)
         W1_updated = W1_T_new.t().contiguous() # shape: (K, s) → transpose to (h, s)
         self.first_layer.weight.data.copy_(W1_updated)
