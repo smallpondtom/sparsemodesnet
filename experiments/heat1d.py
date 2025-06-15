@@ -68,7 +68,7 @@ if __name__ == "__main__":
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 10.0,
+        M               = 0.1,
         reg_path        = reg_path,
         lr              = 1e-3,
         batch_size      = 64,
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-14,
         r_max           = 100,          # max modes for constraint stopping
-        lam0            = 1e-4,         # only used if path
+        lam0            = 1e-3,         # only used if path
         epsilon         = 0.20,         # only used if path
         B_path          = 80,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
@@ -84,7 +84,9 @@ if __name__ == "__main__":
         k_folds         = 5,            # for cv
         num_epochs_cv   = 80,           # for cv
         device          = device,
-        label           = "Heat Equation"
+        label           = "Heat Equation",
+        enable_logging=True,  
+        logs_dir="./logs"     
     )
     
     

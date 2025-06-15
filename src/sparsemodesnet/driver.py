@@ -3,6 +3,10 @@ import kneeliverse.dfdt as dfdt
 import kneeliverse.zmethod as zmethod
 import warnings
 import torch
+import logging
+import os
+from datetime import datetime
+from pathlib import Path
 from torch.utils.data import DataLoader
 
 from .pod import compute_pod_basis
@@ -10,6 +14,54 @@ from .model import SparseModesNet
 from .dataset import PODReconDataset
 from .train import train_sparsemodesnet
 from .cv import run_sparsemodesnet_cv
+
+def _setup_experiment_logging(experiment_name="sparsemodesnet", logs_dir=None):
+    """Setup logging with timestamp for experiment tracking."""
+    if logs_dir is None:
+        # Default to logs directory in current working directory
+        logs_dir = Path.cwd() / "logs"
+    else:
+        logs_dir = Path(logs_dir)
+    
+    logs_dir.mkdir(exist_ok=True)
+    
+    # Create timestamp for log filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = logs_dir / f"{experiment_name}_{timestamp}.log"
+    
+    # Create a logger specific to this experiment
+    logger = logging.getLogger(f"sparsemodesnet.{experiment_name}")
+    logger.setLevel(logging.INFO)
+    
+    # Remove any existing handlers to avoid duplicates
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    
+    # Create file handler with simple format (no timestamp/logger name)
+    file_handler = logging.FileHandler(log_filename)
+    file_handler.setLevel(logging.INFO)
+    
+    # Detailed formatter - just the message
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(detailed_formatter)
+    
+    # Add file handler to logger
+    logger.addHandler(file_handler)
+    
+    # Console handler keeps the full format for debugging
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+    
+    # Initial log entries with timestamp for reference
+    logger.info(f"Starting {experiment_name} experiment")
+    logger.info(f"Log file: {log_filename}")
+    
+    return logger, log_filename
 
 def run_sparsemodesnet_d2s(X_np: np.ndarray,
                            s: int,
@@ -119,7 +171,9 @@ def run_sparsemodesnet(
     num_epochs_cv: int = 20,
     # other common:
     device: str = 'cpu',
-    label: str = ''
+    label: str = '',
+    enable_logging: bool = True,
+    logs_dir: str = None
 ):
     """
     Runs SparseModesNet with lambda selection via path or CV.
@@ -128,44 +182,141 @@ def run_sparsemodesnet(
     -------
     tuple: (final_model, info_dict, selected_indices, path_history)
     """
-    print(f"\n=== SparseModesNet (λ-path={reg_path}) on "
-          f"{label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
+    # Setup logging if enabled
+    if enable_logging:
+        experiment_name = label.lower().replace(" ", "_") if label else "sparsemodesnet"
+        logger, log_file = _setup_experiment_logging(experiment_name, logs_dir)
+        
+        # Log experiment parameters (these will have timestamps)
+        logger.info(f"Experiment: {label}")
+        logger.info(f"Data shape: {X_np.shape}")
+        logger.info(f"POD dimension: {s}")
+        logger.info(f"Hidden units: {hidden_units}")
+        logger.info(f"Regularization method: {reg_path}")
+        logger.info(f"Device: {device}")
+        logger.info(f"Training parameters: M={M}, lr={lr}, batch_size={batch_size}")
+        logger.info(f"Optimizer: {optimizer}, knee_method: {knee_method}")
+        logger.info("="*50)
+        
+        # Create a simple file-only logger for training output
+        training_logger = logging.getLogger(f"training.{experiment_name}")
+        training_logger.setLevel(logging.INFO)
+        
+        # Remove any existing handlers
+        for handler in training_logger.handlers[:]:
+            training_logger.removeHandler(handler)
+        
+        # Add only file handler with simple format
+        training_file_handler = logging.FileHandler(log_file)
+        training_file_handler.setLevel(logging.INFO)
+        simple_formatter = logging.Formatter('%(message)s')
+        training_file_handler.setFormatter(simple_formatter)
+        training_logger.addHandler(training_file_handler)
+        training_logger.propagate = False  # Don't propagate to parent loggers
+        
+        # Modify print function to log to file only (no timestamps)
+        original_print = print
+        def logged_print(*args, **kwargs):
+            message = ' '.join(str(arg) for arg in args)
+            training_logger.info(message)  # Simple format to file
+            original_print(*args, **kwargs)  # Normal print to console
+        
+        # Temporarily replace print with logged version
+        import builtins
+        builtins.print = logged_print
+    
+    try:
+        print(f"\n=== SparseModesNet (λ-path={reg_path}) on "
+              f"{label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
 
-    # Compute POD basis and coefficients
-    U_s_np, _, _ = compute_pod_basis(X_np, s=s)
-    Z_np = U_s_np.T.dot(X_np)
-    U_s_tensor = torch.from_numpy(U_s_np.astype(np.float32)).to(device)
+        # Compute POD basis and coefficients
+        U_s_np, _, _ = compute_pod_basis(X_np, s=s)
+        Z_np = U_s_np.T.dot(X_np)
+        U_s_tensor = torch.from_numpy(U_s_np.astype(np.float32)).to(device)
 
-    # Select lambda using specified method
-    path_history = _regularization_path(
-        reg_path, X_np, s, hidden_units, M, nonzero_thresh,
-        lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, B_path, 
-        max_iters, lr, batch_size, optimizer, device, 
-    )
+        # Select lambda using specified method
+        path_history = _regularization_path(
+            reg_path, X_np, s, hidden_units, M, nonzero_thresh,
+            lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, B_path, 
+            max_iters, lr, batch_size, optimizer, device
+        )
+        
+        # Find optimal lambda using knee detection
+        lam_star, r_star, err_star = _find_optimal_lambda(
+            path_history, knee_method, r_max, reg_path
+        )
+        
+        # Train final model with selected lambda
+        model_final, history_full = _train_final_model(
+            U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
+            B_path, lr, optimizer, device, batch_size
+        )
+        
+        # Evaluate and report results
+        selected_indices = _evaluate_and_report_results(
+            model_final, X_np, U_s_np, Z_np, s, nonzero_thresh, 
+            lam_star, device
+        )
+        
+        if enable_logging:
+            # Final summary with timestamps
+            logger.info("="*50)
+            logger.info(f"Experiment completed successfully!")
+            logger.info(f"Selected {len(selected_indices)} modes out of {s}")
+            logger.info(f"Final lambda: {lam_star:.3e}")
+        
+        return (
+            model_final, 
+            {'history_full': history_full, 'lambda_star': lam_star, 'log_file': log_file if enable_logging else None}, 
+            selected_indices, 
+            path_history
+        )
+        
+    finally:
+        # Restore original print function
+        if enable_logging:
+            import builtins
+            builtins.print = original_print
     
-    # Find optimal lambda using knee detection
-    lam_star, r_star, err_star = _find_optimal_lambda(
-        path_history, knee_method, r_max, reg_path
-    )
     
-    # Train final model with selected lambda
-    model_final, history_full = _train_final_model(
-        U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
-        B_path, lr, optimizer, device, batch_size, 
-    )
+#     print(f"\n=== SparseModesNet (λ-path={reg_path}) on "
+#           f"{label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
+
+#     # Compute POD basis and coefficients
+#     U_s_np, _, _ = compute_pod_basis(X_np, s=s)
+#     Z_np = U_s_np.T.dot(X_np)
+#     U_s_tensor = torch.from_numpy(U_s_np.astype(np.float32)).to(device)
+
+#     # Select lambda using specified method
+#     path_history = _regularization_path(
+#         reg_path, X_np, s, hidden_units, M, nonzero_thresh,
+#         lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, B_path, 
+#         max_iters, lr, batch_size, optimizer, device, 
+#     )
     
-    # Evaluate and report results
-    selected_indices = _evaluate_and_report_results(
-        model_final, X_np, U_s_np, Z_np, s, nonzero_thresh, 
-        lam_star, device
-    )
+#     # Find optimal lambda using knee detection
+#     lam_star, r_star, err_star = _find_optimal_lambda(
+#         path_history, knee_method, r_max, reg_path
+#     )
     
-    return (
-        model_final, 
-        {'history_full': history_full, 'lambda_star': lam_star}, 
-        selected_indices, 
-        path_history
-    )
+#     # Train final model with selected lambda
+#     model_final, history_full = _train_final_model(
+#         U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
+#         B_path, lr, optimizer, device, batch_size, 
+#     )
+    
+#     # Evaluate and report results
+#     selected_indices = _evaluate_and_report_results(
+#         model_final, X_np, U_s_np, Z_np, s, nonzero_thresh, 
+#         lam_star, device
+#     )
+    
+#     return (
+#         model_final, 
+#         {'history_full': history_full, 'lambda_star': lam_star}, 
+#         selected_indices, 
+#         path_history
+#     )
 
 
 def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
