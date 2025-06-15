@@ -68,7 +68,7 @@ if __name__ == "__main__":
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 1.0,
+        M               = 10.0,
         reg_path        = reg_path,
         lr              = 1e-3,
         batch_size      = 64,
