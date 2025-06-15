@@ -55,7 +55,7 @@ def run_sparsemodesnet_d2s(X_np: np.ndarray,
             input_dim    = s,
             hidden_units = hidden_units,
             M            = M,
-            lam          = lam
+            lam          = lam,
         ).to(device)
         
         history = train_sparsemodesnet(
@@ -140,7 +140,7 @@ def run_sparsemodesnet(
     path_history = _regularization_path(
         reg_path, X_np, s, hidden_units, M, nonzero_thresh,
         lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, B_path, 
-        max_iters, lr, batch_size, optimizer, device
+        max_iters, lr, batch_size, optimizer, device, 
     )
     
     # Find optimal lambda using knee detection
@@ -151,7 +151,7 @@ def run_sparsemodesnet(
     # Train final model with selected lambda
     model_final, history_full = _train_final_model(
         U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
-        B_path, lr, optimizer, device, batch_size
+        B_path, lr, optimizer, device, batch_size, 
     )
     
     # Evaluate and report results
@@ -179,7 +179,7 @@ def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
             X_np=X_np, s=s, hidden_units=hidden_units, M=M,
             nonzero_thresh=nonzero_thresh, lambdas=lambdas_cv,
             lr=lr, num_epochs_cv=num_epochs_cv, k_folds=k_folds,
-            batch_size=batch_size, optimizer=optimizer, device=device
+            batch_size=batch_size, optimizer=optimizer, device=device,
         )
     else:
         if reg_path != 'dense2sparse':
@@ -189,7 +189,7 @@ def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
             X_np=X_np, s=s, hidden_units=hidden_units, M=M,
             nonzero_thresh=nonzero_thresh, lam0=lam0, epsilon=epsilon,
             lr=lr, B=B_path, max_iters=max_iters, batch_size=batch_size,
-            optimizer=optimizer, device=device
+            optimizer=optimizer, device=device, 
         )
 
 
@@ -307,7 +307,7 @@ def _train_final_model(U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star,
     
     model_final = SparseModesNet(
         pod_basis=U_s_tensor, input_dim=s, hidden_units=hidden_units,
-        M=M, lam=float(lam_star)
+        M=M, lam=float(lam_star), 
     ).to(device)
     
     history_full = train_sparsemodesnet(

@@ -49,6 +49,7 @@ class SparseModesNet(nn.Module):
         for i in range(1, len(hidden_units)):
             layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
             layers.append(nn.SELU(inplace=True))
+            layers.append(nn.Dropout(p=0.1)) 
         layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
         self.net = nn.Sequential(*layers)
     
@@ -151,3 +152,54 @@ class SparseModesNet(nn.Module):
         self.omega.data.copy_(b_new)           # (s,)
         W1_updated = W1_T_new.t().contiguous() # shape: (K, s) → transpose to (h, s)
         self.first_layer.weight.data.copy_(W1_updated)
+    
+    # @staticmethod 
+    # def proximal_step(theta, W1_T, lam, M):
+    #     b_vals = theta.abs()
+    #     W = W1_T.clone()
+    #     s, K = W.shape
+
+    #     # 1) sort each row of |W|
+    #     u_abs_sorted, _ = W.abs().sort(dim=1, descending=True)  # (s, K)
+
+    #     # 2) partial sums + a_s
+    #     zeros_m    = torch.zeros((s, 1), device=W.device, dtype=W.dtype)
+    #     cumsum_vals = torch.cumsum(u_abs_sorted, dim=1)  # (s, K)
+    #     a_s        = lam - M * torch.cat([zeros_m, cumsum_vals], dim=1)  # (s, K+1)
+
+    #     # 3) broadcast |θ|
+    #     norm_v_col = b_vals.unsqueeze(1).expand(-1, K+1)  # (s, K+1)
+
+    #     # 4) m index
+    #     m_index = torch.arange(K+1, device=W.device, dtype=W.dtype).view(1, K+1)
+    #     m_index = m_index.expand(s, -1)  # (s, K+1)
+
+    #     # 5) x(m), w(m)
+    #     x_vals = F.relu(1.0 - a_s / (norm_v_col + 1e-16)) / (1.0 + m_index * (M**2))  # (s, K+1)
+    #     w_vals = M * x_vals * norm_v_col                                           # (s, K+1)
+
+    #     # 6) lower = [u_abs_sorted, 0]
+    #     lower = torch.cat([u_abs_sorted, zeros_m], dim=1)  # (s, K+1)
+
+    #     # 7) find idx per row
+    #     cond = lower > w_vals                              # (s, K+1)
+    #     idx  = torch.sum(cond, dim=1)                       # (s,)
+
+    #     # 8) gather x_star, w_star
+    #     row_idx = torch.arange(s, device=W.device)
+    #     x_star  = x_vals[row_idx, idx]                      # (s,)
+    #     w_star  = w_vals[row_idx, idx]                      # (s,)
+
+    #     # 9) update b
+    #     b_signed = theta.sign()                             # (s,)
+    #     # raw_b    = x_star * b_vals                          # (s,)
+    #     # b_new    = b_signed * F.relu(raw_b - lam)           # (s,)
+    #     b_new = b_signed * x_star * b_vals
+
+    #     # 10) clip each coord of W
+    #     W_abs    = W.abs()                                  # (s, K)
+    #     w_star_col = w_star.unsqueeze(1).expand(-1, K)      # (s, K)
+    #     clipped_abs = torch.min(W_abs, w_star_col)          # (s, K)
+    #     W_new    = W.sign() * clipped_abs                   # (s, K)
+
+    #     return b_new, W_new

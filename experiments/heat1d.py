@@ -281,6 +281,125 @@ if __name__ == "__main__":
     plt.savefig('../figures/heat_comparison.png', dpi=300)
     plt.show()
     plt.close(fig)
+    
+    #%% 
+    V, _, _ = np.linalg.svd(X_heat, full_matrices=False)
+    V_selected = V[:, selected_h]
+    fig, ax = plt.subplots(figsize=(12, 6))
+    X_pod_recon = V_selected @ V_selected.T @ X_heat
+    
+    # Fix: Convert numpy array to tensor and move to correct device
+    Z_input = torch.from_numpy(
+        (V[:, :s_h].T @ X_heat).T.astype(np.float32)).to(device)
+    with torch.no_grad():
+        model_heat.eval()
+        
+        # # If you enforce omega to be ones 
+        # omega_ones = np.zeros((s_h, s_h), dtype=np.float32)
+        # for i in range(len(model_heat.omega)):
+        #     if model_heat.omega[i].abs().item() > 0:
+        #         omega_ones[i, i] = 1.0 
+        # X_sparse_lin = V[:, :s_h] @ omega_ones @ V[:, :s_h].T @ X_heat
+        # omega_ones_tensor = torch.from_numpy(omega_ones).to(device)
+        # nonlin_part = model_heat.net(Z_input @ omega_ones_tensor)
+        
+        # Linear part
+        omega = np.diag(model_heat.omega.cpu().numpy())
+        X_sparse_lin = V[:, :s_h] @ omega @ V[:, :s_h].T @ X_heat
+        omega_tensor = torch.from_numpy(omega).to(device)
+        
+        # Nonlinear part 
+        nonlin_part = model_heat.net(Z_input @ omega_tensor)
+        X_sparse_nonlin = nonlin_part.cpu().numpy().T
+        
+        # Together 
+        # X_sparse_recon = X_sparse_lin + nonlin_part_np
+        _, X_sparse_recon_tensor = model_heat(Z_input)
+        X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
+    
+    # Calculate errors
+    pod_error = X_heat - X_pod_recon
+    sparse_error = X_heat - X_sparse_recon
+    sparse_lin_error = X_heat - X_sparse_lin
+    sparse_nonlin_error = X_heat - X_sparse_nonlin
+    
+    fig, axes = plt.subplots(4, 2, figsize=(16, 20))
+    # (1,1) POD reconstruction
+    im1 = axes[0,0].imshow(
+        X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[0,0].set_xlabel('Time')
+    axes[0,0].set_ylabel('Space (x)')
+    axes[0,0].set_title('POD Reconstruction')
+    plt.colorbar(im1, ax=axes[0,0], label='u(x,t)')
+    
+    # (1,2) POD error
+    im2 = axes[0,1].imshow(
+        pod_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[0,1].set_xlabel('Time')
+    axes[0,1].set_ylabel('Space (x)')
+    axes[0,1].set_title('POD Error')
+    plt.colorbar(im2, ax=axes[0,1], label='Error')
+    
+    # (2,1) Sparse reconstruction
+    im3 = axes[1,0].imshow(
+        X_sparse_recon, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[1,0].set_xlabel('Time')
+    axes[1,0].set_ylabel('Space (x)')
+    axes[1,0].set_title('Sparse Reconstruction')
+    plt.colorbar(im3, ax=axes[1,0], label='u(x,t)')
+    
+    # (2,2) Sparse error
+    im4 = axes[1,1].imshow(
+        sparse_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[1,1].set_xlabel('Time')
+    axes[1,1].set_ylabel('Space (x)')
+    axes[1,1].set_title('Sparse Error')
+    plt.colorbar(im4, ax=axes[1,1], label='Error')
+    
+    # (3,1) Sparse linear reconstruction
+    im5 = axes[2,0].imshow(
+        X_sparse_lin, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[2,0].set_xlabel('Time')
+    axes[2,0].set_ylabel('Space (x)')
+    axes[2,0].set_title('Sparse Linear Reconstruction')
+    plt.colorbar(im5, ax=axes[2,0], label='u(x,t)')
+    
+    # (3,2) Sparse linear error
+    im6 = axes[2,1].imshow(
+        sparse_lin_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[2,1].set_xlabel('Time')
+    axes[2,1].set_ylabel('Space (x)')
+    axes[2,1].set_title('Sparse Linear Error')
+    plt.colorbar(im6, ax=axes[2,1], label='Error')
+    
+    # (4,1) Sparse nonlinear reconstruction
+    im7 = axes[3,0].imshow(
+        X_sparse_nonlin, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[3,0].set_xlabel('Time')
+    axes[3,0].set_ylabel('Space (x)')
+    axes[3,0].set_title('Sparse Nonlinear Reconstruction')
+    plt.colorbar(im7, ax=axes[3,0], label='u(x,t)')
+    
+    # (4,2) Sparse nonlinear error
+    im8 = axes[3,1].imshow(
+        sparse_nonlin_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan_h[0], tspan_h[-1], xspan_h[0], xspan_h[-1]])
+    axes[3,1].set_xlabel('Time')
+    axes[3,1].set_ylabel('Space (x)')
+    axes[3,1].set_title('Sparse Nonlinear Error')
+    plt.colorbar(im8, ax=axes[3,1], label='Error')
+    
+    plt.tight_layout()
+    plt.savefig('../figures/heat_comparison_separated.png', dpi=300)
+    plt.show()
+    plt.close(fig)
 
     #%% Test the model on a new sample
     # Generate new test data with different parameters
