@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 
 from sparsemodesnet.pod import compute_pod_basis
 from sparsemodesnet.dataset import PODReconDataset
-from sparsemodesnet.__old__.model import SparseModesNet
+from sparsemodesnet.model import SparseModesNet
 from sparsemodesnet.train import train_sparsemodesnet
 
 def run_sparsemodesnet_cv(X_np: np.ndarray,

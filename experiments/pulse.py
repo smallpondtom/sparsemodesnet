@@ -82,8 +82,8 @@ if __name__ == "__main__":
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-8,
         r_max           = 20,          # max modes for constraint stopping
-        lam0            = 5e-3,         # only used if path
-        epsilon         = 0.10,         # only used if path
+        lam0            = 1e-1,         # only used if path
+        epsilon         = 0.05,         # only used if path
         B_path          = 160,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv

@@ -1,0 +1,17 @@
+2025-06-16 13:35:29,739 - sparsemodesnet.heat_equation - INFO - Starting heat_equation experiment
+2025-06-16 13:35:29,740 - sparsemodesnet.heat_equation - INFO - Log file: logs/heat_equation_20250616_133529.log
+2025-06-16 13:35:29,740 - sparsemodesnet.heat_equation - INFO - Experiment: Heat Equation
+2025-06-16 13:35:29,741 - sparsemodesnet.heat_equation - INFO - Data shape: (128, 1000)
+2025-06-16 13:35:29,741 - sparsemodesnet.heat_equation - INFO - POD dimension: 128
+2025-06-16 13:35:29,741 - sparsemodesnet.heat_equation - INFO - Hidden units: [128, 8256]
+2025-06-16 13:35:29,742 - sparsemodesnet.heat_equation - INFO - Regularization method: dense2sparse
+2025-06-16 13:35:29,742 - sparsemodesnet.heat_equation - INFO - Device: mps
+2025-06-16 13:35:29,742 - sparsemodesnet.heat_equation - INFO - Training parameters: M=1.0, lr=0.001, batch_size=64
+2025-06-16 13:35:29,742 - sparsemodesnet.heat_equation - INFO - Optimizer: Adam, knee_method: zmethod
+2025-06-16 13:35:29,743 - sparsemodesnet.heat_equation - INFO - ==================================================
+
+=== SparseModesNet (λ-path=dense2sparse) on Heat Equation: d=128, n=1000, s=128 ===
+
+=== Dense-To-Sparse (default) λ-Path ===
+
+-- Path iteration 1, λ = 1.000e-03   (r(λ) prev = 128)

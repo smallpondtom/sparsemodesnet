@@ -1,3 +1,5 @@
+import numpy as np
+import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as DataLoader
@@ -42,18 +44,16 @@ def train_sparsemodesnet(model: SparseModesNet,
             optimizer.zero_grad()
             _, x_hat_batch = model(z_batch)  # (batch, d)
             loss = mse_loss(x_hat_batch, x_batch)
+            
+            # z_hat_batch, x_hat_batch = model(z_batch)  # (batch, d)
+            # loss1 = mse_loss(x_hat_batch, x_batch)
+            # loss2 = mse_loss(z_hat_batch, z_batch)
+            # loss = loss1 + loss2
+            
             loss.backward()
             optimizer.step()
 
             model.proximal_step()
-            # omega_new, W_new = model.proximal_step(
-            #     model.omega, 
-            #     model.first_layer.weight.T, 
-            #     model.lam, 
-            #     model.M
-            # )
-            # model.omega.data.copy_(omega_new)
-            # model.first_layer.weight.data.copy_(W_new.T)
 
             batch_size = x_batch.shape[0]
             epoch_loss += loss.item() * batch_size

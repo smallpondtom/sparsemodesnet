@@ -27,11 +27,11 @@ if __name__ == "__main__":
     reg_path = 'dense2sparse'  # 'dense2sparse' or 'cv'
     
     # Common hyperparameters
-    hidden_units_heat = [128, 8256]
-    # hidden_units_heat = [20, 210, 400]
+    # hidden_units_heat = [128, 8256]
+    hidden_units_heat = [20, 20, 20, 20, 20, 20, 20, 20, 20, 20] 
 
     # Parameter‐grid for CV
-    lambdas_cv = np.logspace(-2.1, -0.8, 12)  
+    lambdas_cv = np.logspace(-3.0, -1.0, 15)  
     
     # number of grids
     n_grids = 2**7
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         nx=n_grids, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
-    # s_h = 20
+    s_h = 20
     
     ## Create 3D surface plot for Heat Equation (sanity check)
     if sanity_check:
@@ -68,17 +68,17 @@ if __name__ == "__main__":
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 0.1,
+        M               = 1.0,
         reg_path        = reg_path,
         lr              = 1e-3,
         batch_size      = 64,
         knee_method     = 'zmethod',
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-14,
-        r_max           = 100,          # max modes for constraint stopping
+        r_max           = 10,           # max modes for constraint stopping
         lam0            = 1e-3,         # only used if path
         epsilon         = 0.20,         # only used if path
-        B_path          = 80,           # epochs per λ for path or final fit
+        B_path          = 120,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
@@ -315,7 +315,6 @@ if __name__ == "__main__":
         X_sparse_nonlin = nonlin_part.cpu().numpy().T
         
         # Together 
-        # X_sparse_recon = X_sparse_lin + nonlin_part_np
         _, X_sparse_recon_tensor = model_heat(Z_input)
         X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
     
