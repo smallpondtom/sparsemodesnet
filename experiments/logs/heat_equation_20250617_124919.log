@@ -1,0 +1,28 @@
+2025-06-17 12:49:19,168 - sparsemodesnet.heat_equation - INFO - Starting heat_equation experiment
+2025-06-17 12:49:19,168 - sparsemodesnet.heat_equation - INFO - Log file: logs/heat_equation_20250617_124919.log
+2025-06-17 12:49:19,169 - sparsemodesnet.heat_equation - INFO - Experiment: Heat Equation
+2025-06-17 12:49:19,169 - sparsemodesnet.heat_equation - INFO - Data shape: (128, 1000)
+2025-06-17 12:49:19,169 - sparsemodesnet.heat_equation - INFO - POD dimension: 128
+2025-06-17 12:49:19,170 - sparsemodesnet.heat_equation - INFO - Hidden units: [128, 1200, 2400]
+2025-06-17 12:49:19,170 - sparsemodesnet.heat_equation - INFO - Regularization method: dense2sparse
+2025-06-17 12:49:19,170 - sparsemodesnet.heat_equation - INFO - Device: mps
+2025-06-17 12:49:19,171 - sparsemodesnet.heat_equation - INFO - Training parameters: M=1.0, lr=0.001, batch_size=64
+2025-06-17 12:49:19,171 - sparsemodesnet.heat_equation - INFO - Optimizer: Adam, knee_method: zmethod
+2025-06-17 12:49:19,171 - sparsemodesnet.heat_equation - INFO - NN type: PiNetNCPSkip with polynomial order of 2, and 1 number of polynomial blocks
+2025-06-17 12:49:19,172 - sparsemodesnet.heat_equation - INFO - ==================================================
+
+=== SparseModesNet (λ-path=dense2sparse) on Heat Equation: d=128, n=1000, s=128 ===
+
+=== Dense-To-Sparse (default) λ-Path ===
+
+-- Path iteration 1, λ = 1.000e-03   (r(λ) prev = 128)
+  λ=1.000e-03 | Epoch   1 | lr=1.0000e-03 | Recon MSE=1.417098e-04 | ‖ω‖₁=1.269453e+02
+  λ=1.000e-03 | Epoch  10 | lr=1.0000e-03 | Recon MSE=5.647091e-07 | ‖ω‖₁=1.088578e+02
+  λ=1.000e-03 | Epoch  20 | lr=1.0000e-03 | Recon MSE=6.983016e-06 | ‖ω‖₁=8.872869e+01
+  λ=1.000e-03 | Epoch  30 | lr=5.0000e-04 | Recon MSE=3.810622e-08 | ‖ω‖₁=6.853349e+01
+  λ=1.000e-03 | Epoch  40 | lr=5.0000e-04 | Recon MSE=6.183571e-06 | ‖ω‖₁=4.831737e+01
+  λ=1.000e-03 | Epoch  50 | lr=2.5000e-04 | Recon MSE=1.900979e-07 | ‖ω‖₁=2.808004e+01
+  λ=1.000e-03 | Epoch  60 | lr=2.5000e-04 | Recon MSE=5.373554e-07 | ‖ω‖₁=1.191247e+01
+  λ=1.000e-03 | Epoch  70 | lr=2.5000e-04 | Recon MSE=1.228627e-06 | ‖ω‖₁=1.052132e+01
+  λ=1.000e-03 | Epoch  80 | lr=1.2500e-04 | Recon MSE=2.308239e-06 | ‖ω‖₁=9.568221e+00
+  λ=1.000e-03 | Epoch  90 | lr=1.2500e-04 | Recon MSE=3.149295e-06 | ‖ω‖₁=8.759291e+00

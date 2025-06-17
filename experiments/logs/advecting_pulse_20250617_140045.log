@@ -1,0 +1,63 @@
+2025-06-17 14:00:45,153 - sparsemodesnet.advecting_pulse - INFO - Starting advecting_pulse experiment
+2025-06-17 14:00:45,154 - sparsemodesnet.advecting_pulse - INFO - Log file: /Users/tkoike3/Dev/Research/sparsemodesnet/experiments/logs/advecting_pulse_20250617_140045.log
+2025-06-17 14:00:45,154 - sparsemodesnet.advecting_pulse - INFO - Experiment: Advecting Pulse
+2025-06-17 14:00:45,154 - sparsemodesnet.advecting_pulse - INFO - Data shape: (1024, 1000)
+2025-06-17 14:00:45,155 - sparsemodesnet.advecting_pulse - INFO - POD dimension: 50
+2025-06-17 14:00:45,155 - sparsemodesnet.advecting_pulse - INFO - Hidden units: [100, 100, 100]
+2025-06-17 14:00:45,155 - sparsemodesnet.advecting_pulse - INFO - Regularization method: dense2sparse
+2025-06-17 14:00:45,156 - sparsemodesnet.advecting_pulse - INFO - Device: mps
+2025-06-17 14:00:45,156 - sparsemodesnet.advecting_pulse - INFO - Training parameters: M=2.0, lr=0.001, batch_size=128
+2025-06-17 14:00:45,156 - sparsemodesnet.advecting_pulse - INFO - Optimizer: Adam, knee_method: dfdt
+2025-06-17 14:00:45,156 - sparsemodesnet.advecting_pulse - INFO - NN type: PiNetCCP with polynomial order of 2, and 2 number of polynomial blocks
+2025-06-17 14:00:45,157 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+
+=== SparseModesNet (λ-path=dense2sparse) on Advecting Pulse: d=1024, n=1000, s=50 ===
+
+=== Dense-To-Sparse (default) λ-Path ===
+
+-- Path iteration 1, λ = 1.000e-03   (r(λ) prev = 50)
+  λ=1.000e-03 | Epoch   1 | lr=1.0000e-03 | Recon MSE=7.765238e+06 | ‖ω‖₁=4.960048e+01
+  λ=1.000e-03 | Epoch  10 | lr=1.0000e-03 | Recon MSE=2.019174e+04 | ‖ω‖₁=4.548981e+01
+  λ=1.000e-03 | Epoch  20 | lr=5.0000e-04 | Recon MSE=5.877761e+03 | ‖ω‖₁=4.144824e+01
+  λ=1.000e-03 | Epoch  30 | lr=5.0000e-04 | Recon MSE=2.366209e+03 | ‖ω‖₁=3.743746e+01
+  λ=1.000e-03 | Epoch  40 | lr=2.5000e-04 | Recon MSE=9.372619e+02 | ‖ω‖₁=3.343202e+01
+  λ=1.000e-03 | Epoch  50 | lr=2.5000e-04 | Recon MSE=3.560325e+02 | ‖ω‖₁=2.943062e+01
+  λ=1.000e-03 | Epoch  60 | lr=1.2500e-04 | Recon MSE=1.270167e+02 | ‖ω‖₁=2.543006e+01
+  λ=1.000e-03 | Epoch  70 | lr=1.2500e-04 | Recon MSE=4.603647e+01 | ‖ω‖₁=2.142995e+01
+  λ=1.000e-03 | Epoch  80 | lr=6.2500e-05 | Recon MSE=2.186142e+01 | ‖ω‖₁=1.742993e+01
+  λ=1.000e-03 | Epoch  90 | lr=6.2500e-05 | Recon MSE=1.730924e+01 | ‖ω‖₁=1.342993e+01
+  λ=1.000e-03 | Epoch 100 | lr=3.1250e-05 | Recon MSE=1.889799e+01 | ‖ω‖₁=9.429929e+00
+  → at λ=1.000e-03:  r(λ)=50,  rel_err=8.224645e-01
+
+-- Path iteration 2, λ = 1.200e-03   (r(λ) prev = 50)
+  λ=1.200e-03 | Epoch   1 | lr=1.0000e-03 | Recon MSE=3.645228e+06 | ‖ω‖₁=4.956003e+01
+  λ=1.200e-03 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.020633e+03 | ‖ω‖₁=4.477761e+01
+  λ=1.200e-03 | Epoch  20 | lr=5.0000e-04 | Recon MSE=2.093454e+03 | ‖ω‖₁=3.995051e+01
+  λ=1.200e-03 | Epoch  30 | lr=5.0000e-04 | Recon MSE=7.058424e+02 | ‖ω‖₁=3.514430e+01
+  λ=1.200e-03 | Epoch  40 | lr=2.5000e-04 | Recon MSE=2.254704e+02 | ‖ω‖₁=3.034166e+01
+  λ=1.200e-03 | Epoch  50 | lr=2.5000e-04 | Recon MSE=6.897263e+01 | ‖ω‖₁=2.554108e+01
+  λ=1.200e-03 | Epoch  60 | lr=1.2500e-04 | Recon MSE=2.468120e+01 | ‖ω‖₁=2.074091e+01
+  λ=1.200e-03 | Epoch  70 | lr=1.2500e-04 | Recon MSE=1.608585e+01 | ‖ω‖₁=1.594091e+01
+  λ=1.200e-03 | Epoch  80 | lr=6.2500e-05 | Recon MSE=1.745505e+01 | ‖ω‖₁=1.114092e+01
+  λ=1.200e-03 | Epoch  90 | lr=6.2500e-05 | Recon MSE=2.147290e+01 | ‖ω‖₁=6.340916e+00
+  λ=1.200e-03 | Epoch 100 | lr=3.1250e-05 | Recon MSE=2.471936e+01 | ‖ω‖₁=3.245573e+00
+  → at λ=1.200e-03:  r(λ)=50,  rel_err=9.369343e-01
+
+-- Path iteration 3, λ = 1.440e-03   (r(λ) prev = 50)
+  λ=1.440e-03 | Epoch   1 | lr=1.0000e-03 | Recon MSE=6.674103e+06 | ‖ω‖₁=4.949695e+01
+  λ=1.440e-03 | Epoch  10 | lr=1.0000e-03 | Recon MSE=1.400716e+04 | ‖ω‖₁=4.383224e+01
+  λ=1.440e-03 | Epoch  20 | lr=5.0000e-04 | Recon MSE=3.116576e+03 | ‖ω‖₁=3.804577e+01
+  λ=1.440e-03 | Epoch  30 | lr=5.0000e-04 | Recon MSE=8.216178e+02 | ‖ω‖₁=3.228059e+01
+  λ=1.440e-03 | Epoch  40 | lr=2.5000e-04 | Recon MSE=1.907100e+02 | ‖ω‖₁=2.651890e+01
+  λ=1.440e-03 | Epoch  50 | lr=2.5000e-04 | Recon MSE=4.269764e+01 | ‖ω‖₁=2.075865e+01
+  λ=1.440e-03 | Epoch  60 | lr=1.2500e-04 | Recon MSE=1.813969e+01 | ‖ω‖₁=1.499861e+01
+  λ=1.440e-03 | Epoch  70 | lr=1.2500e-04 | Recon MSE=1.902508e+01 | ‖ω‖₁=9.238618e+00
+  λ=1.440e-03 | Epoch  80 | lr=6.2500e-05 | Recon MSE=2.425747e+01 | ‖ω‖₁=3.593137e+00
+  λ=1.440e-03 | Epoch  90 | lr=6.2500e-05 | Recon MSE=2.485611e+01 | ‖ω‖₁=3.101647e+00
+  λ=1.440e-03 | Epoch 100 | lr=3.1250e-05 | Recon MSE=2.500382e+01 | ‖ω‖₁=2.950860e+00
+  → at λ=1.440e-03:  r(λ)=50,  rel_err=9.420589e-01
+
+-- Path iteration 4, λ = 1.728e-03   (r(λ) prev = 50)
+  λ=1.728e-03 | Epoch   1 | lr=1.0000e-03 | Recon MSE=6.966412e+06 | ‖ω‖₁=4.943813e+01
+  λ=1.728e-03 | Epoch  10 | lr=1.0000e-03 | Recon MSE=1.272799e+04 | ‖ω‖₁=4.273008e+01
+  λ=1.728e-03 | Epoch  20 | lr=5.0000e-04 | Recon MSE=2.228694e+03 | ‖ω‖₁=3.579176e+01
