@@ -28,7 +28,7 @@ if __name__ == "__main__":
     
     # Common hyperparameters
     # hidden_units_pulse = [128, 8256]
-    hidden_units_pulse = [100, 2000, 5050]
+    hidden_units_pulse = [200, 5000, 200]
     
     # Parameter‐grid for CV
     lambdas_cv = np.logspace(-2.1, -0.8, 12)  
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     )
     d_p, n_p = X_pulse.shape
     s_p = min(d_p, n_p)
-    s_p = 100
+    s_p = 200
     
     ## Create 3D surface plot for Advecting Pulse (sanity check)
     if sanity_check:
@@ -74,17 +74,20 @@ if __name__ == "__main__":
         X_np            = X_pulse,
         s               = s_p,
         hidden_units    = hidden_units_pulse,
-        M               = 10.0,
+        M               = 2.0,
         reg_path        = reg_path,
         lr              = 1e-3,
-        batch_size      = 256,
-        knee_method     = 'zmethod',
+        batch_size      = 128,
+        knee_method     = 'dfdt',
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-8,
         r_max           = 20,          # max modes for constraint stopping
-        lam0            = 1e-1,         # only used if path
-        epsilon         = 0.05,         # only used if path
-        B_path          = 160,           # epochs per λ for path or final fit
+        lam0            = 1e-3,         # only used if path
+        epsilon         = 0.2,         # only used if path
+        network_type    = 'PiNetCCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
+        poly_order      = 2,            # order of polynomial
+        num_polys       = 2,            # number of polynomials
+        B_path          = 100,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
@@ -229,7 +232,7 @@ if __name__ == "__main__":
 
     #%% Plot the reconstructed flow fields (heatmap)
     V, _, _ = np.linalg.svd(X_pulse, full_matrices=False)
-    V_selected = V[:, selected_p]
+    V_selected = V[:, 1:len(selected_p)]
     fig, ax = plt.subplots(figsize=(12, 6))
     X_pod_recon = V_selected @ V_selected.T @ X_pulse
     
@@ -351,7 +354,17 @@ if __name__ == "__main__":
         omega_tensor = torch.from_numpy(omega).to(device)
         
         # Nonlinear part 
-        nonlin_part = model_pulse.net(Z_input @ omega_tensor)
+        # nonlin_part = model_pulse.net(Z_input @ omega_tensor)
+        # X_sparse_nonlin = nonlin_part.cpu().numpy().T
+        if model_pulse.network_type == 'FF':
+            # For feedforward networks, use the full net
+            nonlin_part = model_pulse.net(Z_input @ omega_tensor)
+        else:
+            # For Pi-Net models (PiNetCCP, PiNetNCP, PiNetNCPSkip)
+            z_sparse = Z_input @ omega_tensor  # Apply sparsity
+            h = model_pulse.first_layer(z_sparse)  # First layer: (batch, in_dim)
+            h_poly = model_pulse.pinet(h)  # Pi-Net: (batch, out_dim)
+            nonlin_part = model_pulse.C(h_poly)  # Final layer: (batch, d)
         X_sparse_nonlin = nonlin_part.cpu().numpy().T
         
         # Together 

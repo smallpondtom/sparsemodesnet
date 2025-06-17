@@ -27,8 +27,8 @@ if __name__ == "__main__":
     reg_path = 'dense2sparse'  # 'dense2sparse' or 'cv'
     
     # Common hyperparameters
-    # hidden_units_heat = [128, 8256]
-    hidden_units_heat = [20, 20, 20, 20, 20, 20, 20, 20, 20, 20] 
+    hidden_units_heat = [128, 8256, 2048]
+    # hidden_units_heat = [20, 210, 400] 
 
     # Parameter‐grid for CV
     lambdas_cv = np.logspace(-3.0, -1.0, 15)  
@@ -44,7 +44,7 @@ if __name__ == "__main__":
         nx=n_grids, nt=1000, alpha=0.01, x_max=1.0, t_max=1.0)
     d_h, n_h = X_heat.shape
     s_h = min(d_h, n_h)
-    s_h = 20
+    # s_h = 20
     
     ## Create 3D surface plot for Heat Equation (sanity check)
     if sanity_check:
@@ -68,17 +68,20 @@ if __name__ == "__main__":
         X_np            = X_heat,
         s               = s_h,
         hidden_units    = hidden_units_heat,
-        M               = 1.0,
+        M               = 4.0,
         reg_path        = reg_path,
         lr              = 1e-3,
         batch_size      = 64,
         knee_method     = 'zmethod',
         optimizer       = 'Adam',
         nonzero_thresh  = 1e-14,
-        r_max           = 10,           # max modes for constraint stopping
+        r_max           = 20,           # max modes for constraint stopping
         lam0            = 1e-3,         # only used if path
         epsilon         = 0.20,         # only used if path
-        B_path          = 120,           # epochs per λ for path or final fit
+        network_type    = 'PiNetCCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
+        poly_order      = 2,            # order of polynomial
+        num_polys       = 1,            # number of polynomials
+        B_path          = 80,          # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
@@ -90,7 +93,8 @@ if __name__ == "__main__":
     )
     
     
-    #%% Plot the first 20 modes of the POD b# recompute just the first 20 POD modes
+    #%% === Plot the first 20 modes of the POD b# recompute just the 
+    # first 20 POD modes ===
     U_s20, _, _ = compute_pod_basis(X_heat, s=s_h)
     fig, axes = plt.subplots(4, 5, figsize=(15, 8))
     for i, ax in enumerate(axes.flatten()):
@@ -102,7 +106,7 @@ if __name__ == "__main__":
     plt.savefig('../figures/heat_pod_modes.png', dpi=300)
     plt.show()
     
-    #%% Plot the POD modes vs the reconstruction error 
+    #%% === Plot the POD modes vs the reconstruction error ===
     U, S, _ = np.linalg.svd(X_heat, full_matrices=False)
     Us_20 = U[:, :s_h].astype(np.float64)  # First s_h POD modes
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -125,7 +129,7 @@ if __name__ == "__main__":
     plt.savefig(f'../figures/heat_pod_mode_vs_recon.png', dpi=300)
     plt.show()
     
-    #%% Plot the λ vs selected modes and λ vs relative error
+    #%% === Plot the λ vs selected modes and λ vs relative error ===
     if reg_path == 'dense2sparse':
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
         # Extract data
@@ -163,7 +167,7 @@ if __name__ == "__main__":
         plt.close(fig)
     
     
-    #%% Plot L-curve
+    #%% === Plot L-curve ====
     if reg_path == 'dense2sparse':
         fig, ax = plt.subplots(figsize=(8, 6))
         ax.set_xlabel('L1 Regularization Term (||ω||₁)')
@@ -177,7 +181,7 @@ if __name__ == "__main__":
         plt.show()
         plt.close(fig)
     
-    #%% Plot the λ vs selected modes and λ vs relative error
+    #%% === Plot the λ vs selected modes and λ vs relative error ===
     if reg_path == 'dense2sparse':
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
         # Extract data
@@ -224,7 +228,7 @@ if __name__ == "__main__":
         plt.show()
         plt.close(fig)
 
-    #%% Plot the reconstructed flow fields (heatmap)
+    #%% === Plot the reconstructed flow fields (heatmap) ===
     V, _, _ = np.linalg.svd(X_heat, full_matrices=False)
     V_selected = V[:, selected_h]
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -284,7 +288,8 @@ if __name__ == "__main__":
     plt.show()
     plt.close(fig)
     
-    #%% 
+    #%% === Plot the reconstructed flow fields (heatmap) with  ====
+    # linear and nonlinear parts
     V, _, _ = np.linalg.svd(X_heat, full_matrices=False)
     V_selected = V[:, selected_h]
     fig, ax = plt.subplots(figsize=(12, 6))
@@ -310,8 +315,20 @@ if __name__ == "__main__":
         X_sparse_lin = V[:, :s_h] @ omega @ V[:, :s_h].T @ X_heat
         omega_tensor = torch.from_numpy(omega).to(device)
         
+        # # Nonlinear part 
+        # nonlin_part = model_heat.net(Z_input @ omega_tensor)
+        # X_sparse_nonlin = nonlin_part.cpu().numpy().T
         # Nonlinear part 
-        nonlin_part = model_heat.net(Z_input @ omega_tensor)
+        if model_heat.network_type == 'FF':
+            # For feedforward networks, use the full net
+            nonlin_part = model_heat.net(Z_input @ omega_tensor)
+        else:
+            # For Pi-Net models (PiNetCCP, PiNetNCP, PiNetNCPSkip)
+            z_sparse = Z_input @ omega_tensor  # Apply sparsity
+            h = model_heat.first_layer(z_sparse)  # First layer: (batch, in_dim)
+            h_poly = model_heat.pinet(h)  # Pi-Net: (batch, out_dim)
+            nonlin_part = model_heat.C(h_poly)  # Final layer: (batch, d)
+
         X_sparse_nonlin = nonlin_part.cpu().numpy().T
         
         # Together 
