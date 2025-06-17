@@ -14,6 +14,9 @@ def run_sparsemodesnet_cv(X_np: np.ndarray,
                           M: float,
                           nonzero_thresh: float,
                           lambdas: np.ndarray,
+                          network_type: str,
+                          poly_order: int,
+                          num_polys: int,
                           lr: float,
                           num_epochs_cv: int,
                           k_folds: int,
@@ -71,7 +74,10 @@ def run_sparsemodesnet_cv(X_np: np.ndarray,
                 input_dim=s,
                 hidden_units=hidden_units,
                 M=M,
-                lam=float(lam)
+                lam=float(lam),
+                network_type=network_type,
+                poly_order=poly_order,
+                num_polys=num_polys
             ).to(device)
 
             # Train for num_epochs_cv

@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from sparsemodesnet.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
+
 class SparseModesNet(nn.Module):
     """
     SparseModesNet mapping from reduced (POD) space to the original space 
@@ -21,7 +23,9 @@ class SparseModesNet(nn.Module):
     """
     
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
-                hidden_units: list, M: float = 5.0, lam: float = 1e-3):
+                 hidden_units: list, M: float = 5.0, lam: float = 1e-3,
+                 network_type: str = 'FF', poly_order: int = 2, 
+                 num_polys: int = 1):
         """
         Initialize SparseModesNet.
         
@@ -43,15 +47,60 @@ class SparseModesNet(nn.Module):
         # Skip‐weights ω ∈ R^s
         self.omega = nn.Parameter(torch.ones(self.s))
         
-        # Build the feedforward network mapping from R^s to R^d
-        self.first_layer = nn.Linear(self.s, hidden_units[0], bias=False)
-        layers = [self.first_layer, nn.SELU(inplace=True)]
-        for i in range(1, len(hidden_units)):
-            layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
-            layers.append(nn.SELU(inplace=True))
-            layers.append(nn.Dropout(p=0.1)) 
-        layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
-        self.net = nn.Sequential(*layers)
+        # Assertion for network type
+        assert network_type in ['FF', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'], \
+            f"Unsupported network type: {network_type}. " \
+            "Use 'FF', 'PiNetCCP', 'PiNetNCP', or 'PiNetNCPSkip'."
+        self.network_type = network_type
+        
+        # Pi-Net dictionary
+        PiNet = {
+            'PiNetCCP': PiNetCCP,
+            'PiNetNCP': PiNetNCP,
+            'PiNetNCPSkip': PiNetNCPSkip
+        }
+        
+        # Assert input and output dimensions for ProdPoly Pi-Nets
+        if num_polys > 1:
+            assert hidden_units[0] == hidden_units[-1], \
+                "For ProdPoly Pi-Nets, the first and last \
+                hidden units must match."
+        
+        if network_type == 'FF': 
+            # Build the feedforward network mapping from R^s to R^d
+            self.first_layer = nn.Linear(self.s, hidden_units[0], bias=False)
+            layers = [self.first_layer, nn.SELU(inplace=True)]
+            for i in range(1, len(hidden_units)):
+                layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
+                layers.append(nn.SELU(inplace=True))
+                layers.append(nn.Dropout(p=0.1)) 
+            layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
+            self.net = nn.Sequential(*layers)
+        else:
+            # PiNetCCP, PiNetNCP, or PiNetNCPSkip (with/without ProdPoly)
+            assert len(hidden_units) == 3, \
+                "PiNetCCP requires exactly 3 hidden units: \
+                [in_dim, inter_dim, out_dim]."
+            in_dim, inter_dim, out_dim = hidden_units
+            
+            # First layer (used in proximal step)
+            self.first_layer = nn.Linear(self.s, in_dim, bias=False)
+            
+            # Pi-Net blocks
+            if num_polys == 1:  # A single PiNetCCP block
+                self.pinet = PiNet[network_type](
+                    in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                    poly_order=poly_order,
+                ) 
+            else:  # Multiple PiNetCCP blocks
+                self.pinet = ProdPoly(
+                    block_cls=PiNet[network_type], num_polys=num_polys,
+                    in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                    poly_order=poly_order,
+                )
+            
+            # Final linear layer to map to output dimension
+            self.C = nn.Linear(out_dim, self.d, bias=False)
     
     def forward(self, z_batch):
         """
@@ -64,16 +113,22 @@ class SparseModesNet(nn.Module):
         z_hat_batch : (batch_size, s)
         x_hat_batch : (batch_size, d)
         """
+        # --- Projection Skip Connection --- 
         # Compute the reduced states with sparsity 
-        z_hat = z_batch * self.omega.unsqueeze(0)  # (batch, s)
+        z_hat = z_batch * self.omega.unsqueeze(0)       # (batch, s)
+        # Reconstruct the linear part via projection
+        x_hat_lin = z_hat @ self.U_s.T                  # (batch, d)
         
-        # Reconstruct the linear part 
-        x_hat_lin = z_hat @ self.U_s.T  # (batch, d)
-        
-        # Apply the neural network to the reduced states 
-        x_hat_nn = self.net(z_hat)  # (batch, d)
+        # --- MLP or MLP + Π-net hybrid ---
+        if self.network_type == 'FF': 
+            # Apply the NN to the reduced states 
+            x_hat_nn = self.net(z_hat)                  # (batch, d)
+        else:
+            h        = self.first_layer(z_hat)          # (batch, inter_dim)
+            h_poly   = self.pinet(h)                    # (batch, out_dim)
+            x_hat_nn = self.C(h_poly)                   # (batch, d)
 
-        # Reconstruct x_hat
+        # --- Reconstruct x_hat ---
         x_hat = x_hat_lin + x_hat_nn
        
         return z_hat, x_hat
