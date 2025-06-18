@@ -88,7 +88,7 @@ if __name__ == "__main__":
         poly_order      = 2,            # order of polynomial
         num_polys       = 2,            # number of polynomials
         drop_linear     = False,          # whether to drop linear term
-        B_path          = 300,           # epochs per λ for path or final fit
+        B_path          = 100,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
