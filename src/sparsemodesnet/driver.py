@@ -73,6 +73,7 @@ def run_sparsemodesnet_d2s(X_np: np.ndarray,
                            network_type: str,
                            poly_order: int,
                            num_polys: int,
+                           drop_linear: bool,
                            lr: float,
                            B: int,
                            max_iters: int,
@@ -114,6 +115,7 @@ def run_sparsemodesnet_d2s(X_np: np.ndarray,
             network_type = network_type,
             poly_order   = poly_order,
             num_polys    = num_polys,
+            drop_linear  = drop_linear
         ).to(device)
         
         history = train_sparsemodesnet(
@@ -169,6 +171,7 @@ def run_sparsemodesnet(
     network_type: str = 'FF',
     poly_order: int = 2,
     num_polys: int = 1,
+    drop_linear: bool = False,
     # for "path":
     lam0: float = 1e-6,
     epsilon: float = 0.1,
@@ -254,7 +257,7 @@ def run_sparsemodesnet(
             reg_path, X_np, s, hidden_units, M, nonzero_thresh,
             lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, B_path, 
             max_iters, lr, batch_size, optimizer, device, 
-            network_type, poly_order, num_polys
+            network_type, poly_order, num_polys, drop_linear
         )
         
         # Find optimal lambda using knee detection
@@ -266,7 +269,7 @@ def run_sparsemodesnet(
         model_final, history_full = _train_final_model(
             U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
             B_path, lr, optimizer, device, batch_size,
-            network_type, poly_order, num_polys
+            network_type, poly_order, num_polys, drop_linear
         )
         
         # Evaluate and report results
@@ -339,7 +342,7 @@ def run_sparsemodesnet(
 def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
                          lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, 
                          B_path, max_iters, lr, batch_size, optimizer, device,
-                         network_type, poly_order, num_polys):
+                         network_type, poly_order, num_polys, drop_linear):
     """Obtain regularization path using the specified method."""
     if reg_path == 'cv':
         if lambdas_cv is None:
@@ -350,7 +353,7 @@ def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
             lr=lr, num_epochs_cv=num_epochs_cv, k_folds=k_folds,
             batch_size=batch_size, optimizer=optimizer, device=device,
             network_type=network_type, poly_order=poly_order, 
-            num_polys=num_polys
+            num_polys=num_polys, drop_linear=drop_linear
         )
     else:
         if reg_path != 'dense2sparse':
@@ -362,7 +365,7 @@ def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
             lr=lr, B=B_path, max_iters=max_iters, batch_size=batch_size,
             optimizer=optimizer, device=device, 
             network_type=network_type, poly_order=poly_order,
-            num_polys=num_polys
+            num_polys=num_polys, drop_linear=drop_linear
         )
 
 
@@ -470,7 +473,7 @@ def _select_from_knees(path_history, knee_idx, loglam_norm, loglam,
 
 def _train_final_model(U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
                       B_path, lr, optimizer, device, batch_size,
-                      network_type, poly_order, num_polys):
+                      network_type, poly_order, num_polys, drop_linear):
     """Train final model with selected lambda."""
     print(f"\n→ Final training on full data with λ = {lam_star:.3e} ...")
     
@@ -482,7 +485,7 @@ def _train_final_model(U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star,
     model_final = SparseModesNet(
         pod_basis=U_s_tensor, input_dim=s, hidden_units=hidden_units,
         M=M, lam=float(lam_star), network_type=network_type,
-        poly_order=poly_order, num_polys=num_polys
+        poly_order=poly_order, num_polys=num_polys, drop_linear=drop_linear
     ).to(device)
     
     history_full = train_sparsemodesnet(

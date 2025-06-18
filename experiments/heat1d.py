@@ -78,10 +78,11 @@ if __name__ == "__main__":
         r_max           = 20,           # max modes for constraint stopping
         lam0            = 1e-3,         # only used if path
         epsilon         = 0.20,         # only used if path
-        network_type    = 'PiNetCCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
+        network_type    = 'PiNetNCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
         poly_order      = 2,            # order of polynomial
         num_polys       = 1,            # number of polynomials
-        B_path          = 80,          # epochs per λ for path or final fit
+        drop_linear     = True,         # whether to drop linear term
+        B_path          = 80,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv

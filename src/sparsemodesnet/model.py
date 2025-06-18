@@ -25,7 +25,7 @@ class SparseModesNet(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
                  hidden_units: list, M: float = 5.0, lam: float = 1e-3,
                  network_type: str = 'FF', poly_order: int = 2, 
-                 num_polys: int = 1):
+                 num_polys: int = 1, drop_linear: bool = False):
         """
         Initialize SparseModesNet.
         
@@ -87,17 +87,30 @@ class SparseModesNet(nn.Module):
             self.first_layer = nn.Linear(self.s, in_dim, bias=False)
             
             # Pi-Net blocks
-            if num_polys == 1:  # A single PiNetCCP block
-                self.pinet = PiNet[network_type](
-                    in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                    poly_order=poly_order,
-                ) 
+            if num_polys == 1:  # A single Pi-Net block
+                if network_type == 'PiNetCCP':
+                    self.pinet = PiNet[network_type](
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order, 
+                    ) 
+                else:
+                    self.pinet = PiNet[network_type](
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order, drop_linear=drop_linear
+                    ) 
             else:  # Multiple PiNetCCP blocks
-                self.pinet = ProdPoly(
-                    block_cls=PiNet[network_type], num_polys=num_polys,
-                    in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                    poly_order=poly_order,
-                )
+                if network_type == 'PiNetCCP':
+                    self.pinet = ProdPoly(
+                        block_cls=PiNet[network_type], num_polys=num_polys,
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order
+                    )
+                else:
+                    self.pinet = ProdPoly(
+                        block_cls=PiNet[network_type], num_polys=num_polys,
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order, drop_linear=drop_linear
+                    )
             
             # Final linear layer to map to output dimension
             self.C = nn.Linear(out_dim, self.d, bias=False)

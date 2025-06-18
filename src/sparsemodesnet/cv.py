@@ -17,6 +17,7 @@ def run_sparsemodesnet_cv(X_np: np.ndarray,
                           network_type: str,
                           poly_order: int,
                           num_polys: int,
+                          drop_linear: bool,
                           lr: float,
                           num_epochs_cv: int,
                           k_folds: int,
@@ -77,7 +78,8 @@ def run_sparsemodesnet_cv(X_np: np.ndarray,
                 lam=float(lam),
                 network_type=network_type,
                 poly_order=poly_order,
-                num_polys=num_polys
+                num_polys=num_polys,
+                drop_linear=drop_linear 
             ).to(device)
 
             # Train for num_epochs_cv

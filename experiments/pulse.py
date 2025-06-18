@@ -27,8 +27,8 @@ if __name__ == "__main__":
     reg_path = 'dense2sparse'  # 'dense2sparse' or 'cv'
     
     # Common hyperparameters
-    # hidden_units_pulse = [128, 8256]
-    hidden_units_pulse = [200, 5000, 200]
+    # hidden_units_pulse = [200, 5000, 200]  # working well for PiNetCCP
+    hidden_units_pulse = [1000, 2000, 1000]
     
     # Parameter‐grid for CV
     lambdas_cv = np.logspace(-2.1, -0.8, 12)  
@@ -77,17 +77,18 @@ if __name__ == "__main__":
         M               = 2.0,
         reg_path        = reg_path,
         lr              = 1e-3,
-        batch_size      = 128,
+        batch_size      = 64,
         knee_method     = 'dfdt',
         optimizer       = 'Adam',
-        nonzero_thresh  = 1e-8,
+        nonzero_thresh  = 1e-14,
         r_max           = 20,          # max modes for constraint stopping
-        lam0            = 1e-3,         # only used if path
+        lam0            = 1e-2,         # only used if path
         epsilon         = 0.2,         # only used if path
-        network_type    = 'PiNetCCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
+        network_type    = 'PiNetNCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
         poly_order      = 2,            # order of polynomial
         num_polys       = 2,            # number of polynomials
-        B_path          = 100,           # epochs per λ for path or final fit
+        drop_linear     = False,          # whether to drop linear term
+        B_path          = 300,           # epochs per λ for path or final fit
         max_iters       = 100,          # max iterations for path
         lambdas_cv      = lambdas_cv,   # only used if cv
         k_folds         = 5,            # for cv
