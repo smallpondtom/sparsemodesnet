@@ -297,48 +297,8 @@ def run_sparsemodesnet(
         if enable_logging:
             import builtins
             builtins.print = original_print
-    
-    
-#     print(f"\n=== SparseModesNet (λ-path={reg_path}) on "
-#           f"{label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
 
-#     # Compute POD basis and coefficients
-#     U_s_np, _, _ = compute_pod_basis(X_np, s=s)
-#     Z_np = U_s_np.T.dot(X_np)
-#     U_s_tensor = torch.from_numpy(U_s_np.astype(np.float32)).to(device)
-
-#     # Select lambda using specified method
-#     path_history = _regularization_path(
-#         reg_path, X_np, s, hidden_units, M, nonzero_thresh,
-#         lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, B_path, 
-#         max_iters, lr, batch_size, optimizer, device, 
-#     )
     
-#     # Find optimal lambda using knee detection
-#     lam_star, r_star, err_star = _find_optimal_lambda(
-#         path_history, knee_method, r_max, reg_path
-#     )
-    
-#     # Train final model with selected lambda
-#     model_final, history_full = _train_final_model(
-#         U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
-#         B_path, lr, optimizer, device, batch_size, 
-#     )
-    
-#     # Evaluate and report results
-#     selected_indices = _evaluate_and_report_results(
-#         model_final, X_np, U_s_np, Z_np, s, nonzero_thresh, 
-#         lam_star, device
-#     )
-    
-#     return (
-#         model_final, 
-#         {'history_full': history_full, 'lambda_star': lam_star}, 
-#         selected_indices, 
-#         path_history
-#     )
-
-
 def _regularization_path(reg_path, X_np, s, hidden_units, M, nonzero_thresh,
                          lambdas_cv, k_folds, num_epochs_cv, lam0, epsilon, 
                          B_path, max_iters, lr, batch_size, optimizer, device,

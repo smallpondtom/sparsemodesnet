@@ -4,29 +4,32 @@ from torch.utils.data import DataLoader
 
 from sparsemodesnet.pod import compute_pod_basis
 from sparsemodesnet.dataset import PODReconDataset
-from sparsemodesnet.__old__.model import SparseModesNet
+from sparsemodesnet.model import SparseModesNet
 from sparsemodesnet.train import train_sparsemodesnet
 
-def select_lambda_stability(X_np: np.ndarray,
-                            s: int,
-                            hidden_units: list,
-                            M: float,
-                            nonzero_thresh: float,
-                            lambdas: np.ndarray,
-                            B: int,
-                            pi_thresh: float,
-                            lr: float,
-                            num_epochs_ss: int,
-                            final_epochs: int,
-                            batch_size: int,
-                            optimizer: str,
-                            device: str,
-                            network_type: str = 'feedforward',  # Add this parameter
-                            **conv_kwargs):  # Add this parameter
+
+def stability_selection(X_np: np.ndarray,
+                        s: int,
+                        hidden_units: list,
+                        M: float,
+                        nonzero_thresh: float,
+                        lambdas: np.ndarray,
+                        network_type: str,
+                        poly_order: int,
+                        num_polys: int,
+                        drop_linear: bool,
+                        B: int,
+                        pi_thresh: float,
+                        lr: float,
+                        num_epochs: int,
+                        batch_size: int,
+                        optimizer: str,
+                        device: str):
+    
     """
-    Canonical stability-selection with support for convolutional networks
+    Stability-Selection (SS) to find the most relevant features
     """
-    print("\n=== Stability Selection λ-Selection ===")
+    print("\n=== Stability Selection for POD-Mode Selection ===")
     d, n = X_np.shape
     V_s_np, _, _ = compute_pod_basis(X_np, s=s)
     Z_np = V_s_np.T.dot(X_np)  # (s, n)
@@ -35,7 +38,6 @@ def select_lambda_stability(X_np: np.ndarray,
     counts = np.zeros((s, m), dtype=int)
 
     # 1) subsample loop
-    cutoff_idx = 0
     for i, lam in enumerate(lambdas):
         print(f" SS testing λ = {lam:.3e}. Currently {i+1}/{m} ...")
         for _ in range(B):
@@ -43,27 +45,29 @@ def select_lambda_stability(X_np: np.ndarray,
             ds_sub = PODReconDataset(Z_np=Z_np[:, subsamp], X_np=X_np[:, subsamp])
             dl_sub = DataLoader(ds_sub, batch_size=batch_size, shuffle=True)
 
-            model_ss = SparseModesNet(
+            model = SparseModesNet(
                 pod_basis    = torch.from_numpy(V_s_np).to(device),
                 input_dim    = s,
                 hidden_units = hidden_units,
                 M            = M,
                 lam          = float(lam),
                 network_type = network_type,  # Add this
-                **conv_kwargs  # Add this
+                poly_order   = poly_order,
+                num_polys    = num_polys,
+                drop_linear  = drop_linear 
             ).to(device)
-            train_sparsemodesnet(model_ss, dl_sub, num_epochs_ss, lr, optimizer, device)
+            train_sparsemodesnet(model, dl_sub, num_epochs, lr, optimizer, device)
 
-            omega_opt = model_ss.omega.detach().cpu().numpy()
+            omega_opt = model.omega.detach().cpu().numpy()
             counts[:, i] += (np.abs(omega_opt) > nonzero_thresh).astype(int)
 
         # This is only for logging
         freqs_i = counts[:, i] / float(B)
         stable_count_i = int((freqs_i >= pi_thresh).sum())
-        print(f"  → λ = {lam:.3e} | stable features = {stable_count_i} (freq ≥ {pi_thresh})")
+        print(f"  → λ = {lam:.3e} | stable features = {stable_count_i}", 
+              f" (freq ≥ {pi_thresh})")
         
         if stable_count_i == 0:
-            cutoff_idx = i
             print(f"  → All features dropped out at λ = {lam:.3e}; ")
             print("  → Stopping SS path early (no features stable at λ > λ*)\n")
             break
@@ -71,84 +75,159 @@ def select_lambda_stability(X_np: np.ndarray,
     # 2) aggregate into selection probabilities
     freqs   = counts / float(B)           # (s, m)
     pi_max  = freqs.max(axis=1)           # (s,)
+    
+    # 3) compute stable set
     S_stable = set(np.where(pi_max >= pi_thresh)[0])
-    print(f"\nComputed Π_j(λ) over all λ. Final stable set size = {len(S_stable)}")
+    print(f"\nComputed Π_j(λ) over all λ. ", 
+          f"Final stable set size = {len(S_stable)}")
 
-    # 3) pick λ* by checking full-data fits
-    ds_full = PODReconDataset(Z_np=Z_np, X_np=X_np)
-    dl_full = DataLoader(ds_full, batch_size=batch_size, shuffle=True)
+    return S_stable, pi_max, freqs 
 
-    path_history_ss = []
-    lambda_star = None
-    r_star = 0
-    S_stable_count = len(S_stable)
-    set_diff_min = np.inf
-    set_diff_min_lam = None
-    print("Finding largest λ that recovers all stable features on full data...")
-    
-    # for i, lam in enumerate(reversed(lambdas)):  # assuming lambdas are sorted ascending
-    # Start from the lambda at cutoff_idx, going in reverse order
-    for i in range(max(cutoff_idx, m-1), 0, -1):
-        lam = lambdas[i]
+
+
+
+# def select_lambda_stability(X_np: np.ndarray,
+#                             s: int,
+#                             hidden_units: list,
+#                             M: float,
+#                             nonzero_thresh: float,
+#                             lambdas: np.ndarray,
+#                             B: int,
+#                             pi_thresh: float,
+#                             lr: float,
+#                             num_epochs_ss: int,
+#                             final_epochs: int,
+#                             batch_size: int,
+#                             optimizer: str,
+#                             device: str,
+#                             network_type: str = 'feedforward',  # Add this parameter
+#                             **conv_kwargs):  # Add this parameter
+#     """
+#     Canonical stability-selection with support for convolutional networks
+#     """
+#     print("\n=== Stability Selection λ-Selection ===")
+#     d, n = X_np.shape
+#     V_s_np, _, _ = compute_pod_basis(X_np, s=s)
+#     Z_np = V_s_np.T.dot(X_np)  # (s, n)
+
+#     m = len(lambdas)
+#     counts = np.zeros((s, m), dtype=int)
+
+#     # 1) subsample loop
+#     cutoff_idx = 0
+#     for i, lam in enumerate(lambdas):
+#         print(f" SS testing λ = {lam:.3e}. Currently {i+1}/{m} ...")
+#         for _ in range(B):
+#             subsamp = np.random.choice(n, size=n//2, replace=False)
+#             ds_sub = PODReconDataset(Z_np=Z_np[:, subsamp], X_np=X_np[:, subsamp])
+#             dl_sub = DataLoader(ds_sub, batch_size=batch_size, shuffle=True)
+
+#             model_ss = SparseModesNet(
+#                 pod_basis    = torch.from_numpy(V_s_np).to(device),
+#                 input_dim    = s,
+#                 hidden_units = hidden_units,
+#                 M            = M,
+#                 lam          = float(lam),
+#                 network_type = network_type,  # Add this
+#                 **conv_kwargs  # Add this
+#             ).to(device)
+#             train_sparsemodesnet(model_ss, dl_sub, num_epochs_ss, lr, optimizer, device)
+
+#             omega_opt = model_ss.omega.detach().cpu().numpy()
+#             counts[:, i] += (np.abs(omega_opt) > nonzero_thresh).astype(int)
+
+#         # This is only for logging
+#         freqs_i = counts[:, i] / float(B)
+#         stable_count_i = int((freqs_i >= pi_thresh).sum())
+#         print(f"  → λ = {lam:.3e} | stable features = {stable_count_i} (freq ≥ {pi_thresh})")
         
-        print(f"  Testing λ = {lam:.3e} on full data ...")
-        model_full = SparseModesNet(
-            pod_basis    = torch.from_numpy(V_s_np).to(device),
-            input_dim    = s,
-            hidden_units = hidden_units,
-            M            = M,
-            lam          = float(lam),
-            network_type = network_type,  # Add this
-            **conv_kwargs  # Add this
-        ).to(device)
-        train_sparsemodesnet(model_full, dl_full,
-                             num_epochs_ss if final_epochs is None else final_epochs,
-                             lr, optimizer, device)
-        omega_full = model_full.omega.detach().cpu().numpy()
-        S_full = set(np.where(np.abs(omega_full) > nonzero_thresh)[0])
-        
-        # Record values for fallback method 
-        S_full_count = len(S_full) 
-        set_diff_i = abs(S_full_count - S_stable_count)
-        if set_diff_i < set_diff_min:
-            set_diff_min = set_diff_i
-            set_diff_min_lam = lam
-            r_star = S_full_count
-            
-        path_history_ss.append({
-            'lambda': lam,
-            'r': S_full_count,
-            'rel_error': np.nan
-        })
-            
-        print(f"    → selected {len(S_full)} features; need ≥ {len(S_stable)}")
-        if S_stable.issubset(S_full):
-            lambda_star = lam
-            r_star = S_stable_count
-            print(f"  → λ* = {lam:.3e} (covers stable set)\n")
-            break
+#         if stable_count_i == 0:
+#             cutoff_idx = i
+#             print(f"  → All features dropped out at λ = {lam:.3e}; ")
+#             print("  → Stopping SS path early (no features stable at λ > λ*)\n")
+#             break
+
+#     # 2) aggregate into selection probabilities
+#     freqs   = counts / float(B)           # (s, m)
+#     pi_max  = freqs.max(axis=1)           # (s,)
+#     S_stable = set(np.where(pi_max >= pi_thresh)[0])
+#     print(f"\nComputed Π_j(λ) over all λ. Final stable set size = {len(S_stable)}")
+
+#     # 3) pick λ* by checking full-data fits
+#     ds_full = PODReconDataset(Z_np=Z_np, X_np=X_np)
+#     dl_full = DataLoader(ds_full, batch_size=batch_size, shuffle=True)
+
+#     path_history_ss = []
+#     lambda_star = None
+#     r_star = 0
+#     S_stable_count = len(S_stable)
+#     set_diff_min = np.inf
+#     set_diff_min_lam = None
+#     print("Finding largest λ that recovers all stable features on full data...")
     
-    # If no λ covers S_stable, find the first λ satisfies
-    # min |r(S_full) - r(S_stable)|, where r(S) = |S|
-    if lambda_star is None:
-        lambda_star = set_diff_min_lam
-        print(f"  No λ covered S_stable; fallback → λ = argmin|r(S)-r(S_stable)| = {lambda_star:.3e}\n")
+#     # for i, lam in enumerate(reversed(lambdas)):  # assuming lambdas are sorted ascending
+#     # Start from the lambda at cutoff_idx, going in reverse order
+#     for i in range(max(cutoff_idx, m-1), 0, -1):
+#         lam = lambdas[i]
+        
+#         print(f"  Testing λ = {lam:.3e} on full data ...")
+#         model_full = SparseModesNet(
+#             pod_basis    = torch.from_numpy(V_s_np).to(device),
+#             input_dim    = s,
+#             hidden_units = hidden_units,
+#             M            = M,
+#             lam          = float(lam),
+#             network_type = network_type,  # Add this
+#             **conv_kwargs  # Add this
+#         ).to(device)
+#         train_sparsemodesnet(model_full, dl_full,
+#                              num_epochs_ss if final_epochs is None else final_epochs,
+#                              lr, optimizer, device)
+#         omega_full = model_full.omega.detach().cpu().numpy()
+#         S_full = set(np.where(np.abs(omega_full) > nonzero_thresh)[0])
+        
+#         # Record values for fallback method 
+#         S_full_count = len(S_full) 
+#         set_diff_i = abs(S_full_count - S_stable_count)
+#         if set_diff_i < set_diff_min:
+#             set_diff_min = set_diff_i
+#             set_diff_min_lam = lam
+#             r_star = S_full_count
+            
+#         path_history_ss.append({
+#             'lambda': lam,
+#             'r': S_full_count,
+#             'rel_error': np.nan
+#         })
+            
+#         print(f"    → selected {len(S_full)} features; need ≥ {len(S_stable)}")
+#         if S_stable.issubset(S_full):
+#             lambda_star = lam
+#             r_star = S_stable_count
+#             print(f"  → λ* = {lam:.3e} (covers stable set)\n")
+#             break
+    
+#     # If no λ covers S_stable, find the first λ satisfies
+#     # min |r(S_full) - r(S_stable)|, where r(S) = |S|
+#     if lambda_star is None:
+#         lambda_star = set_diff_min_lam
+#         print(f"  No λ covered S_stable; fallback → λ = argmin|r(S)-r(S_stable)| = {lambda_star:.3e}\n")
 
-    # # 4) final retraining at λ*
-    # print(f"Retraining final model on full data with λ* = {lambda_star:.3e} ...")
-    # model_final = SparseModesNet(
-    #     pod_basis    = torch.from_numpy(V_s_np).to(device),
-    #     input_dim    = s,
-    #     hidden_units = hidden_units,
-    #     M            = M,
-    #     lam          = float(lambda_star)
-    # ).to(device)
-    # train_sparsemodesnet(model_final, dl_full,
-    #                      num_epochs_ss if final_epochs is None else final_epochs,
-    #                      lr, optimizer, device)
+#     # # 4) final retraining at λ*
+#     # print(f"Retraining final model on full data with λ* = {lambda_star:.3e} ...")
+#     # model_final = SparseModesNet(
+#     #     pod_basis    = torch.from_numpy(V_s_np).to(device),
+#     #     input_dim    = s,
+#     #     hidden_units = hidden_units,
+#     #     M            = M,
+#     #     lam          = float(lambda_star)
+#     # ).to(device)
+#     # train_sparsemodesnet(model_final, dl_full,
+#     #                      num_epochs_ss if final_epochs is None else final_epochs,
+#     #                      lr, optimizer, device)
 
-    # print("Final model ready.\n")
-    return lambda_star, r_star, path_history_ss, S_stable, freqs
+#     # print("Final model ready.\n")
+#     return lambda_star, r_star, path_history_ss, S_stable, freqs
 
 
 # def select_lambda_stability(X_np: np.ndarray,
