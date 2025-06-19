@@ -10,7 +10,7 @@ from .model import SparseModesNet
 from ..dataset import PODReconDataset
 from ..train import train_sparsemodesnet
 from ..cv import select_lambda_cv
-from ..select_lambda.stability import select_lambda_stability
+from ..stability import select_lambda_stability
 from ..stopping.elbow import pick_elbow
 from ..stopping.aic import pick_aic
 

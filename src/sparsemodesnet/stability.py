@@ -7,24 +7,23 @@ from sparsemodesnet.dataset import PODReconDataset
 from sparsemodesnet.model import SparseModesNet
 from sparsemodesnet.train import train_sparsemodesnet
 
-
-def stability_selection(X_np: np.ndarray,
-                        s: int,
-                        hidden_units: list,
-                        M: float,
-                        nonzero_thresh: float,
-                        lambdas: np.ndarray,
-                        network_type: str,
-                        poly_order: int,
-                        num_polys: int,
-                        drop_linear: bool,
-                        B: int,
-                        pi_thresh: float,
-                        lr: float,
-                        num_epochs: int,
-                        batch_size: int,
-                        optimizer: str,
-                        device: str):
+def run_sparsemodesnet_ss(X_np: np.ndarray,
+                          s: int,
+                          hidden_units: list,
+                          M: float,
+                          nonzero_thresh: float,
+                          lambdas: np.ndarray,
+                          network_type: str,
+                          poly_order: int,
+                          num_polys: int,
+                          drop_linear: bool,
+                          B: int,
+                          pi_thresh: float,
+                          lr: float,
+                          num_epochs: int,
+                          batch_size: int,
+                          optimizer: str,
+                          device: str):
     
     """
     Stability-Selection (SS) to find the most relevant features
@@ -56,7 +55,8 @@ def stability_selection(X_np: np.ndarray,
                 num_polys    = num_polys,
                 drop_linear  = drop_linear 
             ).to(device)
-            train_sparsemodesnet(model, dl_sub, num_epochs, lr, optimizer, device)
+            train_sparsemodesnet(
+                model, dl_sub, num_epochs, lr, optimizer, device)
 
             omega_opt = model.omega.detach().cpu().numpy()
             counts[:, i] += (np.abs(omega_opt) > nonzero_thresh).astype(int)
@@ -80,10 +80,9 @@ def stability_selection(X_np: np.ndarray,
     S_stable = set(np.where(pi_max >= pi_thresh)[0])
     print(f"\nComputed Π_j(λ) over all λ. ", 
           f"Final stable set size = {len(S_stable)}")
+    print(f"Final stable set features = {S_stable}")
 
     return S_stable, pi_max, freqs 
-
-
 
 
 # def select_lambda_stability(X_np: np.ndarray,

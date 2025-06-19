@@ -220,6 +220,105 @@ class SparseModesNet(nn.Module):
         self.omega.data.copy_(b_new)           # (s,)
         W1_updated = W1_T_new.t().contiguous() # shape: (K, s) → transpose to (h, s)
         self.first_layer.weight.data.copy_(W1_updated)
+
+
+class StateDecoder(nn.Module):
+    def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
+                 hidden_units: list, M: float,
+                 network_type: str, poly_order: int, 
+                 num_polys: int, drop_linear: bool):
+        super(StateDecoder, self).__init__()
+        
+        self.register_buffer('U_r', pod_basis)  # (d, r): store as buffer
+        self.d, self.r = pod_basis.shape
+        self.M = float(M)
+        
+        # Assertion for network type
+        assert network_type in ['FF', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'], \
+            f"Unsupported network type: {network_type}. " \
+            "Use 'FF', 'PiNetCCP', 'PiNetNCP', or 'PiNetNCPSkip'."
+        self.network_type = network_type
+        
+        # Pi-Net dictionary
+        PiNet = {
+            'PiNetCCP': PiNetCCP,
+            'PiNetNCP': PiNetNCP,
+            'PiNetNCPSkip': PiNetNCPSkip
+        }
+        
+        # Assert input and output dimensions for ProdPoly Pi-Nets
+        if num_polys > 1:
+            assert hidden_units[0] == hidden_units[-1], \
+                "For ProdPoly Pi-Nets, the first and last \
+                hidden units must match."
+        
+        if network_type == 'FF': 
+            # Build the feedforward network mapping from R^s to R^d
+            self.first_layer = nn.Linear(self.r, hidden_units[0], bias=False)
+            layers = [self.first_layer, nn.SELU(inplace=True)]
+            for i in range(1, len(hidden_units)):
+                layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
+                layers.append(nn.SELU(inplace=True))
+                layers.append(nn.Dropout(p=0.1)) 
+            layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
+            self.net = nn.Sequential(*layers)
+        else:
+            # PiNetCCP, PiNetNCP, or PiNetNCPSkip (with/without ProdPoly)
+            assert len(hidden_units) == 3, \
+                "PiNetCCP requires exactly 3 hidden units: \
+                [in_dim, inter_dim, out_dim]."
+            in_dim, inter_dim, out_dim = hidden_units
+            
+            # First layer (used in proximal step)
+            self.first_layer = nn.Linear(self.r, in_dim, bias=False)
+            
+            # Pi-Net blocks
+            if num_polys == 1:  # A single Pi-Net block
+                if network_type == 'PiNetCCP':
+                    self.pinet = PiNet[network_type](
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order, 
+                    ) 
+                else:
+                    self.pinet = PiNet[network_type](
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order, drop_linear=drop_linear
+                    ) 
+            else:  # Multiple PiNetCCP blocks
+                if network_type == 'PiNetCCP':
+                    self.pinet = ProdPoly(
+                        block_cls=PiNet[network_type], num_polys=num_polys,
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order
+                    )
+                else:
+                    self.pinet = ProdPoly(
+                        block_cls=PiNet[network_type], num_polys=num_polys,
+                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                        poly_order=poly_order, drop_linear=drop_linear
+                    )
+            
+            # Final linear layer to map to output dimension
+            self.C = nn.Linear(out_dim, self.d, bias=False)
+        
+    def forward(self, z_batch):
+        # Reconstruct the linear part via projection
+        x_hat_lin = z_batch @ self.U_r.T                # (batch, d)
+        
+        # --- MLP or MLP + Π-net hybrid ---
+        if self.network_type == 'FF': 
+            # Apply the NN to the reduced states 
+            x_hat_nn = self.net(z_batch)                # (batch, d)
+        else:
+            h        = self.first_layer(z_batch)        # (batch, inter_dim)
+            h_poly   = self.pinet(h)                    # (batch, out_dim)
+            x_hat_nn = self.C(h_poly)                   # (batch, d)
+
+        # --- Reconstruct x_hat ---
+        x_hat = x_hat_lin + x_hat_nn
+       
+        return x_hat
+
         
         
 # import torch
