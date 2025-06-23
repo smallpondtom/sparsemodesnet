@@ -1,0 +1,15 @@
+2025-06-23 17:46:44,684 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Starting heat_equation_pi-net_decoder experiment
+2025-06-23 17:46:44,684 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Log file: logs/heat_equation_pi-net_decoder_20250623_174644.log
+2025-06-23 17:46:44,684 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Experiment: Heat Equation Pi-Net Decoder
+2025-06-23 17:46:44,685 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Data shape: (128, 1000)
+2025-06-23 17:46:44,685 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - POD dimension: 30
+2025-06-23 17:46:44,685 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Hidden units: [30, 465, 128]
+2025-06-23 17:46:44,686 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Mode Selection Method: None
+2025-06-23 17:46:44,686 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Device: mps
+2025-06-23 17:46:44,686 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Training parameters: M=1.0, lr=0.001, batch_size=32
+2025-06-23 17:46:44,686 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Optimizer: Adam, knee_method: dfdt
+2025-06-23 17:46:44,686 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - NN type: PiNetCCP with polynomial order of 2, and 2 number of polynomial blocks
+2025-06-23 17:46:44,687 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - ==================================================
+Skipping mode selection.
+
+→ Training decoder model with 3 selected modes ...

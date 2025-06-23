@@ -1,0 +1,82 @@
+2025-06-23 17:56:51,938 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Starting heat_equation_pi-net_decoder experiment
+2025-06-23 17:56:51,939 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Log file: logs/heat_equation_pi-net_decoder_20250623_175651.log
+2025-06-23 17:56:51,939 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Experiment: Heat Equation Pi-Net Decoder
+2025-06-23 17:56:51,939 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Data shape: (128, 1000)
+2025-06-23 17:56:51,940 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - POD dimension: 30
+2025-06-23 17:56:51,940 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Hidden units: [30, 465, 128]
+2025-06-23 17:56:51,940 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Mode Selection Method: None
+2025-06-23 17:56:51,941 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Device: mps
+2025-06-23 17:56:51,941 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Training parameters: M=1.0, lr=0.001, batch_size=32
+2025-06-23 17:56:51,941 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Optimizer: Adam, knee_method: dfdt
+2025-06-23 17:56:51,942 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - NN type: PiNetNCP with polynomial order of 2, and 2 number of polynomial blocks
+2025-06-23 17:56:51,942 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - ==================================================
+Skipping mode selection.
+
+→ Training decoder model with 3 selected modes ...
+  Epoch   1 | lr=1.0000e-03 | Recon MSE=1.745046e-04
+  Epoch  10 | lr=1.0000e-03 | Recon MSE=2.571752e-07
+  Epoch  20 | lr=1.0000e-03 | Recon MSE=2.578161e-07
+  Epoch  30 | lr=1.0000e-03 | Recon MSE=2.621782e-07
+  Epoch  40 | lr=1.0000e-03 | Recon MSE=2.649958e-07
+  Epoch  50 | lr=1.0000e-03 | Recon MSE=2.680588e-07
+  Epoch  60 | lr=1.0000e-03 | Recon MSE=2.638658e-07
+  Epoch  70 | lr=1.0000e-03 | Recon MSE=2.576464e-07
+  Epoch  80 | lr=1.0000e-03 | Recon MSE=2.710899e-07
+  Epoch  90 | lr=1.0000e-03 | Recon MSE=2.844685e-07
+  Epoch 100 | lr=1.0000e-03 | Recon MSE=2.708776e-07
+  Epoch 110 | lr=1.0000e-03 | Recon MSE=2.640504e-07
+  Epoch 120 | lr=1.0000e-03 | Recon MSE=2.630371e-07
+  Epoch 130 | lr=1.0000e-03 | Recon MSE=2.741650e-07
+  Epoch 140 | lr=1.0000e-03 | Recon MSE=2.795254e-07
+  Epoch 150 | lr=1.0000e-03 | Recon MSE=2.722852e-07
+  Epoch 160 | lr=1.0000e-03 | Recon MSE=2.584101e-07
+  Epoch 170 | lr=1.0000e-03 | Recon MSE=3.159514e-07
+  Epoch 180 | lr=1.0000e-03 | Recon MSE=2.687852e-07
+  Epoch 190 | lr=1.0000e-03 | Recon MSE=2.848351e-07
+  Epoch 200 | lr=5.0000e-04 | Recon MSE=2.598576e-07
+  Epoch 210 | lr=5.0000e-04 | Recon MSE=2.715336e-07
+  Epoch 220 | lr=5.0000e-04 | Recon MSE=2.625669e-07
+  Epoch 230 | lr=5.0000e-04 | Recon MSE=2.655857e-07
+  Epoch 240 | lr=5.0000e-04 | Recon MSE=2.747369e-07
+  Epoch 250 | lr=5.0000e-04 | Recon MSE=2.661686e-07
+  Epoch 260 | lr=5.0000e-04 | Recon MSE=2.605693e-07
+  Epoch 270 | lr=5.0000e-04 | Recon MSE=2.576001e-07
+  Epoch 280 | lr=5.0000e-04 | Recon MSE=2.599703e-07
+  Epoch 290 | lr=5.0000e-04 | Recon MSE=2.744629e-07
+  Epoch 300 | lr=5.0000e-04 | Recon MSE=2.675494e-07
+  Epoch 310 | lr=5.0000e-04 | Recon MSE=2.625988e-07
+  Epoch 320 | lr=5.0000e-04 | Recon MSE=2.575901e-07
+  Epoch 330 | lr=5.0000e-04 | Recon MSE=2.680844e-07
+  Epoch 340 | lr=5.0000e-04 | Recon MSE=3.025289e-07
+  Epoch 350 | lr=5.0000e-04 | Recon MSE=2.686648e-07
+  Epoch 360 | lr=5.0000e-04 | Recon MSE=2.661208e-07
+  Epoch 370 | lr=5.0000e-04 | Recon MSE=2.576163e-07
+  Epoch 380 | lr=5.0000e-04 | Recon MSE=2.708560e-07
+  Epoch 390 | lr=5.0000e-04 | Recon MSE=2.677450e-07
+  Epoch 400 | lr=2.5000e-04 | Recon MSE=2.619264e-07
+  Epoch 410 | lr=2.5000e-04 | Recon MSE=2.553416e-07
+  Epoch 420 | lr=2.5000e-04 | Recon MSE=2.662498e-07
+  Epoch 430 | lr=2.5000e-04 | Recon MSE=2.558329e-07
+  Epoch 440 | lr=2.5000e-04 | Recon MSE=2.647844e-07
+  Epoch 450 | lr=2.5000e-04 | Recon MSE=2.547915e-07
+  Epoch 460 | lr=2.5000e-04 | Recon MSE=2.577508e-07
+  Epoch 470 | lr=2.5000e-04 | Recon MSE=2.591619e-07
+  Epoch 480 | lr=2.5000e-04 | Recon MSE=2.640075e-07
+  Epoch 490 | lr=2.5000e-04 | Recon MSE=2.569356e-07
+  Epoch 500 | lr=2.5000e-04 | Recon MSE=2.589090e-07
+  Epoch 510 | lr=2.5000e-04 | Recon MSE=2.639757e-07
+  Epoch 520 | lr=2.5000e-04 | Recon MSE=2.579846e-07
+  Epoch 530 | lr=2.5000e-04 | Recon MSE=2.570945e-07
+  Epoch 540 | lr=2.5000e-04 | Recon MSE=2.569398e-07
+  Epoch 550 | lr=2.5000e-04 | Recon MSE=2.579634e-07
+  Epoch 560 | lr=2.5000e-04 | Recon MSE=2.548290e-07
+  Epoch 570 | lr=2.5000e-04 | Recon MSE=2.559758e-07
+  Epoch 580 | lr=2.5000e-04 | Recon MSE=2.530311e-07
+  Epoch 590 | lr=2.5000e-04 | Recon MSE=2.574234e-07
+  Epoch 600 | lr=1.2500e-04 | Recon MSE=2.553843e-07
+  Epoch 610 | lr=1.2500e-04 | Recon MSE=2.576326e-07
+  Epoch 620 | lr=1.2500e-04 | Recon MSE=2.579017e-07
+  Epoch 630 | lr=1.2500e-04 | Recon MSE=2.546953e-07
+  Epoch 640 | lr=1.2500e-04 | Recon MSE=2.583023e-07
+  Epoch 650 | lr=1.2500e-04 | Recon MSE=2.557167e-07
+  Epoch 660 | lr=1.2500e-04 | Recon MSE=2.588294e-07

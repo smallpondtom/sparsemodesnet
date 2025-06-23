@@ -1,0 +1,32 @@
+2025-06-23 17:58:58,450 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Starting heat_equation_pi-net_decoder experiment
+2025-06-23 17:58:58,450 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Log file: logs/heat_equation_pi-net_decoder_20250623_175858.log
+2025-06-23 17:58:58,451 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Experiment: Heat Equation Pi-Net Decoder
+2025-06-23 17:58:58,451 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Data shape: (128, 1000)
+2025-06-23 17:58:58,451 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - POD dimension: 30
+2025-06-23 17:58:58,452 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Hidden units: [30, 900, 128]
+2025-06-23 17:58:58,452 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Mode Selection Method: None
+2025-06-23 17:58:58,452 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Device: mps
+2025-06-23 17:58:58,452 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Training parameters: M=1.0, lr=0.001, batch_size=32
+2025-06-23 17:58:58,453 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - Optimizer: Adam, knee_method: dfdt
+2025-06-23 17:58:58,453 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - NN type: PiNetNCP with polynomial order of 2, and 2 number of polynomial blocks
+2025-06-23 17:58:58,453 - sparsemodesnet.heat_equation_pi-net_decoder - INFO - ==================================================
+Skipping mode selection.
+
+→ Training decoder model with 3 selected modes ...
+  Epoch   1 | lr=1.0000e-03 | Recon MSE=7.203088e-05
+  Epoch  10 | lr=1.0000e-03 | Recon MSE=2.602102e-07
+  Epoch  20 | lr=1.0000e-03 | Recon MSE=2.602542e-07
+  Epoch  30 | lr=1.0000e-03 | Recon MSE=2.695655e-07
+  Epoch  40 | lr=1.0000e-03 | Recon MSE=2.620405e-07
+  Epoch  50 | lr=1.0000e-03 | Recon MSE=2.584138e-07
+  Epoch  60 | lr=1.0000e-03 | Recon MSE=2.648712e-07
+  Epoch  70 | lr=1.0000e-03 | Recon MSE=2.627533e-07
+  Epoch  80 | lr=1.0000e-03 | Recon MSE=2.766719e-07
+  Epoch  90 | lr=1.0000e-03 | Recon MSE=2.660458e-07
+  Epoch 100 | lr=1.0000e-03 | Recon MSE=2.760155e-07
+  Epoch 110 | lr=1.0000e-03 | Recon MSE=2.651027e-07
+  Epoch 120 | lr=1.0000e-03 | Recon MSE=2.776823e-07
+  Epoch 130 | lr=1.0000e-03 | Recon MSE=2.671838e-07
+  Epoch 140 | lr=1.0000e-03 | Recon MSE=3.016258e-07
+  Epoch 150 | lr=1.0000e-03 | Recon MSE=2.628122e-07
+  Epoch 160 | lr=1.0000e-03 | Recon MSE=2.640388e-07
