@@ -61,10 +61,10 @@ class SparseModesNet(nn.Module):
         }
         
         # Assert input and output dimensions for ProdPoly Pi-Nets
-        if num_polys > 1:
-            assert hidden_units[0] == hidden_units[-1], \
-                "For ProdPoly Pi-Nets, the first and last \
-                hidden units must match."
+        # if num_polys > 1:
+        #     assert hidden_units[0] == hidden_units[-1], \
+        #         "For ProdPoly Pi-Nets, the first and last \
+        #         hidden units must match."
         
         if network_type == 'FF': 
             # Build the feedforward network mapping from R^s to R^d
@@ -83,6 +83,10 @@ class SparseModesNet(nn.Module):
                 [in_dim, inter_dim, out_dim]."
             in_dim, inter_dim, out_dim = hidden_units
             
+            assert out_dim == self.d, \
+                f"Output dimension {out_dim} must match the original \
+                    state dimension {self.d}."
+            
             # First layer (used in proximal step)
             self.first_layer = nn.Linear(self.s, in_dim, bias=False)
             
@@ -99,21 +103,14 @@ class SparseModesNet(nn.Module):
                         poly_order=poly_order, drop_linear=drop_linear
                     ) 
             else:  # Multiple PiNetCCP blocks
-                if network_type == 'PiNetCCP':
-                    self.pinet = ProdPoly(
-                        block_cls=PiNet[network_type], num_polys=num_polys,
-                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order
-                    )
-                else:
-                    self.pinet = ProdPoly(
-                        block_cls=PiNet[network_type], num_polys=num_polys,
-                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order, drop_linear=drop_linear
-                    )
+                self.pinet = ProdPoly(
+                    pinet_class=PiNet[network_type], num_polys=num_polys,
+                    in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                    poly_order=poly_order, drop_linear=drop_linear
+                )
             
-            # Final linear layer to map to output dimension
-            self.C = nn.Linear(out_dim, self.d, bias=False)
+            # # Final linear layer to map to output dimension
+            # self.C = nn.Linear(out_dim, self.d, bias=False)
     
     def forward(self, z_batch):
         """
@@ -137,9 +134,11 @@ class SparseModesNet(nn.Module):
             # Apply the NN to the reduced states 
             x_hat_nn = self.net(z_hat)                  # (batch, d)
         else:
+            # h        = self.first_layer(z_hat)          # (batch, inter_dim)
+            # h_poly   = self.pinet(h)                    # (batch, out_dim)
+            # x_hat_nn = self.C(h_poly)                   # (batch, d)
             h        = self.first_layer(z_hat)          # (batch, inter_dim)
-            h_poly   = self.pinet(h)                    # (batch, out_dim)
-            x_hat_nn = self.C(h_poly)                   # (batch, d)
+            x_hat_nn = self.pinet(h)                    # (batch, out_dim)
 
         # --- Reconstruct x_hat ---
         x_hat = x_hat_lin + x_hat_nn
@@ -247,20 +246,20 @@ class StateDecoder(nn.Module):
         }
         
         # Assert input and output dimensions for ProdPoly Pi-Nets
-        if num_polys > 1:
-            assert hidden_units[0] == hidden_units[-1], \
-                "For ProdPoly Pi-Nets, the first and last \
-                hidden units must match."
+        # if num_polys > 1:
+        #     assert hidden_units[0] == hidden_units[-1], \
+        #         "For ProdPoly Pi-Nets, the first and last \
+        #         hidden units must match."
         
         if network_type == 'FF': 
             # Build the feedforward network mapping from R^s to R^d
-            self.first_layer = nn.Linear(self.r, hidden_units[0], bias=False)
+            self.first_layer = nn.Linear(self.r, hidden_units[0], bias=True)
             layers = [self.first_layer, nn.SELU(inplace=True)]
             for i in range(1, len(hidden_units)):
-                layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=False))
+                layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=True))
                 layers.append(nn.SELU(inplace=True))
                 layers.append(nn.Dropout(p=0.1)) 
-            layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
+            layers.append(nn.Linear(hidden_units[-1], self.d, bias=True))
             self.net = nn.Sequential(*layers)
         else:
             # PiNetCCP, PiNetNCP, or PiNetNCPSkip (with/without ProdPoly)
@@ -268,7 +267,11 @@ class StateDecoder(nn.Module):
                 "PiNetCCP requires exactly 3 hidden units: \
                 [in_dim, inter_dim, out_dim]."
             in_dim, inter_dim, out_dim = hidden_units
-            
+                    
+            assert out_dim == self.d, \
+                f"Output dimension {out_dim} must match the original \
+                    state dimension {self.d}."
+                    
             # First layer (used in proximal step)
             self.first_layer = nn.Linear(self.r, in_dim, bias=False)
             
@@ -285,21 +288,11 @@ class StateDecoder(nn.Module):
                         poly_order=poly_order, drop_linear=drop_linear
                     ) 
             else:  # Multiple PiNetCCP blocks
-                if network_type == 'PiNetCCP':
-                    self.pinet = ProdPoly(
-                        block_cls=PiNet[network_type], num_polys=num_polys,
-                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order
-                    )
-                else:
-                    self.pinet = ProdPoly(
-                        block_cls=PiNet[network_type], num_polys=num_polys,
-                        in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order, drop_linear=drop_linear
-                    )
-            
-            # Final linear layer to map to output dimension
-            self.C = nn.Linear(out_dim, self.d, bias=False)
+                self.pinet = ProdPoly(
+                    pinet_class=PiNet[network_type], num_polys=num_polys,
+                    in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
+                    poly_order=poly_order, drop_linear=drop_linear
+                )
         
     def forward(self, z_batch):
         # Reconstruct the linear part via projection
@@ -311,8 +304,7 @@ class StateDecoder(nn.Module):
             x_hat_nn = self.net(z_batch)                # (batch, d)
         else:
             h        = self.first_layer(z_batch)        # (batch, inter_dim)
-            h_poly   = self.pinet(h)                    # (batch, out_dim)
-            x_hat_nn = self.C(h_poly)                   # (batch, d)
+            x_hat_nn = self.pinet(h)                    # (batch, out_dim)
 
         # --- Reconstruct x_hat ---
         x_hat = x_hat_lin + x_hat_nn

@@ -91,7 +91,7 @@ def train_statedecoder(model: StateDecoder,
         gamma=0.5
     )  # learning rate scheduler
 
-    loss = []
+    loss_history = []
 
     for epoch in range(1, num_epochs + 1):
         epoch_loss = 0.0
@@ -117,11 +117,11 @@ def train_statedecoder(model: StateDecoder,
         lr_new = optimizer.param_groups[0]['lr']
 
         epoch_loss /= n_samples
-        loss.append(epoch_loss)
+        loss_history.append(epoch_loss)
 
         # Print every 10 epochs or first:
         if (epoch % 10 == 0) or (epoch == 1):
             print(f"  Epoch {epoch:3d} | lr={lr_new:.4e} | "
               f"Recon MSE={epoch_loss:.6e}")
 
-    return loss
+    return loss_history

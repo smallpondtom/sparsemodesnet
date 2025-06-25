@@ -78,7 +78,7 @@ if __name__ == "__main__":
         r_max           = 20,           # max modes for constraint stopping
         lam0            = 1e-3,         # only used if path
         epsilon         = 0.20,         # only used if path
-        network_type    = 'PiNetNCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
+        network_type    = 'PiNetCCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
         poly_order      = 2,            # order of polynomial
         num_polys       = 1,            # number of polynomials
         drop_linear     = True,         # whether to drop linear term

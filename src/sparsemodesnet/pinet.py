@@ -162,22 +162,62 @@ class ProdPoly(nn.Module):
     yielding a final order = ∏ block_orders.
     """
     def __init__(self,
-                 block_cls: type,
+                 pinet_class: type,
+                 in_dim: int,
+                 out_dim: int,
+                 inter_dim: int,
+                 poly_order: int,
                  num_polys: int,
-                 *block_args,
-                 **block_kwargs):
+                 drop_linear: bool):
         """
-        block_cls   : class of a single polynomial block (must be nn.Module)
-        num_polys   : number of successive polynomials P
-        *block_args : positional args passed to each block constructor
-        **block_kwargs: keyword args passed to each block constructor
+        pinet_class : Pi-Net class (PiNetCCP, PiNetNCP, PiNetNCPSkip)
+        in_dim      : input dimension (s)
+        inter_dim   : intermediate dimension (k) 
+        out_dim     : output dimension (d)
+        poly_order  : polynomial order for each block
+        num_polys   : number of polynomial blocks
+        drop_linear : whether to drop linear terms
+        use_batch_norm : whether to use batch normalization
         """
         super().__init__()
-        # Create P independent polynomial blocks
-        self.blocks = nn.ModuleList([
-            block_cls(*block_args, **block_kwargs)
-            for _ in range(num_polys)
-        ])
+        
+        self.num_polys = num_polys
+        self.blocks = nn.ModuleList() 
+         
+        for i in range(num_polys):
+            if i == 0:
+                # First block: in_dim → inter_dim
+                block_in_dim = in_dim
+                block_out_dim = inter_dim if num_polys > 1 else out_dim
+                block_inter_dim = inter_dim
+            elif i == num_polys - 1:
+                # Last block: inter_dim → out_dim
+                block_in_dim = inter_dim
+                block_out_dim = out_dim
+                block_inter_dim = inter_dim 
+            else:
+                # Intermediate blocks: inter_dim → inter_dim
+                block_in_dim = inter_dim
+                block_out_dim = inter_dim
+                block_inter_dim = inter_dim
+        
+            # Create the Pi-Net block with appropriate dimensions
+            if pinet_class is PiNetCCP:
+                block = pinet_class(
+                    in_dim=block_in_dim,
+                    out_dim=block_out_dim,
+                    inter_dim=block_inter_dim,
+                    poly_order=poly_order,
+                )
+            else:
+                block = pinet_class(
+                    in_dim=block_in_dim,
+                    out_dim=block_out_dim,
+                    inter_dim=block_inter_dim,
+                    poly_order=poly_order,
+                    drop_linear=drop_linear,
+                )
+            self.blocks.append(block)
 
     def forward(self, z):
         """

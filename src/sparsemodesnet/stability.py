@@ -67,9 +67,9 @@ def run_sparsemodesnet_ss(X_np: np.ndarray,
         print(f"  → λ = {lam:.3e} | stable features = {stable_count_i}", 
               f" (freq ≥ {pi_thresh})")
         
-        if stable_count_i == 0:
-            print(f"  → All features dropped out at λ = {lam:.3e}; ")
-            print("  → Stopping SS path early (no features stable at λ > λ*)\n")
+        if stable_count_i == s:
+            print(f"  → All features appeared at λ = {lam:.3e}; ")
+            print("  → Stopping SS path early (all features are stable at later λ)\n")
             break
 
     # 2) aggregate into selection probabilities
@@ -77,10 +77,10 @@ def run_sparsemodesnet_ss(X_np: np.ndarray,
     pi_max  = freqs.max(axis=1)           # (s,)
     
     # 3) compute stable set
-    S_stable = set(np.where(pi_max >= pi_thresh)[0])
+    S_stable = np.where(pi_max >= pi_thresh)[0]
     print(f"\nComputed Π_j(λ) over all λ. ", 
           f"Final stable set size = {len(S_stable)}")
-    print(f"Final stable set features = {S_stable}")
+    print(f"Final stable set features = {S_stable.tolist()}")
 
     return S_stable, pi_max, freqs 
 
