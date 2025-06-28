@@ -25,7 +25,8 @@ class SparseModesNet(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
                  hidden_units: list, M: float = 5.0, lam: float = 1e-3,
                  network_type: str = 'FF', poly_order: int = 2, 
-                 num_polys: int = 1, drop_linear: bool = False):
+                 num_polys: int = 1, drop_linear: bool = False,
+                 drop_constant: bool = False):
         """
         Initialize SparseModesNet.
         
@@ -95,18 +96,20 @@ class SparseModesNet(nn.Module):
                 if network_type == 'PiNetCCP':
                     self.pinet = PiNet[network_type](
                         in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order, 
+                        poly_order=poly_order, drop_constant=drop_constant
                     ) 
                 else:
                     self.pinet = PiNet[network_type](
                         in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order, drop_linear=drop_linear
+                        poly_order=poly_order, drop_linear=drop_linear,
+                        drop_constant=drop_constant
                     ) 
             else:  # Multiple PiNetCCP blocks
                 self.pinet = ProdPoly(
                     pinet_class=PiNet[network_type], num_polys=num_polys,
                     in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                    poly_order=poly_order, drop_linear=drop_linear
+                    poly_order=poly_order, drop_linear=drop_linear,
+                    drop_constant=drop_constant
                 )
             
             # # Final linear layer to map to output dimension
@@ -225,7 +228,8 @@ class StateDecoder(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
                  hidden_units: list, M: float,
                  network_type: str, poly_order: int, 
-                 num_polys: int, drop_linear: bool):
+                 num_polys: int, drop_linear: bool, 
+                 drop_constant: bool):
         super(StateDecoder, self).__init__()
         
         self.register_buffer('U_r', pod_basis)  # (d, r): store as buffer
@@ -280,18 +284,20 @@ class StateDecoder(nn.Module):
                 if network_type == 'PiNetCCP':
                     self.pinet = PiNet[network_type](
                         in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order, 
+                        poly_order=poly_order, drop_constant=drop_constant
                     ) 
                 else:
                     self.pinet = PiNet[network_type](
                         in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                        poly_order=poly_order, drop_linear=drop_linear
+                        poly_order=poly_order, drop_linear=drop_linear,
+                        drop_constant=drop_constant
                     ) 
             else:  # Multiple PiNetCCP blocks
                 self.pinet = ProdPoly(
                     pinet_class=PiNet[network_type], num_polys=num_polys,
                     in_dim=in_dim, out_dim=out_dim, inter_dim=inter_dim,
-                    poly_order=poly_order, drop_linear=drop_linear
+                    poly_order=poly_order, drop_linear=drop_linear,
+                    drop_constant=drop_constant
                 )
         
     def forward(self, z_batch):
