@@ -28,6 +28,8 @@ tqdm = ">=4.67.1,<5"
 jupyter = ">=1.1.1,<2"
 scipy = ">=1.15.2,<2"
 kneed = ">=0.8.5,<0.9"
+jax = ">=0.6.0,<0.7"
+absl-py = ">=2.3.0,<3"
 
 [dependency-groups]
 test = ["pytest"]
