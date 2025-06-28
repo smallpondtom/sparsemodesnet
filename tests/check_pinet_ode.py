@@ -529,7 +529,7 @@ def plot_ode_results_with_reconstruction(all_results: dict):
                         # Compute trajectory error
                         if len(sol_true.y[0]) == len(sol_learned.y[0]):
                             traj_error = np.mean(np.sqrt(np.sum((sol_true.y - sol_learned.y)**2, axis=0)))
-                            ax.set_title(f'{model_name} - {label}\nTraj Error: {traj_error:.3f}')
+                            ax.set_title(f'{model_name} - {label}\nTraj Error: {traj_error:.4e}')
                         else:
                             ax.set_title(f'{model_name} - {label}')
                     else:
@@ -625,7 +625,7 @@ def plot_ode_results_with_reconstruction(all_results: dict):
                         if len(sol_true.y[state_idx]) == len(sol_learned.y[state_idx]):
                             state_error = np.mean(np.abs(sol_true.y[state_idx] - sol_learned.y[state_idx]))
                             max_error = np.max(np.abs(sol_true.y[state_idx] - sol_learned.y[state_idx]))
-                            ax.set_title(f'{model_name} - {state_labels[state_idx]}\nMean Error: {state_error:.4f}, Max Error: {max_error:.4f}')
+                            ax.set_title(f'{model_name} - {state_labels[state_idx]}\nMean Error: {state_error:.4e}, Max Error: {max_error:.4e}')
                         else:
                             ax.set_title(f'{model_name} - {state_labels[state_idx]}')
                     else:
@@ -755,7 +755,10 @@ def plot_ode_summary_comparison(all_results: dict):
                 ax.grid(True, alpha=0.3)
                 
                 # Plot 3D trajectory
-                ax = axes[order_idx, 2]
+                # Get the 2D axis first and remove it
+                ax_2d = axes[order_idx, 2]
+                ax_2d.remove()
+                # Create 3D subplot in its place
                 ax = plt.subplot(n_orders, 4, order_idx*4 + 3, projection='3d')
                 ax.plot(sol_true.y[0], sol_true.y[1], sol_true.y[2], 'b-', label='True', linewidth=2)
                 ax.plot(sol_learned.y[0], sol_learned.y[1], sol_learned.y[2], 'r--', label='Learned', linewidth=2)
