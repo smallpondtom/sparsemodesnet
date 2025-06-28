@@ -11,6 +11,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 from examples.heat1d import generate_heat_data
 from sparsemodesnet import run_sparsemodesnet
 from sparsemodesnet.pod import compute_pod_basis
+from sparsemodesnet.config import (
+    SparseModesNetConfig, NetworkConfig,
+    TrainingConfig, SparsityConfig,
+    SelectionConfig, ExperimentConfig
+)
 
 #%%
 if __name__ == "__main__":
@@ -60,106 +65,144 @@ if __name__ == "__main__":
     X_pod = U_r @ U_r.T @ X_heat  # POD reconstruction
     
     #%% FF Decoder with leading r modes
-    ff_decoder, _ = run_sparsemodesnet(
-        X_np            = X_heat, 
-        s               = s_h,
-        hidden_units    = [s_h, int(s_h*(s_h+1)/2)],
-        lr              = 1e-3,
-        batch_size      = 16,
-        mode_selection  = None,
-        optimizer       = 'Adam',
-        final_epochs    = 2000,
-        r_max           = r_max, 
-        network_type    = 'FF',
-        # other common:
-        device          = device,
-        label           = "Heat Equation FF Decoder",
-        enable_logging  = True,  
-        logs_dir        = "./logs"     
+    ff_decoder, I_ff, history = run_sparsemodesnet(
+        X_heat,
+        SparseModesNetConfig(
+            s = s_h, 
+            network = NetworkConfig(
+                hidden_units = [s_h, int(s_h*(s_h+1)/2)],
+                network_type = 'FF'
+            ),
+            training = TrainingConfig(
+                lr = 1e-3,
+                batch_size = 32,
+                optimizer = 'Adam',
+                num_epochs = 2000,
+                device = device
+            ),
+            sparsity = SparsityConfig(),
+            selection = SelectionConfig(
+                mode_selection = None,
+                r_max = r_max
+            ),
+            experiment = ExperimentConfig(
+                label = "Heat Equation FF Decoder",
+                enable_logging = False,
+                logs_dir = "./logs"
+            )
+        )
     )
     
     #%% Pi-Net decoder with leading r modes
-    pinet_decoder, _ = run_sparsemodesnet(
-        X_np            = X_heat, 
-        s               = s_h,
-        hidden_units    = [s_h, int(s_h*(s_h+1)/2), n_grids],
-        lr              = 1e-3,
-        batch_size      = 32,
-        mode_selection  = None,
-        optimizer       = 'Adam',
-        final_epochs    = 1000,
-        r_max           = r_max, 
-        network_type    = 'PiNetCCP',
-        # for Π-net:
-        poly_order      = 2,
-        num_polys       = 1,
-        drop_linear     = False,
-        # other common:
-        device          = device,
-        label           = "Heat Equation Pi-Net Decoder",
-        enable_logging  = True,  
-        logs_dir        = "./logs"     
-    )
+    pinet_decoder, I_pi, history = run_sparsemodesnet(
+        X_heat,
+        SparseModesNetConfig(
+            s = s_h, 
+            network = NetworkConfig(
+                hidden_units = [s_h, int(s_h*(s_h+1)/2), n_grids],
+                network_type = 'PiNetCCP',
+                poly_order = 2,
+                num_polys = 1,
+                drop_linear = False
+            ),
+            training = TrainingConfig(
+                lr = 1e-3,
+                batch_size = 32,
+                optimizer = 'Adam',
+                num_epochs = 1000,
+                device = device
+            ),
+            sparsity = SparsityConfig(),
+            selection = SelectionConfig(
+                mode_selection = None,
+                r_max = r_max
+            ),
+            experiment = ExperimentConfig(
+                label = "Heat Equation Pi-Net Decoder",
+                enable_logging = False,
+                logs_dir = "./logs"
+            )
+        )
+    ) 
     
     #%% FF decoder + SparseModesNet
-    ff_sparse_decoder, I_NN, history = run_sparsemodesnet(
-        X_np            = X_heat, 
-        s               = s_h,
-        hidden_units    = [s_h, int(s_h*(s_h+1)/2)],
-        M               = 4.0,
-        lr              = 1e-3,
-        batch_size      = 32,
-        mode_selection  = 'dense2sparse',
-        knee_method     = 'dfdt', 
-        optimizer       = 'Adam',
-        nonzero_thresh  = 1e-14,
-        num_epochs      = 100,
-        final_epochs    = 2000,
-        r_max           = r_max, 
-        network_type    = 'FF',
-        # for "dense-to-sparse"
-        lam0            = 1e-3,
-        epsilon         = 0.2,
-        max_iters       = 100,
-        # other common:
-        device          = device,
-        label           = "Heat Equation FF Sparse Decoder",
-        enable_logging  = True,  
-        logs_dir        = "./logs"     
+    ff_sparse_decoder, I_ff_sparse, history = run_sparsemodesnet(
+        X_heat,
+        SparseModesNetConfig(
+            s               = s_h, 
+            network         = NetworkConfig(
+                hidden_units    = [s_h, int(s_h*(s_h+1)/2)],
+                network_type    = 'FF'
+            ),
+            training        = TrainingConfig(
+                lr              = 1e-3,
+                batch_size      = 32,
+                optimizer       = 'Adam',
+                num_epochs      = 100,
+                final_epochs    = 2000,
+                device          = device
+            ),
+            sparsity        = SparsityConfig(
+                M               = 4.0,
+                nonzero_thresh  = 1e-6,
+                lam0            = 1e-3,
+                epsilon         = 0.2,
+                max_iters       = 100
+            ),
+            selection       = SelectionConfig(
+                mode_selection  = 'dense2sparse',
+                knee_method     = 'dfdt', 
+                r_max           = r_max
+            ),
+            experiment      = ExperimentConfig(
+                label           = "Heat Equation FF Sparse Decoder",
+                enable_logging  = True,  
+                logs_dir        = "./logs"
+            )
+        ) 
     )
-    print("FF Sparse Decoder I_NN:", I_NN)
+    print("FF Sparse Decoder I_NN:", I_ff_sparse)
     
     #%% Pi-Net decoder + SparseModesNet
-    pinet_sparse_decoder, I_NN, history = run_sparsemodesnet(
-        X_np            = X_heat, 
-        s               = s_h,
-        hidden_units    = [s_h, int(s_h*(s_h+1)/2), n_grids],
-        M               = 4.0,
-        lr              = 1e-3,
-        batch_size      = 32,
-        mode_selection  = 'dense2sparse',
-        knee_method     = 'dfdt', 
-        optimizer       = 'Adam',
-        nonzero_thresh  = 1e-14,
-        num_epochs      = 100,
-        final_epochs    = 1000,
-        r_max           = r_max, 
-        network_type    = 'PiNetCCP',
-        # for Π-net:
-        poly_order      = 2,
-        num_polys       = 1,
-        drop_linear     = False,
-        # for "dense-to-sparse"
-        lam0            = 1e-3,
-        epsilon         = 0.2,
-        max_iters       = 100,
-        # other common:
-        device          = device,
-        label           = "Heat Equation Pi-Net Sparse Decoder",
-        enable_logging  = True,  
-        logs_dir        = "./logs"     
+    pinet_sparse_decoder, I_pi_sparse, history = run_sparsemodesnet(
+        X_heat,
+        SparseModesNetConfig(
+            s               = s_h, 
+            network         = NetworkConfig(
+                hidden_units    = [s_h, int(s_h*(s_h+1)/2), n_grids],
+                network_type    = 'PiNetCCP',
+                poly_order      = 2,
+                num_polys       = 1,
+                drop_linear     = False
+            ),
+            training        = TrainingConfig(
+                lr              = 1e-3,
+                batch_size      = 32,
+                optimizer       = 'Adam',
+                num_epochs      = 100,
+                final_epochs    = 1000,
+                device          = device
+            ),
+            sparsity        = SparsityConfig(
+                M               = 4.0,
+                nonzero_thresh  = 1e-14,
+                lam0            = 1e-3,
+                epsilon         = 0.2,
+                max_iters       = 100
+            ),
+            selection       = SelectionConfig(
+                mode_selection  = 'dense2sparse',
+                knee_method     = 'dfdt', 
+                r_max           = r_max
+            ),
+            experiment      = ExperimentConfig(
+                label           = "Heat Equation Pi-Net Sparse Decoder",
+                enable_logging  = True,  
+                logs_dir        = "./logs"
+            )
+        )
     )
-    print("Pi-Net Sparse Decoder I_NN:", I_NN)
+    print("Pi-Net Sparse Decoder I_NN:", I_pi_sparse)
     
     #%% === Plot the reconstructed flow fields (heatmap) ===
     # 1. POD reconstruction

@@ -24,26 +24,31 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Number of modes
-    r_max = 10
+    r_max = 5
     
     # number of grids
-    n_grids = 2**9
+    n_grids = 2**12
     
     # Sanity check flag (plotting)
     sanity_check = True
 
     # ---------- Advecting Pulse ----------
     X_pulse, xspan_p, tspan_p = generate_advecting_pulse(
-        pulse_width=5.0e-4,
+        pulse_width=2.0e-4,
         pulse_shift=0.1,
-        speed=4.0,
-        final_time=0.15,
+        speed=10.0,
+        final_time=0.1,
         n_time_samples=1000,
+        # pulse_width=5.0e-4,
+        # pulse_shift=0.1,
+        # speed=4.0,
+        # final_time=0.15,
+        # n_time_samples=1000,
         n_space_samples=n_grids
     )
     d_p, n_p = X_pulse.shape
     s_p = min(d_p, n_p)
-    s_p = r_max * 10
+    s_p = r_max * 20
     
     ## Create 3D surface plot for Advecting Pulse (sanity check)
     if sanity_check:
@@ -61,23 +66,36 @@ if __name__ == "__main__":
         # plt.savefig('../figures/pulse_data.png', dpi=300)
         plt.show()
         plt.close(fig)
+        
+    #%% Greedy Quadratic Manifold approach
+    from QM.quadmani import quadmani_greedy, lift_quadratic, linear_reduce
+    V, W, shift_value, I_qm = quadmani_greedy(
+        X_pulse, r_max, s_p, 1e-6, np.array([], dtype=int))
+    reduced_points = linear_reduce(V, X_pulse, shift_value)
+    reconstructed = lift_quadratic(V, W, shift_value, reduced_points)
+    rel_rec_error = np.linalg.norm(reconstructed - X_pulse) / np.linalg.norm(X_pulse)
+    print('Relative reconstruction error: ', rel_rec_error)
+    print("Quadratic manifold indices I_qm:", I_qm)
 
     #%% Simple POD basis decoder with leading r modes
-    U_r, _, _ = compute_pod_basis(X_pulse, s=r_max)
-    X_pod = U_r @ U_r.T @ X_pulse  # POD reconstruction
+    shift_value = np.array(shift_value)[:, np.newaxis]
+    # U_r, _, _ = compute_pod_basis(X_pulse - shift_value, s=r_max)
+    # X_pod = (U_r @ U_r.T @ (X_pulse - shift_value)) + shift_value 
     
     #%% FF Decoder with leading r modes
     ff_decoder, I_ff, _ = run_sparsemodesnet(
-        X_np            = X_pulse, 
+        X_np            = X_pulse - shift_value, 
         s               = s_p,
         hidden_units    = [s_p, s_p*5],
         lr              = 1e-3,
-        batch_size      = 64,
+        batch_size      = 256,
         mode_selection  = None,
         optimizer       = 'Adam',
         final_epochs    = 2000,
-        r_max           = r_max, 
+        I_NN            = None, 
+        r_max           = r_max,
         network_type    = 'FF',
+        # I_NN            = I_qm,
         # other common:
         device          = device,
         label           = "Pulse FF Decoder",
@@ -87,20 +105,22 @@ if __name__ == "__main__":
     
     #%% Pi-Net decoder with leading r modes
     pinet_decoder, I_pi, _ = run_sparsemodesnet(
-        X_np            = X_pulse, 
+        X_np            = X_pulse - shift_value, 
         s               = s_p,
         hidden_units    = [s_p, s_p*5, n_grids],
         lr              = 1e-3,
-        batch_size      = 64,
+        batch_size      = 256,
         mode_selection  = None,
         optimizer       = 'Adam',
         final_epochs    = 1000,
         r_max           = r_max, 
         network_type    = 'PiNetNCP',
+        I_NN            = I_qm,  
         # for Π-net:
         poly_order      = 2,
-        num_polys       = 2,
+        num_polys       = 1,
         drop_linear     = False,
+        drop_constant   = True,
         # other common:
         device          = device,
         label           = "Pulse Pi-Net Decoder",
@@ -211,11 +231,17 @@ if __name__ == "__main__":
         X_pinet_sparse_recon = X_pinet_sparse_recon_tensor.cpu().numpy().T
     
     # Calculate errors
-    pod_error = X_pulse - X_pod_recon
     ff_error = X_pulse - X_ff_recon
     pinet_error = X_pulse - X_pinet_recon
     ff_sparse_error = X_pulse - X_ff_sparse_recon
     pinet_sparse_error = X_pulse - X_pinet_sparse_recon
+    
+    # Print the errors
+    print("POD Reconstruction Error:", np.linalg.norm(pod_error, 'fro') / np.linalg.norm(X_pulse, 'fro'))
+    print("FF Decoder Reconstruction Error:", np.linalg.norm(ff_error, 'fro') / np.linalg.norm(X_pulse, 'fro'))
+    print("Pi-Net Decoder Reconstruction Error:", np.linalg.norm(pinet_error, 'fro') / np.linalg.norm(X_pulse, 'fro'))
+    print("FF Sparse Decoder Reconstruction Error:", np.linalg.norm(ff_sparse_error, 'fro') / np.linalg.norm(X_pulse, 'fro'))
+    print("Pi-Net Sparse Decoder Reconstruction Error:", np.linalg.norm(pinet_sparse_error, 'fro') / np.linalg.norm(X_pulse, 'fro'))
     
     # Calculate unified color ranges
     all_reconstructions = [X_pod_recon, X_ff_recon, X_pinet_recon, X_ff_sparse_recon, X_pinet_sparse_recon]
@@ -320,7 +346,7 @@ if __name__ == "__main__":
     cbar2 = plt.colorbar(im10, cax=cax2, label='Error')
     
     plt.subplots_adjust(left=0.05, right=0.9, top=0.95, bottom=0.1, wspace=0.3, hspace=0.3)
-    plt.savefig('../figures/pulse/pulse_comparison_all_methods.png', dpi=300, bbox_inches='tight')
+    # plt.savefig('../figures/pulse/pulse_comparison_all_methods.png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig)
 
@@ -354,7 +380,7 @@ if __name__ == "__main__":
         ax.legend(fontsize=10)
 
     plt.tight_layout()
-    plt.savefig('../figures/pulse_waves_timepoints_all_methods.png', dpi=300)
+    # plt.savefig('../figures/pulse/pulse_waves_timepoints_all_methods.png', dpi=300)
     plt.show()
     plt.close(fig)
 # %%
