@@ -37,7 +37,7 @@ def run_sparsemodesnet(X_np: np.ndarray,
     """
     # Setup logging
     if config.experiment.enable_logging:
-        logger = _setup_experiment_logging(
+        logger, _ = _setup_experiment_logging(
             experiment_name=config.experiment.label.lower().replace(" ", "_"),
             logs_dir=config.experiment.logs_dir
         )
@@ -80,16 +80,21 @@ def run_sparsemodesnet(X_np: np.ndarray,
             I_NN, selection_history = run_sparsemodesnet_cv(X_np, config)
             
         else:
-            warnings.warn(
-                "'dense2sparse', 'ss', or 'cv' was not selected for mode "
-                "selection. Hence, training decoder using leading "
-                f"{config.selection.r_max} modes."
-            )
             if config.training.I_NN is None:
+                print(
+                    "'dense2sparse', 'ss', or 'cv' was not selected for mode "
+                    "selection. Hence, training decoder using leading "
+                    f"{config.selection.r_max} modes."
+                )
                 I_NN = (list(range(config.selection.r_max)) 
                         if config.selection.r_max is not None 
                         else list(range(config.s//2)))
             else:
+                print(
+                    "'dense2sparse', 'ss', or 'cv' was not selected for mode "
+                    "selection but I_NN is given. Hence, training decoder using "
+                    f"the modes {config.training.I_NN}."
+                )
                 I_NN = config.training.I_NN
             selection_history = None
              
@@ -105,17 +110,17 @@ def run_sparsemodesnet(X_np: np.ndarray,
             
         if config.selection.r_max is not None:
             if r > config.selection.r_max:
-                warnings.warn(f"Selected {r} modes, but " 
-                              f"r_max={config.selection.r_max} is set. "
-                              f"Truncating to r_max.")
+                print(f"Selected {r} modes, but " 
+                      f"r_max={config.selection.r_max} is set. "
+                      f"Truncating to r_max.")
                 I_NN = I_NN[:config.selection.r_max]
                 r = config.selection.r_max 
                 
             elif r < config.selection.r_max:
-                warnings.warn(f"Selected {r} modes, but " 
-                              f"r_max={config.selection.r_max} is set. "
-                              f"Will select {config.selection.r_max-r} " 
-                              f"additional leading modes.")
+                print(f"Selected {r} modes, but " 
+                      f"r_max={config.selection.r_max} is set. "
+                      f"Will select {config.selection.r_max-r} " 
+                      f"additional leading modes.")
                 
                 # Use numpy operations for efficiency
                 all_modes = np.arange(config.s)
@@ -145,7 +150,8 @@ def run_sparsemodesnet(X_np: np.ndarray,
             poly_order     = config.network.poly_order,
             num_polys      = config.network.num_polys, 
             drop_linear    = config.network.drop_linear,
-            drop_constant  = config.network.drop_constant
+            drop_constant  = config.network.drop_constant,
+            normalize      = config.network.normalize
         )
         
         dataset_full = PODReconDataset(Z_np=Z_r_np, X_np=X_np)
@@ -155,7 +161,7 @@ def run_sparsemodesnet(X_np: np.ndarray,
         )
         
         train_statedecoder(
-            decoder, dataloader_full, config.training.num_epochs, 
+            decoder, dataloader_full, config.training.final_epochs, 
             config.training.lr, config.training.optimizer, 
             config.training.device
         )

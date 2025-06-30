@@ -208,14 +208,14 @@ class PiNetNCP(nn.Module):
         returns x_hat : (batch_size, d)  output of the last polynomial
         """
         # level-1
-        b0 = self.B[0](self.b[0])                # (k,)
-        x = self.A[0](z) * b0.unsqueeze(0)       # (batch, k)
+        b0 = self.B[0](self.b[0])                    # (k,)
+        x = self.A[0](z) * b0.unsqueeze(0)           # (batch, k)
         x = self.batch_norms[0](x) if hasattr(self, 'batch_norms') else x
             
         # levels 2..N 
         for n in range(1, self.N):
             u = self.A[n](z)                         # (batch, k)
-            if n == self.N and self.drop_linear:     # last level, drop linear
+            if n == self.N-1 and self.drop_linear:   # last level, drop linear
                 v = self.S[n](x)                     # (batch, k)
             else:                                    
                 bn = self.B[n](self.b[n])            # (k,)
@@ -334,14 +334,14 @@ class PiNetNCPSkip(nn.Module):
         returns x_hat : (batch_size, d)  output of the last polynomial
         """
         # level-1
-        b0 = self.B[0](self.b[0])                 # (k,)
-        x = self.A[0](z) * b0.unsqueeze(0)        # (batch, k)
+        b0 = self.B[0](self.b[0])                     # (k,)
+        x = self.A[0](z) * b0.unsqueeze(0)            # (batch, k)
         x = self.batch_norms[0](x) if hasattr(self, 'batch_norms') else x
         
         # recursion
         for n in range(1, self.N):
             u = self.A[n](z)                          # (batch, k)
-            if n == self.N and self.drop_linear:      # last level, drop linear
+            if n == self.N-1 and self.drop_linear:    # last level, drop linear
                 v = self.S[n](x)                      # (batch, k)
             else:
                 bn = self.B[n](self.b[n])             # (k,)

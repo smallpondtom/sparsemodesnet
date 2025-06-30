@@ -49,6 +49,32 @@ def _setup_experiment_logging(experiment_name="sparsemodesnet", logs_dir=None):
     logger.info(f"Starting {experiment_name} experiment")
     logger.info(f"Log file: {log_filename}")
     
+    # Create training logger
+    training_logger = logging.getLogger(f"training.{experiment_name}")
+    training_logger.setLevel(logging.INFO)
+    
+    # Remove existing handlers
+    for handler in training_logger.handlers[:]:
+        training_logger.removeHandler(handler)
+    
+    # Add file handler with simple format
+    training_file_handler = logging.FileHandler(log_filename)
+    training_file_handler.setLevel(logging.INFO)
+    simple_formatter = logging.Formatter('%(message)s')
+    training_file_handler.setFormatter(simple_formatter)
+    training_logger.addHandler(training_file_handler)
+    training_logger.propagate = False
+    
+    # Replace print function temporarily
+    original_print = print
+    def logged_print(*args, **kwargs):
+        message = ' '.join(str(arg) for arg in args)
+        training_logger.info(message)
+        original_print(*args, **kwargs)
+    
+    import builtins
+    builtins.print = logged_print
+    
     return logger, log_filename
 
 def _log_experiment_info(logger: logging.Logger, 
@@ -81,9 +107,9 @@ def _log_experiment_info(logger: logging.Logger,
     logger.info("CORE PARAMETERS")
     logger.info("-" * 30)
     logger.info(f"s (latent dimension): {config.s}")
-    logger.info(f"I_NN provided: {config.I_NN is not None}")
-    if config.I_NN is not None:
-        logger.info(f"I_NN shape: {config.I_NN.shape}")
+    logger.info(f"I_NN provided: {config.training.I_NN is not None}")
+    if config.training.I_NN is not None:
+        logger.info(f"I_NN shape: {config.training.I_NN.shape}")
     
     # Network configuration
     logger.info("-" * 30)
@@ -143,6 +169,7 @@ def _log_experiment_info(logger: logging.Logger,
     logger.info(f"Logs directory: {config.experiment.logs_dir}")
     
     logger.info("="*50)
+    
 
 def _log_results(logger: logging.Logger, model, 
                  I_NN: np.ndarray, history: dict):

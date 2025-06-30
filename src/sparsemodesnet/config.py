@@ -18,6 +18,7 @@ class TrainingConfig:
     """Configuration for training parameters"""
     lr: float = 1e-3
     num_epochs: int = 100
+    final_epochs: int = 100
     batch_size: int = 32
     optimizer: str = 'Adam'
     device: str = 'cpu'

@@ -23,12 +23,15 @@ def train_sparsemodesnet(model: SparseModesNet,
     else:
         raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
     mse_loss = nn.MSELoss()
-    lr_schedule = optim.lr_scheduler.StepLR(
-        optimizer, 
-        step_size=num_epochs // 5,  # Reduce learning rate every 5 epochs
-        gamma=0.5
-    )  # learning rate scheduler
-
+    # lr_schedule = optim.lr_scheduler.StepLR(
+    #     optimizer, 
+    #     step_size=num_epochs // 5,  # Reduce learning rate every 5 epochs
+    #     gamma=0.5
+    # )  # learning rate scheduler
+    lr_schedule = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.2, patience=50,
+    )
+    lr_new = optimizer.param_groups[0]['lr']
     history = {'loss': [], 'l1_b': []}
 
     for epoch in range(1, num_epochs + 1):
@@ -48,12 +51,12 @@ def train_sparsemodesnet(model: SparseModesNet,
             loss.backward()
             optimizer.step()
 
-            model.proximal_step()
+            model.proximal_step(model.lam * lr_new)
 
-            batch_size = x_batch.shape[0]
+            batch_size  = x_batch.shape[0]
             epoch_loss += loss.item() * batch_size
-            epoch_l1  += model.l1_norm_omega().item() * batch_size
-            n_samples += batch_size
+            epoch_l1   += model.l1_norm_omega().item() * batch_size
+            n_samples  += batch_size
             
         lr_schedule.step()  # Update learning rate
         lr_new = optimizer.param_groups[0]['lr']
@@ -87,9 +90,12 @@ def train_statedecoder(model: StateDecoder,
     mse_loss = nn.MSELoss()
     lr_schedule = optim.lr_scheduler.StepLR(
         optimizer, 
-        step_size=num_epochs // 5,  # Reduce learning rate every 5 epochs
+        step_size=5000,  # Reduce learning rate every 5 epochs
         gamma=0.5
     )  # learning rate scheduler
+    # lr_schedule = optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer, mode='min', factor=0.2, patience=200,
+    # )
 
     loss_history = []
 
@@ -113,11 +119,11 @@ def train_statedecoder(model: StateDecoder,
             epoch_loss += loss.item() * batch_size
             n_samples += batch_size
             
-        lr_schedule.step()  # Update learning rate
-        lr_new = optimizer.param_groups[0]['lr']
-
         epoch_loss /= n_samples
         loss_history.append(epoch_loss)
+
+        lr_schedule.step()  # Update learning rate
+        lr_new = optimizer.param_groups[0]['lr']
 
         # Print every 10 epochs or first:
         if (epoch % 10 == 0) or (epoch == 1):
