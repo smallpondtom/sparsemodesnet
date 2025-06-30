@@ -11,6 +11,11 @@ sys.path.append(str(Path(__file__).parent.parent))
 from examples.pulse import generate_advecting_pulse
 from sparsemodesnet import run_sparsemodesnet
 from sparsemodesnet.pod import compute_pod_basis
+from sparsemodesnet.config import (
+    SparseModesNetConfig, NetworkConfig,
+    TrainingConfig, SparsityConfig,
+    SelectionConfig, ExperimentConfig
+)
 
 #%%
 if __name__ == "__main__":
@@ -24,31 +29,31 @@ if __name__ == "__main__":
     print("Using device:", device)
     
     # Number of modes
-    r_max = 5
+    r_max = 15
     
     # number of grids
-    n_grids = 2**12
+    n_grids = 2**10
     
     # Sanity check flag (plotting)
     sanity_check = True
 
     # ---------- Advecting Pulse ----------
     X_pulse, xspan_p, tspan_p = generate_advecting_pulse(
-        pulse_width=2.0e-4,
-        pulse_shift=0.1,
-        speed=10.0,
-        final_time=0.1,
-        n_time_samples=1000,
-        # pulse_width=5.0e-4,
+        # pulse_width=2.0e-4,
         # pulse_shift=0.1,
-        # speed=4.0,
-        # final_time=0.15,
+        # speed=10.0,
+        # final_time=0.1,
         # n_time_samples=1000,
+        pulse_width=5.0e-4,
+        pulse_shift=0.1,
+        speed=8.0,
+        final_time=0.15,
+        n_time_samples=1000,
         n_space_samples=n_grids
     )
     d_p, n_p = X_pulse.shape
     s_p = min(d_p, n_p)
-    s_p = r_max * 20
+    s_p = 100
     
     ## Create 3D surface plot for Advecting Pulse (sanity check)
     if sanity_check:
@@ -84,111 +89,146 @@ if __name__ == "__main__":
     
     #%% FF Decoder with leading r modes
     ff_decoder, I_ff, _ = run_sparsemodesnet(
-        X_np            = X_pulse - shift_value, 
-        s               = s_p,
-        hidden_units    = [s_p, s_p*5],
-        lr              = 1e-3,
-        batch_size      = 256,
-        mode_selection  = None,
-        optimizer       = 'Adam',
-        final_epochs    = 2000,
-        I_NN            = None, 
-        r_max           = r_max,
-        network_type    = 'FF',
-        # I_NN            = I_qm,
-        # other common:
-        device          = device,
-        label           = "Pulse FF Decoder",
-        enable_logging  = False,  
-        logs_dir        = "./logs"     
+        X_pulse - shift_value,
+        SparseModesNetConfig(
+            s = s_p, 
+            network = NetworkConfig(
+                hidden_units = [r_max, int(r_max*(r_max+1)/2)],
+                network_type = 'QM'
+            ),
+            training = TrainingConfig(
+                lr = 1e-3,
+                batch_size = 1024,
+                optimizer = 'Adam',
+                final_epochs = 100000,
+                device = device,
+                I_NN = I_qm.sort()
+            ),
+            sparsity = SparsityConfig(),
+            selection = SelectionConfig(
+                mode_selection = None,
+                r_max = r_max
+            ),
+            experiment = ExperimentConfig(
+                label = "Pulse FF Decoder",
+                enable_logging = False,
+                logs_dir = "./logs"
+            )
+        )
     )
     
     #%% Pi-Net decoder with leading r modes
     pinet_decoder, I_pi, _ = run_sparsemodesnet(
-        X_np            = X_pulse - shift_value, 
-        s               = s_p,
-        hidden_units    = [s_p, s_p*5, n_grids],
-        lr              = 1e-3,
-        batch_size      = 256,
-        mode_selection  = None,
-        optimizer       = 'Adam',
-        final_epochs    = 1000,
-        r_max           = r_max, 
-        network_type    = 'PiNetNCP',
-        I_NN            = I_qm,  
-        # for Π-net:
-        poly_order      = 2,
-        num_polys       = 1,
-        drop_linear     = False,
-        drop_constant   = True,
-        # other common:
-        device          = device,
-        label           = "Pulse Pi-Net Decoder",
-        enable_logging  = False,  
-        logs_dir        = "./logs"     
+        X_pulse - shift_value,
+        SparseModesNetConfig(
+            s = s_p, 
+            network = NetworkConfig(
+                hidden_units = [r_max, int(r_max*(r_max+1)/2), n_grids],
+                network_type = 'PiNetNCP',
+                poly_order = 2,
+                num_polys = 2,
+                drop_linear = False,
+                drop_constant = False,
+                # normalize = 'last'
+            ),
+            training = TrainingConfig(
+                lr = 1e-3,
+                batch_size = 128,
+                optimizer = 'Adam',
+                final_epochs = 50000,
+                device = device,
+                I_NN = I_qm
+            ),
+            sparsity = SparsityConfig(),
+            selection = SelectionConfig(
+                mode_selection = None,
+                r_max = r_max
+            ),
+            experiment = ExperimentConfig(
+                label = "Pulse Pi-Net Decoder",
+                enable_logging = False,
+                logs_dir = "./logs"
+            )
+        )
     )
     
     #%% FF decoder + SparseModesNet
     ff_sparse_decoder, I_ff_sparse, history = run_sparsemodesnet(
-        X_np            = X_pulse, 
-        s               = s_p,
-        hidden_units    = [s_p, s_p*5],
-        M               = 4.0,
-        lr              = 1e-3,
-        batch_size      = 64,
-        mode_selection  = 'dense2sparse',
-        knee_method     = 'dfdt', 
-        optimizer       = 'Adam',
-        nonzero_thresh  = 1e-6,
-        num_epochs      = 100,
-        final_epochs    = 2000,
-        r_max           = r_max, 
-        network_type    = 'FF',
-        # for "dense-to-sparse"
-        lam0            = 2e-3,
-        epsilon         = 0.1,
-        max_iters       = 100,
-        # for "stability selection"
-        num_subsamples  = 100,
-        pi_thresh       = 0.9,
-        lambdas         = np.logspace(-3, -0.7, 20)[::-1],
-        # other common:
-        device          = device,
-        label           = "Pulse FF Sparse Decoder",
-        enable_logging  = False,  
-        logs_dir        = "./logs"     
+        X_pulse - shift_value,
+        SparseModesNetConfig(
+            s = s_p, 
+            network = NetworkConfig(
+                hidden_units = [s_p, s_p*5],
+                network_type = 'PiNetNCP'
+            ),
+            training = TrainingConfig(
+                lr = 1e-3,
+                batch_size = 64,
+                optimizer = 'Adam',
+                num_epochs = 1000,
+                final_epochs = 2000,
+                device = device,
+            ),
+            sparsity = SparsityConfig(
+                M               = 10.0,
+                nonzero_thresh  = 1e-6,
+                lam0            = 1.0,
+                epsilon         = 0.1,
+                max_iters       = 100
+            ),
+            selection = SelectionConfig(
+                mode_selection  = 'dense2sparse',
+                knee_method     = 'dfdt', 
+                r_max           = r_max
+            ),
+            experiment = ExperimentConfig(
+                label = "Pulse FF Sparse Decoder",
+                enable_logging = False,
+                logs_dir = "./logs"
+            )
+        )
     )
     print("FF Sparse Decoder I_NN:", I_ff_sparse)
     
     #%% Pi-Net decoder + SparseModesNet
     pinet_sparse_decoder, I_pi_sparse, history = run_sparsemodesnet(
-        X_np            = X_pulse, 
-        s               = s_p,
-        hidden_units    = [s_p, s_p*5, n_grids],
-        M               = 4.0,
-        lr              = 1e-3,
-        batch_size      = 64,
-        mode_selection  = 'dense2sparse',
-        knee_method     = 'dfdt', 
-        optimizer       = 'Adam',
-        nonzero_thresh  = 1e-6,
-        num_epochs      = 80,
-        final_epochs    = 1000,
-        r_max           = r_max, 
-        network_type    = 'PiNetNCP',
-        # for Π-net:
-        poly_order      = 2,
-        num_polys       = 2,
-        drop_linear     = False,
-        # for "dense-to-sparse"
-        lam0            = 2e-3,
-        epsilon         = 0.1,
-        max_iters       = 100,
-        # other common:
-        device          = device,
-        label           = "Pulse Pi-Net Sparse Decoder",
-        enable_logging  = False,  
-        logs_dir        = "./logs"     
+        X_pulse - shift_value,
+        SparseModesNetConfig(
+            s = s_p, 
+            network = NetworkConfig(
+                hidden_units  = [s_p, s_p*5, n_grids],
+                network_type  = 'PiNetNCP',
+                poly_order    = 2,
+                num_polys     = 1,
+                drop_linear   = True,
+                drop_constant = True
+            ),
+            training = TrainingConfig(
+                lr = 1e-3,
+                batch_size = 256,
+                optimizer = 'Adam',
+                num_epochs = 1000,
+                final_epochs = 2000,
+                device = device,
+            ),
+            sparsity = SparsityConfig(
+                M               = 10.0,
+                nonzero_thresh  = 1e-6,
+                lam0            = 1.0,
+                epsilon         = 0.1,
+                max_iters       = 100
+            ),
+            selection = SelectionConfig(
+                mode_selection  = 'dense2sparse',
+                knee_method     = 'dfdt', 
+                r_max           = r_max
+            ),
+            experiment = ExperimentConfig(
+                label = "Pulse Pi-Net Sparse Decoder",
+                enable_logging = False,
+                logs_dir = "./logs"
+            )
+        )
     )
     print("Pi-Net Sparse Decoder I_NN:", I_pi_sparse)
 
