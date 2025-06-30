@@ -1,0 +1,14 @@
+2025-06-28 12:59:17,648 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Starting heat_equation_ff_sparse_decoder experiment
+2025-06-28 12:59:17,648 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Log file: logs/heat_equation_ff_sparse_decoder_20250628_125917.log
+2025-06-28 12:59:17,648 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - ==================================================
+2025-06-28 12:59:17,649 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - EXPERIMENT CONFIGURATION
+2025-06-28 12:59:17,649 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - ==================================================
+2025-06-28 12:59:17,649 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Data shape: (128, 1000)
+2025-06-28 12:59:17,649 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Data type: float64
+2025-06-28 12:59:17,650 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Data range: [0.000000, 0.999225]
+2025-06-28 12:59:17,650 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Data mean: 0.248239
+2025-06-28 12:59:17,651 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - Data std: 0.259093
+2025-06-28 12:59:17,651 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - ------------------------------
+2025-06-28 12:59:17,651 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - CORE PARAMETERS
+2025-06-28 12:59:17,651 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - ------------------------------
+2025-06-28 12:59:17,652 - sparsemodesnet.heat_equation_ff_sparse_decoder - INFO - s (latent dimension): 30
