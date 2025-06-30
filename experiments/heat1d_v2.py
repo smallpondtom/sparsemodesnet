@@ -129,32 +129,32 @@ if __name__ == "__main__":
     ff_sparse_decoder, I_ff_sparse, history = run_sparsemodesnet(
         X_heat,
         SparseModesNetConfig(
-            s               = s_h, 
-            network         = NetworkConfig(
+            s = s_h, 
+            network = NetworkConfig(
                 hidden_units    = [s_h, int(s_h*(s_h+1)/2)],
                 network_type    = 'FF'
             ),
-            training        = TrainingConfig(
+            training = TrainingConfig(
                 lr              = 1e-3,
                 batch_size      = 32,
                 optimizer       = 'Adam',
-                num_epochs      = 100,
+                num_epochs      = 2000,
                 final_epochs    = 2000,
                 device          = device
             ),
-            sparsity        = SparsityConfig(
-                M               = 4.0,
+            sparsity = SparsityConfig(
+                M               = 10.0,
                 nonzero_thresh  = 1e-6,
-                lam0            = 1e-3,
+                lam0            = 1.0,
                 epsilon         = 0.2,
                 max_iters       = 100
             ),
-            selection       = SelectionConfig(
+            selection = SelectionConfig(
                 mode_selection  = 'dense2sparse',
                 knee_method     = 'dfdt', 
                 r_max           = r_max
             ),
-            experiment      = ExperimentConfig(
+            experiment = ExperimentConfig(
                 label           = "Heat Equation FF Sparse Decoder",
                 enable_logging  = True,  
                 logs_dir        = "./logs"
@@ -167,15 +167,15 @@ if __name__ == "__main__":
     pinet_sparse_decoder, I_pi_sparse, history = run_sparsemodesnet(
         X_heat,
         SparseModesNetConfig(
-            s               = s_h, 
-            network         = NetworkConfig(
+            s  = s_h, 
+            network = NetworkConfig(
                 hidden_units    = [s_h, int(s_h*(s_h+1)/2), n_grids],
                 network_type    = 'PiNetCCP',
                 poly_order      = 2,
                 num_polys       = 1,
                 drop_linear     = False
             ),
-            training        = TrainingConfig(
+            training = TrainingConfig(
                 lr              = 1e-3,
                 batch_size      = 32,
                 optimizer       = 'Adam',
@@ -183,19 +183,19 @@ if __name__ == "__main__":
                 final_epochs    = 1000,
                 device          = device
             ),
-            sparsity        = SparsityConfig(
+            sparsity = SparsityConfig(
                 M               = 4.0,
                 nonzero_thresh  = 1e-14,
                 lam0            = 1e-3,
                 epsilon         = 0.2,
                 max_iters       = 100
             ),
-            selection       = SelectionConfig(
+            selection = SelectionConfig(
                 mode_selection  = 'dense2sparse',
                 knee_method     = 'dfdt', 
                 r_max           = r_max
             ),
-            experiment      = ExperimentConfig(
+            experiment = ExperimentConfig(
                 label           = "Heat Equation Pi-Net Sparse Decoder",
                 enable_logging  = True,  
                 logs_dir        = "./logs"
