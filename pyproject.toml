@@ -30,6 +30,7 @@ scipy = ">=1.15.2,<2"
 kneed = ">=0.8.5,<0.9"
 jax = ">=0.6.0,<0.7"
 absl-py = ">=2.3.0,<3"
+scikit-learn = ">=1.7.0,<2"
 
 [dependency-groups]
 test = ["pytest"]
