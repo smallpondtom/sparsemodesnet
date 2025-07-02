@@ -81,11 +81,7 @@ if __name__ == "__main__":
     rel_rec_error = np.linalg.norm(reconstructed - X_pulse) / np.linalg.norm(X_pulse)
     print('Relative reconstruction error: ', rel_rec_error)
     print("Quadratic manifold indices I_qm:", I_qm)
-
-    #%% Simple POD basis decoder with leading r modes
     shift_value = np.array(shift_value)[:, np.newaxis]
-    # U_r, _, _ = compute_pod_basis(X_pulse - shift_value, s=r_max)
-    # X_pod = (U_r @ U_r.T @ (X_pulse - shift_value)) + shift_value 
     
     #%% FF Decoder with leading r modes
     ff_decoder, I_ff, _ = run_sparsemodesnet(
@@ -97,10 +93,10 @@ if __name__ == "__main__":
                 network_type = 'QM'
             ),
             training = TrainingConfig(
-                lr = 1e-3,
+                lr = 1e-2,
                 batch_size = 1024,
                 optimizer = 'Adam',
-                final_epochs = 100000,
+                final_epochs = 10000,
                 device = device,
                 I_NN = I_qm.sort()
             ),
@@ -126,13 +122,13 @@ if __name__ == "__main__":
                 hidden_units = [r_max, int(r_max*(r_max+1)/2), n_grids],
                 network_type = 'PiNetNCP',
                 poly_order = 2,
-                num_polys = 2,
-                drop_linear = False,
-                drop_constant = False,
-                # normalize = 'last'
+                num_polys = 1,
+                drop_linear = True,
+                drop_constant = True,
+                normalize = 'last'
             ),
             training = TrainingConfig(
-                lr = 1e-3,
+                lr = 1e-2,
                 batch_size = 128,
                 optimizer = 'Adam',
                 final_epochs = 50000,
