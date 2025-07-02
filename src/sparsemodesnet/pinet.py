@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from math import sqrt
 
+
 class PiNetCCP(nn.Module):
     """
     Coupled CP Π-net (CCP)
@@ -226,7 +227,6 @@ class PiNetNCP(nn.Module):
         # final output
         return self.C(x)                             # (batch, d)
 
-
 class PiNetNCPSkip(nn.Module):
     """
     Nested CP Π-net with skip connections (NCP-Skip)
@@ -435,3 +435,251 @@ class ProdPoly(nn.Module):
         for poly in self.blocks:
             x = poly(x)
         return x
+    
+# class PiNetCCP(nn.Module):
+#     def __init__(self, in_dim: int, out_dim: int, 
+#                  inter_dim: int, poly_order: int,
+#                  drop_constant: bool = False,
+#                  normalize: None | str = None):
+#         super().__init__()
+#         s, d, k, N = in_dim, out_dim, inter_dim, poly_order
+#         self.N = N
+
+#         # U_n weight matrices: (k, s) for n=1..N
+#         self.U_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, s) / sqrt(s))  # Kaiming-like init
+#             for _ in range(N)
+#         ])
+        
+#         # Batch normalization (unchanged)
+#         if normalize is not None:
+#             if normalize == 'all':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True)
+#                     for _ in range(N)
+#                 ])
+#             elif normalize == 'last2':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True) 
+#                     if n >= N-2 else nn.Identity()
+#                     for n in range(N)
+#                 ])
+#             elif normalize == 'last':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True) 
+#                     if n == N-1 else nn.Identity()
+#                     for n in range(N)
+#                 ])
+#             else:
+#                 raise ValueError(f"Unknown normalization method: {normalize}")
+        
+#         # C weight matrix: (d, k) and optional bias
+#         self.C_weight = nn.Parameter(torch.randn(d, k) / sqrt(k))
+#         if not drop_constant:
+#             self.C_bias = nn.Parameter(torch.zeros(d))
+#         else:
+#             self.register_parameter('C_bias', None)
+
+#     def forward(self, z: torch.Tensor) -> torch.Tensor:
+#         # level-1: x = U_0 @ z^T -> (k, batch)
+#         x = self.U_weights[0] @ z.T  # (k, batch)
+#         x = x.T  # (batch, k)
+#         x = self.batch_norms[0](x) if hasattr(self, 'batch_norms') else x
+        
+#         # levels 2..N via Eq. (6): x_n = (U_n z) ⊙ x + x
+#         for n in range(1, self.N):
+#             u_n = (self.U_weights[n] @ z.T).T  # (batch, k)
+#             x = u_n * x + x
+#             x = self.batch_norms[n](x) if hasattr(self, 'batch_norms') else x
+
+#         # final linear map: x_hat = C @ x^T + bias
+#         x_hat = (self.C_weight @ x.T).T  # (batch, d)
+#         if self.C_bias is not None:
+#             x_hat = x_hat + self.C_bias
+#         return x_hat
+
+
+# class PiNetNCP(nn.Module):
+#     def __init__(self, in_dim: int, out_dim: int, 
+#                  inter_dim: int, poly_order: int, 
+#                  drop_linear: bool = False,
+#                  drop_constant: bool = False,
+#                  normalize: None | str = None):
+#         super().__init__()
+#         s, d, k, N = in_dim, out_dim, inter_dim, poly_order
+#         self.N = N
+#         self.drop_linear = drop_linear
+        
+#         num_bB_modules = N - 1 if drop_linear else N
+
+#         # A_n weight matrices: (k, s)
+#         self.A_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, s) / sqrt(s))
+#             for _ in range(N)
+#         ])
+        
+#         # S_n weight matrices: (k, k)
+#         self.S_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, k) / sqrt(k))
+#             for _ in range(N)
+#         ])
+        
+#         # b_n parameters: (k,)
+#         self.b = nn.ParameterList([
+#             nn.Parameter(torch.ones(k))
+#             for _ in range(num_bB_modules)
+#         ])
+        
+#         # B_n weight matrices: (k, k)
+#         self.B_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, k) / sqrt(k))
+#             for _ in range(num_bB_modules)
+#         ])
+        
+#         # C weight matrix: (d, k) and optional bias
+#         self.C_weight = nn.Parameter(torch.randn(d, k) / sqrt(k))
+#         if not drop_constant:
+#             self.C_bias = nn.Parameter(torch.zeros(d))
+#         else:
+#             self.register_parameter('C_bias', None)
+        
+#         # Batch normalization (unchanged)
+#         if normalize is not None:
+#             if normalize == 'all':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True)
+#                     for _ in range(N)
+#                 ])
+#             elif normalize == 'last2':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True) 
+#                     if n >= N-2 else nn.Identity()
+#                     for n in range(N)
+#                 ])
+#             elif normalize == 'last':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True) 
+#                     if n == N-1 else nn.Identity()
+#                     for n in range(N)
+#                 ])
+#             else:
+#                 raise ValueError(f"Unknown normalization method: {normalize}")
+
+#     def forward(self, z: torch.Tensor) -> torch.Tensor:
+#         # level-1
+#         b0 = (self.B_weights[0] @ self.b[0]).unsqueeze(0)  # (1, k)
+#         x = (self.A_weights[0] @ z.T).T * b0  # (batch, k)
+#         x = self.batch_norms[0](x) if hasattr(self, 'batch_norms') else x
+            
+#         # levels 2..N 
+#         for n in range(1, self.N):
+#             u = (self.A_weights[n] @ z.T).T  # (batch, k)
+#             if n == self.N-1 and self.drop_linear:
+#                 v = (self.S_weights[n] @ x.T).T  # (batch, k)
+#             else:
+#                 bn = (self.B_weights[n] @ self.b[n]).unsqueeze(0)  # (1, k)
+#                 v = (self.S_weights[n] @ x.T).T + bn  # (batch, k)
+#             x = u * v
+#             x = self.batch_norms[n](x) if hasattr(self, 'batch_norms') else x
+             
+#         # final output
+#         x_hat = (self.C_weight @ x.T).T  # (batch, d)
+#         if self.C_bias is not None:
+#             x_hat = x_hat + self.C_bias
+#         return x_hat
+
+
+# class PiNetNCPSkip(nn.Module):
+#     def __init__(self, in_dim: int, out_dim: int,
+#                  inter_dim: int, poly_order: int, 
+#                  drop_linear: bool = False,
+#                  drop_constant: bool = False,
+#                  normalize: None | str = None):
+#         super().__init__()
+#         s, d, k, N = in_dim, out_dim, inter_dim, poly_order
+#         self.N = N
+#         self.drop_linear = drop_linear
+        
+#         num_bB_modules = N - 1 if drop_linear else N
+
+#         # A_n weight matrices: (k, s)
+#         self.A_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, s) / sqrt(s))
+#             for _ in range(N)
+#         ])
+        
+#         # S_n weight matrices: (k, k)
+#         self.S_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, k) / sqrt(k))
+#             for _ in range(N)
+#         ])
+        
+#         # b_n parameters: (k,)
+#         self.b = nn.ParameterList([
+#             nn.Parameter(torch.ones(k))
+#             for _ in range(num_bB_modules)
+#         ])
+        
+#         # B_n weight matrices: (k, k)
+#         self.B_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, k) / sqrt(k))
+#             for _ in range(num_bB_modules)
+#         ])
+        
+#         # V_n weight matrices: (k, k) for skip connections
+#         self.V_weights = nn.ParameterList([
+#             nn.Parameter(torch.randn(k, k) / sqrt(k))
+#             for _ in range(N)
+#         ])
+        
+#         # C weight matrix: (d, k) and optional bias
+#         self.C_weight = nn.Parameter(torch.randn(d, k) / sqrt(k))
+#         if not drop_constant:
+#             self.C_bias = nn.Parameter(torch.zeros(d))
+#         else:
+#             self.register_parameter('C_bias', None)
+        
+#         # Batch normalization (unchanged)
+#         if normalize is not None:
+#             if normalize == 'all':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True)
+#                     for _ in range(N)
+#                 ])
+#             elif normalize == 'last2':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True) 
+#                     if n >= N-2 else nn.Identity()
+#                     for n in range(N)
+#                 ])
+#             elif normalize == 'last':
+#                 self.batch_norms = nn.ModuleList([
+#                     nn.BatchNorm1d(k, affine=True) 
+#                     if n == N-1 else nn.Identity()
+#                     for n in range(N)
+#                 ])
+#             else:
+#                 raise ValueError(f"Unknown normalization method: {normalize}")
+
+#     def forward(self, z: torch.Tensor) -> torch.Tensor:
+#         # level-1
+#         b0 = (self.B_weights[0] @ self.b[0]).unsqueeze(0)  # (1, k)
+#         x = (self.A_weights[0] @ z.T).T * b0  # (batch, k)
+#         x = self.batch_norms[0](x) if hasattr(self, 'batch_norms') else x
+        
+#         # recursion
+#         for n in range(1, self.N):
+#             u = (self.A_weights[n] @ z.T).T  # (batch, k)
+#             if n == self.N-1 and self.drop_linear:
+#                 v = (self.S_weights[n] @ x.T).T  # (batch, k)
+#             else:
+#                 bn = (self.B_weights[n] @ self.b[n]).unsqueeze(0)  # (1, k)
+#                 v = (self.S_weights[n] @ x.T).T + bn  # (batch, k)
+#             x = u * v + (self.V_weights[n] @ x.T).T  # (batch, k)
+#             x = self.batch_norms[n](x) if hasattr(self, 'batch_norms') else x
+        
+#         # final output 
+#         x_hat = (self.C_weight @ x.T).T  # (batch, d)
+#         if self.C_bias is not None:
+#             x_hat = x_hat + self.C_bias
+#         return x_hat
