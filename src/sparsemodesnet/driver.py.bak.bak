@@ -1,0 +1,643 @@
+import numpy as np
+import kneeliverse.dfdt as dfdt
+import kneeliverse.zmethod as zmethod
+import warnings
+import torch
+import logging
+from datetime import datetime
+from pathlib import Path
+from torch.utils.data import DataLoader
+
+from .pod import compute_pod_basis
+from .model import SparseModesNet, StateDecoder
+from .dataset import PODReconDataset
+from .train import train_sparsemodesnet, train_statedecoder
+from .cv import run_sparsemodesnet_cv
+from .stability import run_sparsemodesnet_ss
+
+def _setup_experiment_logging(experiment_name="sparsemodesnet", logs_dir=None):
+    """Setup logging with timestamp for experiment tracking."""
+    if logs_dir is None:
+        # Default to logs directory in current working directory
+        logs_dir = Path.cwd() / "logs"
+    else:
+        logs_dir = Path(logs_dir)
+    
+    logs_dir.mkdir(exist_ok=True)
+    
+    # Create timestamp for log filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_filename = logs_dir / f"{experiment_name}_{timestamp}.log"
+    
+    # Create a logger specific to this experiment
+    logger = logging.getLogger(f"sparsemodesnet.{experiment_name}")
+    logger.setLevel(logging.INFO)
+    
+    # Remove any existing handlers to avoid duplicates
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    
+    # Create file handler with simple format (no timestamp/logger name)
+    file_handler = logging.FileHandler(log_filename)
+    file_handler.setLevel(logging.INFO)
+    
+    # Detailed formatter - just the message
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(detailed_formatter)
+    
+    # Add file handler to logger
+    logger.addHandler(file_handler)
+    
+    # Console handler keeps the full format for debugging
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(console_formatter)
+    logger.addHandler(console_handler)
+    
+    # Initial log entries with timestamp for reference
+    logger.info(f"Starting {experiment_name} experiment")
+    logger.info(f"Log file: {log_filename}")
+    
+    return logger, log_filename
+
+def run_sparsemodesnet_d2s(X_np: np.ndarray,
+                           s: int,
+                           hidden_units: list,
+                           M: float,
+                           nonzero_thresh: float,
+                           lam0: float,
+                           epsilon: float,
+                           network_type: str,
+                           poly_order: int,
+                           num_polys: int,
+                           drop_linear: bool,
+                           lr: float,
+                           B: int,
+                           max_iters: int,
+                           batch_size: int,
+                           optimizer: str,
+                           device: str):
+    """
+    The original warm-start λ→(1+ε)λ routine.
+    """
+    print("\n=== Dense-To-Sparse (default) λ-Path ===")
+    
+    U_s_np, _, _ = compute_pod_basis(X_np, s=s)   # (d, s)
+    Z_np = U_s_np.T.dot(X_np)                     # (s, n)
+
+    U_s_tensor = torch.from_numpy(U_s_np.astype(np.float32)).to(device)
+    Z_tensor   = torch.from_numpy(Z_np.T.astype(np.float32)).to(device) # (n, s)
+
+    dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np)
+    dataloader_full = DataLoader(
+        dataset_full, batch_size=batch_size, shuffle=True, drop_last=False)
+
+    lam = lam0
+    prev_nonzero = s
+    path_history = []
+    iter_count = 0
+
+    while True:
+        iter_count += 1
+        print(f"\n-- Path iteration {iter_count}, λ = {lam:.3e} ",
+              f" (r(λ) prev = {prev_nonzero})")
+        
+        model = SparseModesNet(
+            pod_basis    = U_s_tensor,
+            input_dim    = s,
+            hidden_units = hidden_units,
+            M            = M,
+            lam          = lam,
+            network_type = network_type,
+            poly_order   = poly_order,
+            num_polys    = num_polys,
+            drop_linear  = drop_linear
+        ).to(device)
+        
+        history = train_sparsemodesnet(
+            model, dataloader_full, B, lr, optimizer, device)
+        omega_opt = model.omega.detach().cpu().numpy()
+        nonzero_idxs = np.where(np.abs(omega_opt) > nonzero_thresh)[0]
+        curr_nonzero = len(nonzero_idxs)
+
+        model.eval()
+        with torch.no_grad():
+            _, x_hat_tensor = model(Z_tensor)
+            X_hat_np = x_hat_tensor.cpu().numpy().T
+        frob_error = np.linalg.norm(X_np - X_hat_np, 'fro')
+        rel_frob_error = frob_error / np.linalg.norm(X_np, 'fro')
+
+        path_history.append({
+            'lambda': lam,
+            'nonzero_count': curr_nonzero,
+            'selected_idxs': nonzero_idxs.copy(),
+            'error': rel_frob_error,
+            'l1_b': np.mean(history['l1_b'])
+        })
+
+        print(f"  → at λ={lam:.3e}:  r(λ)={curr_nonzero},", 
+              f" rel_err={rel_frob_error:.6e}")
+
+        if curr_nonzero == 0:
+            print("All skip-weights have zeroed out. Stopping path.\n")
+            break
+
+        lam = lam * (1.0 + epsilon)
+        prev_nonzero = curr_nonzero
+
+        if iter_count >= max_iters:
+            print(f"Reached max_iters={max_iters} on λ-path; stopping early.\n")
+            break
+
+    return path_history
+
+
+def run_sparsemodesnet(
+    X_np: np.ndarray,
+    s: int,
+    hidden_units: list,
+    M: float = 1.0,
+    lr: float = 1e-3,
+    batch_size: int = 16,
+    mode_selection: str | None = 'dense2sparse',
+    knee_method: str = 'dfdt', 
+    optimizer: str = 'Adam',
+    nonzero_thresh: float = 1e-6,
+    num_epochs: int = 100,
+    final_epochs: int = 100,
+    r_max: int = None, 
+    network_type: str = 'FF',
+    # for Π-net:
+    poly_order: int = 2,
+    num_polys: int = 1,
+    drop_linear: bool = False,
+    # for "dense-to-sparse":
+    lam0: float = 1e-6,
+    epsilon: float = 0.1,
+    max_iters: int = 100,
+    # for "stability selection"
+    num_subsamples: int = 5,
+    pi_thresh: float = 0.9,
+    lambdas: np.ndarray = None,
+    # for "cv":
+    k_folds: int = 5,
+    # other common:
+    device: str = 'cpu',
+    label: str = '',
+    enable_logging: bool = True,
+    logs_dir: str = None
+):
+    """
+    Runs SparseModesNet with lambda selection via path or CV.
+    
+    Returns
+    -------
+    tuple: (final_model, info_dict, selected_indices, path_history)
+    """
+    # Setup logging if enabled
+    if enable_logging:
+        experiment_name = label.lower().replace(" ", "_") if label else "sparsemodesnet"
+        logger, log_file = _setup_experiment_logging(experiment_name, logs_dir)
+        
+        # Log experiment parameters (these will have timestamps)
+        logger.info(f"Experiment: {label}")
+        logger.info(f"Data shape: {X_np.shape}")
+        logger.info(f"POD dimension: {s}")
+        logger.info(f"Hidden units: {hidden_units}")
+        logger.info(f"Mode Selection Method: {mode_selection}")
+        logger.info(f"Device: {device}")
+        logger.info(f"Training parameters: M={M}, lr={lr}, batch_size={batch_size}")
+        logger.info(f"Optimizer: {optimizer}, knee_method: {knee_method}")
+        if network_type == 'FF':
+            logger.info("NN type: Feedforward")
+        else:
+            logger.info(f"NN type: {network_type} with polynomial "
+                        f"order of {poly_order}, and {num_polys} number of "
+                        f"polynomial blocks")
+        logger.info("="*50)
+        
+        # Create a simple file-only logger for training output
+        training_logger = logging.getLogger(f"training.{experiment_name}")
+        training_logger.setLevel(logging.INFO)
+        
+        # Remove any existing handlers
+        for handler in training_logger.handlers[:]:
+            training_logger.removeHandler(handler)
+        
+        # Add only file handler with simple format
+        training_file_handler = logging.FileHandler(log_file)
+        training_file_handler.setLevel(logging.INFO)
+        simple_formatter = logging.Formatter('%(message)s')
+        training_file_handler.setFormatter(simple_formatter)
+        training_logger.addHandler(training_file_handler)
+        training_logger.propagate = False  # Don't propagate to parent loggers
+        
+        # Modify print function to log to file only (no timestamps)
+        original_print = print
+        def logged_print(*args, **kwargs):
+            message = ' '.join(str(arg) for arg in args)
+            training_logger.info(message)  # Simple format to file
+            original_print(*args, **kwargs)  # Normal print to console
+        
+        # Temporarily replace print with logged version
+        import builtins
+        builtins.print = logged_print
+    
+    try:
+        # Compute POD basis and coefficients
+        U_s_np, _, _ = compute_pod_basis(X_np, s=s)
+        Z_np = U_s_np.T.dot(X_np)
+        U_s_tensor = torch.from_numpy(U_s_np.astype(np.float32)).to(device)
+        
+        # Method 1: Regularization path
+        # Train models for different lambdas (dense-to-sparse) and record 
+        # history (e.g., number of nonzero modes, lambda, and errors)
+        # then compute the optimal lambda using knee detection of the L-curve.
+        # if reg_path:
+        #     print(f"\n=== SparseModesNet (Regularization Path) on "
+        #         f"{label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
+
+        #     path_history = run_sparsemodesnet_d2s(
+        #         X_np           = X_np, 
+        #         s              = s, 
+        #         hidden_units   = hidden_units, 
+        #         M              = M,
+        #         nonzero_thresh = nonzero_thresh, 
+        #         lam0           = lam0, 
+        #         epsilon        = epsilon,
+        #         lr             = lr, 
+        #         B              = num_epochs, 
+        #         max_iters      = max_iters, 
+        #         batch_size     = batch_size,
+        #         optimizer      = optimizer, 
+        #         device         = device, 
+        #         network_type   = network_type, 
+        #         poly_order     = poly_order,
+        #         num_polys      = num_polys, 
+        #         drop_linear    = drop_linear
+        #     )
+            
+        #     # Find optimal lambda using knee detection
+        #     lam_star, _, _ = _find_best_features(
+        #         path_history, knee_method, r_max, reg_path
+        #     )
+            
+        #     # Train final model with selected lambda
+        #     model_final, history_full = _train_final_model(
+        #         U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
+        #         final_epochs, lr, optimizer, device, batch_size,
+        #         network_type, poly_order, num_polys, drop_linear
+        #     )
+            
+        #     # Evaluate and report results
+        #     selected_indices = _evaluate_and_report_results(
+        #         model_final, X_np, U_s_np, Z_np, s, nonzero_thresh, 
+        #         lam_star, device
+        #     )
+        
+        #     if enable_logging:
+        #         # Final summary with timestamps
+        #         logger.info("="*50)
+        #         logger.info(f"Experiment completed successfully!")
+        #         logger.info(f"Selected {len(selected_indices)} modes out of {s}")
+        #         logger.info(f"Final lambda: {lam_star:.3e}")
+            
+        #     return (
+        #         model_final, 
+        #         {'history_full': history_full, 'lambda_star': lam_star, 
+        #         'log_file': log_file if enable_logging else None}, 
+        #         selected_indices, 
+        #         path_history
+        #     )
+        # else:
+        #     print("Skipping regularization path.")
+            
+        # Method 2: Find most relevant features then train unconstrained model
+        # This is (or will be) the default way
+        if mode_selection is not None:
+            print(f"\n=== SparseModesNet (Modes Selection) on "
+                  f"{label}: d={X_np.shape[0]}, n={X_np.shape[1]}, s={s} ===")
+        else:
+            print("Skipping mode selection.")
+        
+        if mode_selection == 'dense2sparse':
+            path_history = run_sparsemodesnet_d2s(
+                X_np           = X_np, 
+                s              = s, 
+                hidden_units   = hidden_units, 
+                M              = M,
+                nonzero_thresh = nonzero_thresh, 
+                lam0           = lam0, 
+                epsilon        = epsilon,
+                lr             = lr, 
+                B              = num_epochs, 
+                max_iters      = max_iters, 
+                batch_size     = batch_size,
+                optimizer      = optimizer, 
+                device         = device, 
+                network_type   = network_type, 
+                poly_order     = poly_order,
+                num_polys      = num_polys, 
+                drop_linear    = drop_linear
+            )
+            # Find best features using L-curve
+            I_NN = _find_best_features(path_history, knee_method, r_max)
+            selection_history = {
+                'path_history': path_history,
+                'I_NN': I_NN
+            }
+            
+        elif mode_selection == 'ss':
+            I_NN, pi_max, freqs = run_sparsemodesnet_ss(
+                X_np           = X_np,
+                s              = s,
+                hidden_units   = hidden_units,
+                M              = M,
+                nonzero_thresh = nonzero_thresh,
+                lambdas        = lambdas,
+                network_type   = network_type,
+                poly_order     = poly_order,
+                num_polys      = num_polys,
+                drop_linear    = drop_linear,
+                B              = num_subsamples,
+                pi_thresh      = pi_thresh,
+                lr             = lr,
+                num_epochs     = num_epochs,
+                batch_size     = batch_size,
+                optimizer      = optimizer,
+                device         = device 
+            )
+            selection_history = {
+                'I_NN': I_NN, 'pi_mmax': pi_max, 'freqs': freqs
+            }
+        elif mode_selection == 'cv':
+            # Use cross-validation to select modes
+            I_NN, selection_history = run_sparsemodesnet_cv(
+                X_np           = X_np,
+                s              = s,
+                hidden_units   = hidden_units,
+                M              = M,
+                nonzero_thresh = nonzero_thresh,
+                lambdas        = lambdas,
+                network_type   = network_type,
+                poly_order     = poly_order,
+                num_polys      = num_polys,
+                drop_linear    = drop_linear,
+                lr             = lr,
+                num_epochs     = num_epochs,
+                k_folds        = k_folds,
+                batch_size     = batch_size,
+                optimizer      = optimizer,
+                device         = device 
+            )
+        else:
+            warnings.warn("'dense2sparse', 'ss', or 'cv' was not selected for mode "
+                          "seletion. Hence, training decoder using leading "
+                          f"{r_max} modes.")
+            I_NN = list(range(r_max))
+            selection_history = None
+             
+        # Adjust and fix the selected modes
+        r = len(I_NN)
+        if r == 0:
+            raise ValueError(
+                "No modes selected. Please check your input data and parameters."
+            )
+        if r > r_max and r_max is not None:
+            warnings.warn(f"Selected {r} modes, but r_max={r_max} is set. "
+                          f"Truncating to r_max.")
+            I_NN = I_NN[:r_max]
+            r = r_max 
+        if r < r_max and r_max is not None:
+            warnings.warn(f"Selected {r} modes, but r_max={r_max} is set. "
+                          f"Will select {r_max-r} additional leading modes.")
+            r_i = 1
+            while len(I_NN) < r_max:
+                if r_i not in I_NN: 
+                    I_NN.append(r_i)
+                r_i += 1
+            I_NN.sort()
+            r = r_max
+                
+        U_r_np = U_s_np[:, I_NN]     # (d, r)
+        Z_r_np = U_r_np.T.dot(X_np)  # (r, n)
+        U_r_tensor = torch.from_numpy(U_r_np.astype(np.float32)).to(device)
+        
+        # Train the state decoder with selected modes (NOT LassoNet)
+        print(f"\n→ Training decoder model with {r} selected modes ...") 
+        decoder = StateDecoder(
+            pod_basis    = U_r_tensor, 
+            input_dim    = r, 
+            hidden_units = hidden_units,
+            M            = M, 
+            network_type = network_type, 
+            poly_order   = poly_order,
+            num_polys    = num_polys, 
+            drop_linear  = drop_linear
+        )
+        
+        dataset_full = PODReconDataset(Z_np=Z_r_np, X_np=X_np)
+        dataloader_full = DataLoader(
+            dataset_full, batch_size=batch_size, shuffle=True, drop_last=False)
+        
+        train_statedecoder(
+            decoder, dataloader_full, final_epochs, lr, optimizer, device)
+        
+        Z_r_tensor = torch.from_numpy(Z_r_np.T.astype(np.float32)).to(device)
+        decoder.eval()
+        with torch.no_grad():
+            X_hat_tensor = decoder(Z_r_tensor)
+            X_hat_np = X_hat_tensor.cpu().numpy().T 
+        frob_error = np.linalg.norm(X_np - X_hat_np, 'fro')
+        rel_frob_error = frob_error / np.linalg.norm(X_np, 'fro')
+        mse_per_sample = frob_error / X_np.shape[1]
+        print(f"Final relative reconstruction error: "
+              f"||X - X_hat||_F / ||X||_F = {rel_frob_error:.6e}")
+        print(f"Final MSE per sample: {mse_per_sample:.6e}")
+        # Selected modes only reconstruction error
+        if r > 0:
+            frob_error_selected = np.linalg.norm(
+                X_np - U_r_np @ (U_r_np.T @ X_np), 'fro')
+            X_np_norm = np.linalg.norm(X_np, 'fro')
+            rel_frob_error_selected = frob_error_selected / X_np_norm
+            mse_per_sample_selected = frob_error_selected / X_np.shape[1]
+            print(f"Relative error using only selected modes: "
+                  f"{rel_frob_error_selected:.6e}")
+            print(f"MSE per sample using only selected modes: "
+                  f"{mse_per_sample_selected:.6e}")
+        
+        return decoder, selection_history
+        
+    finally:
+        # Restore original print function
+        if enable_logging:
+            import builtins
+            builtins.print = original_print
+
+def _find_best_features(path_history, knee_method, r_max):
+    """Find optimal features using knee detection or fallback methods."""
+    # Prepare data for knee detection
+    err = np.array([h['error'] for h in path_history])
+    logerr = np.log(err)
+    lasso = np.array([h['l1_b'] for h in path_history])
+    loglasso = np.log(lasso)
+    
+    # Normalize to [0, 1] range
+    logerr_norm = _normalize_array(logerr)
+    loglasso_norm = _normalize_array(loglasso)
+    data = np.column_stack((loglasso_norm, logerr_norm))
+    
+    # Apply knee detection
+    knee_idx = _detect_knees(data, knee_method)
+    
+    if len(knee_idx) == 0:
+        return _fallback_lambda_selection(path_history, r_max)
+    else:
+        return _select_from_knees(path_history, knee_idx, r_max)
+
+
+def _normalize_array(arr):
+    """Normalize array to [0, 1] range."""
+    return (arr - arr.min()) / (arr.max() - arr.min())
+
+
+def _detect_knees(data, knee_method):
+    """Detect knee points using specified method."""
+    if knee_method == 'dfdt':
+        knee_idx = dfdt.multi_knee(data)
+        print(f"Found knees using DFDT method: {knee_idx}")
+    elif knee_method == 'zmethod':
+        knee_idx = zmethod.knees2(data)
+        print(f"Found knees using Z-method: {knee_idx}")
+    else:
+        raise ValueError(f"Unknown knee_method: {knee_method}. "
+                        f"Use 'dfdt' or 'zmethod'.")
+    knee_idx = np.array(knee_idx, dtype=int)
+    return knee_idx
+
+
+def _fallback_lambda_selection(path_history, r_max):
+    """Fallback lambda selection when knee detection fails."""
+    print("No modes selected at λ*. Using fallback selection.")
+    
+    if r_max is not None:
+        print(f"Searching for first λ with nonzero_count <= {r_max} ...")
+        nonzero_counts = np.array(
+            [entry['nonzero_count'] for entry in path_history])
+        valid_indices = np.where(nonzero_counts <= r_max)[0]
+        
+        if len(valid_indices) > 0:
+            idx = valid_indices[0]
+        else:
+            idx = -1  # Use last entry
+    else:
+        print("r_max not specified. Using last entry from path.")
+        idx = -1
+    
+    entry = path_history[idx]
+    lam_star, r_star = entry['lambda'], entry['nonzero_count']
+    err_star = entry['error']
+    I_NN = entry['selected_idxs']
+    print(f"[Fallback] λ={lam_star:.3e}, r={r_star}, err={err_star:.6e}")
+    return I_NN
+
+def _select_from_knees(path_history, knee_idx, r_max):
+    """Select lambda from detected knee points."""
+    rs = np.array([h['nonzero_count'] for h in path_history])
+    r_stars = rs[knee_idx]
+    
+    # Pick first knee point that satisfies r_max constraint
+    if r_max is not None:
+        valid_mask = r_stars <= r_max
+        valid_indices = np.where(valid_mask)[0]
+        if len(valid_indices) > 0:
+            i_star = valid_indices[0]
+        else:
+            i_star = 0  # Fallback to first knee
+    else:
+        i_star = 0
+        
+    # Make sure knee_idx[i_star] is a valid index
+    selected_knee_idx = knee_idx[i_star]
+    I_NN = path_history[selected_knee_idx]['selected_idxs']
+        
+    # Print selection info
+    selected_entry = path_history[selected_knee_idx]
+    print(f"Selected knee at index {selected_knee_idx}: "
+          f"λ={selected_entry['lambda']:.3e}, "
+          f"r={selected_entry['nonzero_count']}, "
+          f"err={selected_entry['error']:.6e}")
+        
+    return I_NN
+
+# def _train_final_model(U_s_tensor, X_np, Z_np, s, hidden_units, M, lam_star, 
+#                       B_path, lr, optimizer, device, batch_size,
+#                       network_type, poly_order, num_polys, drop_linear):
+#     """Train final model with selected lambda."""
+#     print(f"\n→ Final training on full data with λ = {lam_star:.3e} ...")
+    
+#     dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np)
+#     dataloader_full = DataLoader(
+#         dataset_full, batch_size=batch_size, shuffle=True, drop_last=False
+#     )
+    
+#     model_final = SparseModesNet(
+#         pod_basis=U_s_tensor, input_dim=s, hidden_units=hidden_units,
+#         M=M, lam=float(lam_star), network_type=network_type,
+#         poly_order=poly_order, num_polys=num_polys, drop_linear=drop_linear
+#     ).to(device)
+    
+#     history_full = train_sparsemodesnet(
+#         model=model_final, dataloader=dataloader_full, num_epochs=B_path,
+#         lr=lr, optimizer=optimizer, device=device
+#     )
+    
+#     return model_final, history_full
+
+
+# def _evaluate_and_report_results(model_final, X_np, U_s_np, Z_np, s, 
+#                                  nonzero_thresh, lam_star, device):
+#     """Evaluate final model and report results."""
+#     # Get selected indices
+#     omega_opt = model_final.omega.detach().cpu().numpy()
+#     selected_indices = np.where(np.abs(omega_opt) > nonzero_thresh)[0]
+    
+#     print(f"\nFinal skip-weights ω: {omega_opt.tolist()[:10]} ...")
+#     print(f"Selected POD-mode indices (ω_j ≠ 0): {selected_indices.tolist()} "
+#           f"(count = {len(selected_indices)} / {s})")
+    
+#     # Compute reconstruction errors
+#     model_final.eval()
+#     with torch.no_grad():
+#         Z_tensor = torch.from_numpy(Z_np.T.astype(np.float32)).to(device)
+#         _, x_hat_tensor = model_final(Z_tensor)
+#         X_hat_np = x_hat_tensor.cpu().numpy().T
+    
+#     # SparseModesNet reconstruction error
+#     frob_error = np.linalg.norm(X_np - X_hat_np, 'fro')
+#     rel_frob_error = frob_error / np.linalg.norm(X_np, 'fro')
+#     mse_per_sample = frob_error / X_np.shape[1]
+    
+#     print(f"Final relative reconstruction of SparseModesNet: "
+#           f"||X - X_hat||_F / ||X||_F = {rel_frob_error:.6e}")
+#     print(f"Final MSE per sample of SparseModesNet: = {mse_per_sample:.6e}")
+    
+#     # Selected modes only reconstruction error
+#     if len(selected_indices) > 0:
+#         U_selected = U_s_np[:, selected_indices]
+#         frob_error_selected = np.linalg.norm(
+#             X_np - U_selected @ (U_selected.T @ X_np), 'fro'
+#         )
+#         X_np_norm = np.linalg.norm(X_np, 'fro')
+#         rel_frob_error_selected = frob_error_selected / X_np_norm
+#         mse_per_sample_selected = frob_error_selected / X_np.shape[1]
+        
+#         print(f"Relative error using only selected ",
+#               f"modes: {rel_frob_error_selected:.6e}")
+#         print(f"MSE per sample using only selected ",
+#               f"modes: {mse_per_sample_selected:.6e}")
+    
+#     return selected_indices

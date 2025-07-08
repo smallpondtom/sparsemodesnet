@@ -63,8 +63,10 @@ class QuadraticManifold(nn.Module):
         
         if W is None:
             # Random initialization
+            # self.weight_mat = nn.Parameter(
+            #     torch.randn(self.r * (self.r + 1) // 2, self.d, dtype=torch.float64) * 0.01)
             self.weight_mat = nn.Parameter(
-                torch.randn(self.r * (self.r + 1) // 2, self.d, dtype=torch.float64) * 0.01)
+                torch.zeros(self.r * (self.r + 1) // 2, self.d, dtype=torch.float64))
         else:
             # CRITICAL FIX: Don't transpose! Check shapes first
             W = W.double()
@@ -420,6 +422,8 @@ def visualize_regression_test_results(results):
         print("Matplotlib not available for visualization")
 
 
+
+
 #%%
 if __name__ == "__main__":
     # Force CPU for deterministic results
@@ -465,7 +469,7 @@ if __name__ == "__main__":
     X_pulse, xspan_p, tspan_p = generate_advecting_pulse(
         pulse_width=5.0e-4,
         pulse_shift=0.1,
-        speed=8.0,
+        speed=5.0,
         final_time=0.15,
         n_time_samples=1000,
         n_space_samples=n_grids
@@ -481,6 +485,19 @@ if __name__ == "__main__":
     s_p = min(d_p, n_p)
     s_p = 100
     
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(111, projection='3d')
+    X_mesh, T_mesh = np.meshgrid(xspan_p, tspan_p)
+    Z_mesh = X_pulse.T  # Transpose to match meshgrid dimensions
+    surf = ax.plot_surface(
+        X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
+    ax.set_xlabel('x')
+    ax.set_ylabel('t')
+    ax.set_zlabel('u(x,t)')
+    ax.set_title('Advecting Gaussian Pulse')
+    plt.colorbar(surf, shrink=0.5, aspect=5)
+    plt.show()
+    plt.close(fig)
     
     
 #%% #======================= Greedy Quadratic Manifold ========================#
@@ -632,6 +649,7 @@ if __name__ == "__main__":
                 
     except Exception as e:
         print(f"✗ Error in analytical solution: {e}")
+        
 
 #%% #===================== Neural Network Quadratic Manifold ==================#
     print("\n" + "="*60)
@@ -724,12 +742,12 @@ if __name__ == "__main__":
     W_tensor = torch.tensor(W.T, dtype=torch.float64)  # Transpose for NN
     
     qm_model = QuadraticManifold(
-        pod_basis, gamma, W_tensor + torch.randn_like(W_tensor) * 0.1)
+        pod_basis, gamma)
     qm_model = qm_model.to(device)
     
     # Training setup
-    optimizer = optim.SGD(qm_model.parameters(), lr=1.2e-4, 
-            momentum=0.99, nesterov=True, weight_decay=gamma)
+    optimizer = optim.SGD(qm_model.parameters(), lr=1e-4, 
+            momentum=0.99, weight_decay=gamma**2)
     mse_loss = nn.MSELoss()
     qm_model.train()
     
@@ -737,7 +755,7 @@ if __name__ == "__main__":
         optimizer, mode='min', factor=0.8, patience=100)
     
     # Training loop
-    for epoch in range(10000):
+    for epoch in range(200000):
         optimizer.zero_grad()
         x_pred = qm_model(z_train)
         reconstruction_loss = mse_loss(x_pred, x_target)
@@ -779,4 +797,679 @@ if __name__ == "__main__":
         print("✓ Training did not change the model.")
     else:
         print("✗ Training did not improve the model.")
+# %%
+    # Optional: Train the network to see if it can improve
+    print(f"\n{'='*60}")
+    print("TRAINING NEURAL NETWORK - PURE GRADIENT DESCENT")
+    print(f"{'='*60}")
+
+    W_tensor = torch.tensor(W.T, dtype=torch.float64)  # Transpose for NN
+
+    qm_model = QuadraticManifold(
+        pod_basis, gamma, W_tensor + torch.randn_like(W_tensor) * 0.1)
+    qm_model = qm_model.to(device)
+
+    # Pure gradient descent - no optimizer
+    learning_rate = 1e-4
+    mse_loss = nn.MSELoss()
+    qm_model.train()
+
+    # Optional: Add explicit L2 regularization matching analytical solution
+    def regularized_loss(x_pred, x_target, model, reg_weight):
+        reconstruction_loss = mse_loss(x_pred, x_target)
+        # L2 regularization on W (same as analytical solution)
+        weight_reg = reg_weight**2 * torch.norm(model.weight_mat, 'fro')**2
+        return reconstruction_loss + weight_reg
+
+    # Pure gradient descent training loop
+    for epoch in range(10000):
+        # Forward pass
+        x_pred = qm_model(z_train)
+        
+        # Compute loss
+        loss = regularized_loss(x_pred, x_target, qm_model, gamma)
+        
+        # Backward pass
+        loss.backward()
+        
+        # Pure gradient descent update: w = w - lr * grad_w
+        with torch.no_grad():
+            for param in qm_model.parameters():
+                if param.grad is not None:
+                    param.data -= learning_rate * param.grad
+        
+        # Zero gradients for next iteration
+        qm_model.zero_grad()
+    
+        if epoch % 500 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                weight_norm = torch.norm(qm_model.weight_mat, 'fro')
+                print(f"Epoch {epoch:4d}: "
+                    f"LR = {learning_rate:.4e}, "
+                    f"Loss = {loss.item():.4e}, "
+                    f"Rel Error = {rel_err.item():.4e}, "
+                    f"Weight Norm = {weight_norm.item():.4e}")
+
+    # Final evaluation after training
+    qm_model.eval()
+    with torch.no_grad():
+        x_reconstructed_trained = qm_model(z_train)
+        x_final_trained = x_reconstructed_trained.numpy() + shift_value.T
+
+    rel_error_trained = np.linalg.norm(x_final_trained.T - X_pulse) / np.linalg.norm(X_pulse)
+    print(f"\nFinal trained NN error: {rel_error_trained:.2e}")
+    print(f"Greedy QM error: {rel_error_greedy:.2e}")
+
+    # Check how much weights changed
+    final_weight_diff = torch.max(
+        torch.abs(
+            qm_model.weight_mat.T - torch.tensor(W, dtype=torch.float64)
+        )).item()
+    print(f"Final weight matrix difference: {final_weight_diff:.2e}")
+
+    # Compare with analytical solution
+    if 'W_analytical' in locals():
+        analytical_weight_diff = torch.max(
+            torch.abs(
+                qm_model.weight_mat.T - torch.tensor(W_analytical, dtype=torch.float64)
+            )).item()
+        print(f"Final weight vs analytical difference: {analytical_weight_diff:.2e}")
+
+    if rel_error_trained < rel_error_nn:
+        print("✓ Training improved the model!")
+    elif np.abs(rel_error_trained - rel_error_nn) < 1e-10:
+        print("✓ Training did not change the model.")
+    else:
+        print("✗ Training did not improve the model.")
+        
+        
+        
+        
+# %%
+    # Natural gradient descent using the Fisher Information Matrix approximation
+    print("\n" + "="*60)
+    print("NATURAL GRADIENT DESCENT")
+    print("="*60)
+
+    qm_model_ng = QuadraticManifold(pod_basis, gamma)
+    qm_model_ng = qm_model_ng.to(device)
+
+    # Compute Fisher Information Matrix (Gauss-Newton approximation)
+    with torch.no_grad():
+        z_quad = quadratic_mapping_torch(z_train)
+        # Use the empirical Fisher: F = J^T J where J is the Jacobian
+        fisher_matrix = z_quad.T @ z_quad / z_quad.shape[0]  # (quad_dim, quad_dim)
+        
+        # Add regularization to Fisher matrix
+        fisher_matrix += gamma * torch.eye(fisher_matrix.shape[0], dtype=torch.float64)
+        
+        # Compute preconditioner (inverse of Fisher matrix)
+        try:
+            preconditioner = torch.inverse(fisher_matrix)
+            print(f"Using exact Fisher inverse")
+        except:
+            # Use pseudo-inverse if singular
+            preconditioner = torch.pinverse(fisher_matrix)
+            print(f"Using Fisher pseudo-inverse")
+        
+        print(f"Fisher matrix condition number: {torch.linalg.cond(fisher_matrix):.2e}")
+
+    # Natural gradient training
+    learning_rate = 1.0  # Can use much higher learning rate
+    prev_loss = float('inf')
+    lr_decay = 0.95
+    patience = 100
+    patience_counter = 0
+    for epoch in range(10000):
+        # Forward pass
+        x_pred = qm_model_ng(z_train)
+        loss = regularized_loss(x_pred, x_target, qm_model_ng, gamma)
+        
+        # Backward pass
+        loss.backward()
+        
+        # Natural gradient update
+        with torch.no_grad():
+            for param in qm_model_ng.parameters():
+                if param.grad is not None:
+                    # Apply preconditioner to gradient
+                    natural_grad = preconditioner @ param.grad 
+                    param.data -= learning_rate * natural_grad
+        
+        # Simple learning rate adaptation
+        if loss.item() >= prev_loss:
+            patience_counter += 1
+            if patience_counter >= patience:
+                learning_rate *= lr_decay
+                patience_counter = 0
+                print(f"  Reducing learning rate to {learning_rate:.2e}")
+        else:
+            patience_counter = 0
+        
+        prev_loss = loss.item()
+        
+        qm_model_ng.zero_grad()
+        
+        if epoch % 100 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                print(f"Epoch {epoch:4d}: Loss = {loss.item():.6e}, Rel Error = {rel_err.item():.6e}")
+                
+            if rel_err.item() < 1e-12:
+                print(f"Natural gradient converged at epoch {epoch}")
+                break
+
+
+
+#%% #======================== Training with Data Normalization ================#
+    print(f"\n{'='*60}")
+    print("TRAINING NEURAL NETWORK WITH DATA NORMALIZATION")
+    print(f"{'='*60}")
+
+    # Analyze data statistics before normalization
+    print("Data statistics before normalization:")
+    print(f"z_train - mean: {torch.mean(z_train):.2e}, std: {torch.std(z_train):.2e}")
+    print(f"z_train - min: {torch.min(z_train):.2e}, max: {torch.max(z_train):.2e}")
+    print(f"x_target - mean: {torch.mean(x_target):.2e}, std: {torch.std(x_target):.2e}")
+    print(f"x_target - min: {torch.min(x_target):.2e}, max: {torch.max(x_target):.2e}")
+
+    # Normalize input data (z_train)
+    z_mean = torch.mean(z_train, dim=0, keepdim=True)
+    z_std = torch.std(z_train, dim=0, keepdim=True) + 1e-8  # Add small epsilon to avoid division by zero
+    z_train_normalized = (z_train - z_mean) / z_std
+
+    # Normalize target data (x_target)
+    x_mean = torch.mean(x_target, dim=0, keepdim=True)
+    x_std = torch.std(x_target, dim=0, keepdim=True) + 1e-8
+    x_target_normalized = (x_target - x_mean) / x_std
+
+    print("\nData statistics after normalization:")
+    print(f"z_train_normalized - mean: {torch.mean(z_train_normalized):.2e}, std: {torch.std(z_train_normalized):.2e}")
+    print(f"x_target_normalized - mean: {torch.mean(x_target_normalized):.2e}, std: {torch.std(x_target_normalized):.2e}")
+
+    # Check quadratic features conditioning
+    with torch.no_grad():
+        z_quad_raw = quadratic_mapping_torch(z_train)
+        z_quad_normalized = quadratic_mapping_torch(z_train_normalized)
+        
+        print(f"\nQuadratic features analysis:")
+        print(f"Raw quadratic features - std: {torch.std(z_quad_raw):.2e}, max: {torch.max(torch.abs(z_quad_raw)):.2e}")
+        print(f"Normalized quadratic features - std: {torch.std(z_quad_normalized):.2e}, max: {torch.max(torch.abs(z_quad_normalized)):.2e}")
+        
+        # Condition number comparison
+        U_raw, S_raw, V_raw = torch.svd(z_quad_raw)
+        U_norm, S_norm, V_norm = torch.svd(z_quad_normalized)
+        
+        cond_raw = S_raw[0] / S_raw[-1] if S_raw[-1] > 1e-15 else float('inf')
+        cond_norm = S_norm[0] / S_norm[-1] if S_norm[-1] > 1e-15 else float('inf')
+        
+        print(f"Condition number - Raw: {cond_raw:.2e}, Normalized: {cond_norm:.2e}")
+        print(f"Condition improvement: {cond_raw / cond_norm:.2e}x better")
+
+    # Create normalized quadratic manifold
+    class NormalizedQuadraticManifold(nn.Module):
+        def __init__(self, pod_basis, gamma, z_mean, z_std, x_mean, x_std):
+            super().__init__()
+            pod_basis = pod_basis.double()
+            self.register_buffer('U_r', pod_basis)
+            self.d, self.r = pod_basis.shape
+            self.gamma = gamma
+            
+            # Store normalization parameters
+            self.register_buffer('z_mean', z_mean)
+            self.register_buffer('z_std', z_std)
+            self.register_buffer('x_mean', x_mean)
+            self.register_buffer('x_std', x_std)
+            
+            # Initialize weights with proper scaling
+            self.weight_mat = nn.Parameter(
+                torch.randn(self.r * (self.r + 1) // 2, self.d, dtype=torch.float64) * 0.01)
+        
+        def forward(self, z_batch):
+            # Normalize input
+            z_batch = z_batch.double()
+            z_normalized = (z_batch - self.z_mean) / self.z_std
+            
+            # Linear part (on normalized data)
+            x_hat_lin = z_normalized @ self.U_r.T
+            
+            # Quadratic part (on normalized data)
+            z_quad = quadratic_mapping_torch(z_normalized)
+            x_hat_quad = z_quad @ self.weight_mat
+            
+            # Combine
+            x_hat_normalized = x_hat_lin + x_hat_quad
+            
+            # Denormalize output
+            x_hat = x_hat_normalized * self.x_std + self.x_mean
+            
+            return x_hat
+
+    # Create normalized model
+    qm_model_norm = NormalizedQuadraticManifold(pod_basis, gamma, z_mean, z_std, x_mean, x_std)
+    qm_model_norm = qm_model_norm.to(device)
+
+    # Training with much higher learning rate (normalization allows this)
+    optimizer = optim.Adam(qm_model_norm.parameters(), lr=1e-2, weight_decay=0)
+    mse_loss = nn.MSELoss()
+    qm_model_norm.train()
+
+    # Add L2 regularization
+    def regularized_loss(x_pred, x_target, model, reg_weight):
+        reconstruction_loss = mse_loss(x_pred, x_target)
+        weight_reg = reg_weight * torch.norm(model.weight_mat, 'fro')**2
+        return reconstruction_loss + weight_reg
+
+    # Learning rate scheduler
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=200)
+
+    print(f"\nTraining normalized model...")
+    print(f"Initial learning rate: {optimizer.param_groups[0]['lr']:.2e}")
+
+    # Training loop with normalized data
+    best_loss = float('inf')
+    patience_counter = 0
+    max_patience = 1000
+
+    for epoch in range(10000):  # Fewer epochs needed with normalization
+        optimizer.zero_grad()
+        
+        # Forward pass (model handles normalization internally)
+        x_pred = qm_model_norm(z_train)
+        loss = regularized_loss(x_pred, x_target, qm_model_norm, gamma)
+        
+        loss.backward()
+        
+        # Gradient clipping for stability
+        # torch.nn.utils.clip_grad_norm_(qm_model_norm.parameters(), max_norm=1.0)
+        
+        optimizer.step()
+        
+        # Learning rate scheduling
+        lr_scheduler.step(loss)
+        
+        # Early stopping
+        if loss.item() < best_loss:
+            best_loss = loss.item()
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            
+        if patience_counter >= max_patience:
+            print(f"Early stopping at epoch {epoch}")
+            break
+        
+        if epoch % 100 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                print(f"Epoch {epoch:4d}: "
+                    f"LR = {optimizer.param_groups[0]['lr']:.4e}, "
+                    f"Loss = {loss.item():.6e}, "
+                    f"Rel Error = {rel_err.item():.6e}")
+                
+        # Check for convergence
+        if epoch % 500 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                if rel_err.item() < 1e-12:
+                    print(f"Converged at epoch {epoch}")
+                    break
+
+    # Final evaluation
+    qm_model_norm.eval()
+    with torch.no_grad():
+        x_reconstructed_norm = qm_model_norm(z_train)
+        x_final_norm = x_reconstructed_norm.numpy() + shift_value.T
+
+    rel_error_norm = np.linalg.norm(x_final_norm.T - X_pulse) / np.linalg.norm(X_pulse)
+    print(f"\nFinal normalized NN error: {rel_error_norm:.2e}")
+    print(f"Greedy QM error: {rel_error_greedy:.2e}")
+
+    # Compare with non-normalized version
+    if 'rel_error_trained' in locals():
+        print(f"Non-normalized NN error: {rel_error_trained:.2e}")
+        improvement = rel_error_trained / rel_error_norm
+        print(f"Normalization improvement: {improvement:.2e}x better")
+
+    # Check convergence speed
+    print(f"Training completed in {epoch} epochs")
+
+    # Verify denormalization is working correctly
+    with torch.no_grad():
+        # Test on normalized data directly
+        x_pred_normalized = qm_model_norm(z_train)
+        
+        # Manual normalization check
+        z_norm_manual = (z_train - z_mean) / z_std
+        x_pred_manual = (z_norm_manual @ qm_model_norm.U_r.T + 
+                        quadratic_mapping_torch(z_norm_manual) @ qm_model_norm.weight_mat)
+        x_pred_manual = x_pred_manual * x_std + x_mean
+        
+        normalization_error = torch.norm(x_pred_normalized - x_pred_manual) / torch.norm(x_pred_manual)
+        print(f"Normalization implementation error: {normalization_error.item():.2e}")
+
+    if rel_error_norm < rel_error_greedy:
+        print("✓ Normalized training improved over greedy QM!")
+    else:
+        print("○ Normalized training matched greedy QM performance")
+        
+        
+    
+#%% #======================== Training with Weight Normalization ===============# 
+    print(f"\n{'='*60}")
+    print("TRAINING WITH WEIGHT NORMALIZATION")
+    print(f"{'='*60}")
+    
+    import torch.nn.utils.weight_norm as weight_norm
+    class WeightNormQuadraticManifold(nn.Module):
+        def __init__(self, pod_basis: torch.Tensor, gamma: float, W: torch.Tensor = None):
+            super(WeightNormQuadraticManifold, self).__init__()
+            
+            # Ensure everything is double precision
+            pod_basis = pod_basis.double()
+            self.register_buffer('U_r', pod_basis)  # (d, r)
+            self.d, self.r = pod_basis.shape
+            self.gamma = gamma
+            
+            # Create the weight matrix as a Linear layer (for weight normalization)
+            self.weight_layer = nn.Linear(self.r * (self.r + 1) // 2, self.d, bias=False)
+            self.weight_layer = self.weight_layer.double()
+            
+            # Initialize weights
+            if W is None:
+                # Random initialization with proper scaling
+                nn.init.kaiming_uniform_(self.weight_layer.weight, nonlinearity='linear')
+                self.weight_layer.weight.data *= 0.01  # Scale down for stability
+            else:
+                # Initialize with provided weights
+                W = W.double()
+                expected_shape = (self.d, self.r * (self.r + 1) // 2)  # Linear layer expects (out, in)
+                
+                if W.shape == expected_shape:
+                    print(f"✓ W shape {W.shape} matches expected {expected_shape}")
+                    self.weight_layer.weight.data = W.clone()
+                elif W.shape == (expected_shape[1], expected_shape[0]):
+                    print(f"⚠ W shape {W.shape} needs transpose to match {expected_shape}")
+                    self.weight_layer.weight.data = W.T.clone()
+                else:
+                    raise ValueError(f"W shape {W.shape} doesn't match expected {expected_shape} or its transpose")
+            
+            # Apply weight normalization
+            self.weight_layer = weight_norm(self.weight_layer, name='weight', dim=0)
+            
+            print(f"Applied weight normalization to quadratic layer")
+            print(f"Weight shape: {self.weight_layer.weight.shape}")
+            print(f"Weight_g shape: {self.weight_layer.weight_g.shape}")
+            print(f"Weight_v shape: {self.weight_layer.weight_v.shape}")
+            
+        def forward(self, z_batch):
+            # Ensure double precision
+            z_batch = z_batch.double()
+            
+            # Linear reconstruction
+            x_hat_lin = z_batch @ self.U_r.T     # (batch, d)
+            
+            # Quadratic reconstruction with weight normalization
+            z_quad = quadratic_mapping_torch(z_batch)  # (batch, r*(r+1)//2)
+            x_hat_quad = self.weight_layer(z_quad)      # (batch, d)
+            
+            # Total reconstruction
+            x_hat = x_hat_lin + x_hat_quad
+            return x_hat
+        
+        @property
+        def weight_mat(self):
+            """For compatibility with existing code"""
+            return self.weight_layer.weight.T  # Return in original format
+
+
+    # Create weight-normalized model
+    qm_model_wn = WeightNormQuadraticManifold(pod_basis, gamma)
+    qm_model_wn = qm_model_wn.to(device)
+
+    # Analyze the weight normalization effect
+    with torch.no_grad():
+        print(f"Initial weight_g norm: {torch.norm(qm_model_wn.weight_layer.weight_g):.2e}")
+        print(f"Initial weight_v norm: {torch.norm(qm_model_wn.weight_layer.weight_v):.2e}")
+        print(f"Initial weight norm: {torch.norm(qm_model_wn.weight_layer.weight):.2e}")
+
+    # Training with weight normalization - can use higher learning rates
+    optimizer = optim.SGD(qm_model_wn.parameters(), lr=1e-2, 
+                          momentum=0.99, nesterov=True, weight_decay=0) 
+    mse_loss = nn.MSELoss()
+    qm_model_wn.train()
+
+    # Regularization function
+    def regularized_loss_wn(x_pred, x_target, model, reg_weight):
+        reconstruction_loss = mse_loss(x_pred, x_target)
+        # L2 regularization on the magnitude parameters (weight_g)
+        weight_reg = reg_weight * torch.norm(model.weight_layer.weight_g)**2
+        return reconstruction_loss + weight_reg
+
+    # Learning rate scheduler
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.8, patience=100)
+
+    print(f"\nTraining weight-normalized model...")
+    print(f"Initial learning rate: {optimizer.param_groups[0]['lr']:.2e}")
+
+    # Training loop
+    best_loss = float('inf')
+    patience_counter = 0
+    max_patience = 500
+
+    for epoch in range(10000):  # Should converge much faster
+        optimizer.zero_grad()
+        
+        # Forward pass
+        x_pred = qm_model_wn(z_train)
+        loss = regularized_loss_wn(x_pred, x_target, qm_model_wn, gamma)
+        
+        loss.backward()
+        
+        # Gradient clipping (less needed with weight norm)
+        torch.nn.utils.clip_grad_norm_(qm_model_wn.parameters(), max_norm=10.0)
+        
+        optimizer.step()
+        
+        # Learning rate scheduling
+        lr_scheduler.step(loss)
+        
+        # # Early stopping
+        # if loss.item() < best_loss:
+        #     best_loss = loss.item()
+        #     patience_counter = 0
+        # else:
+        #     patience_counter += 1
+            
+        # if patience_counter >= max_patience:
+        #     print(f"Early stopping at epoch {epoch}")
+        #     break
+        
+        if epoch % 50 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                weight_g_norm = torch.norm(qm_model_wn.weight_layer.weight_g)
+                weight_v_norm = torch.norm(qm_model_wn.weight_layer.weight_v)
+                print(f"Epoch {epoch:4d}: "
+                    f"LR = {optimizer.param_groups[0]['lr']:.4e}, "
+                    f"Loss = {loss.item():.6e}, "
+                    f"Rel Error = {rel_err.item():.6e}, "
+                    f"||g|| = {weight_g_norm.item():.4e}, "
+                    f"||v|| = {weight_v_norm.item():.4e}")
+                
+        # Check for convergence
+        if epoch % 100 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                if rel_err.item() < 1e-12:
+                    print(f"Weight-normalized model converged at epoch {epoch}")
+                    break
+
+    # Final evaluation
+    qm_model_wn.eval()
+    with torch.no_grad():
+        x_reconstructed_wn = qm_model_wn(z_train)
+        x_final_wn = x_reconstructed_wn.numpy() + shift_value.T
+
+    rel_error_wn = np.linalg.norm(x_final_wn.T - X_pulse) / np.linalg.norm(X_pulse)
+    print(f"\nFinal weight-normalized NN error: {rel_error_wn:.2e}")
+    print(f"Greedy QM error: {rel_error_greedy:.2e}")
+    print(f"Training completed in {epoch} epochs")
+
+    # Compare with other methods
+    if 'rel_error_norm' in locals():
+        print(f"Data normalization NN error: {rel_error_norm:.2e}")
+        improvement = rel_error_norm / rel_error_wn
+        print(f"Weight norm vs data norm improvement: {improvement:.2e}x")
+
+    # Analyze final weight statistics
+    with torch.no_grad():
+        print(f"\nFinal weight statistics:")
+        print(f"Weight_g norm: {torch.norm(qm_model_wn.weight_layer.weight_g):.2e}")
+        print(f"Weight_v norm: {torch.norm(qm_model_wn.weight_layer.weight_v):.2e}")
+        print(f"Final weight norm: {torch.norm(qm_model_wn.weight_layer.weight):.2e}")
+        
+        # Check if weights are well-conditioned
+        weight_matrix = qm_model_wn.weight_layer.weight.detach()
+        U, S, V = torch.svd(weight_matrix)
+        cond_num = S[0] / S[-1] if S[-1] > 1e-15 else float('inf')
+        print(f"Weight matrix condition number: {cond_num:.2e}")
+
+    if rel_error_wn < rel_error_greedy:
+        print("✓ Weight normalization improved over greedy QM!")
+    else:
+        print("○ Weight normalization matched greedy QM performance")
+        
+
+#%% #======================== Training with Combined Normalization =============#
+    print(f"\n{'='*60}")
+    print("TRAINING WITH BOTH WEIGHT AND DATA NORMALIZATION")
+    print(f"{'='*60}")
+    
+    # Analyze data statistics before normalization
+    print("Data statistics before normalization:")
+    print(f"z_train - mean: {torch.mean(z_train):.2e}, std: {torch.std(z_train):.2e}")
+    print(f"z_train - min: {torch.min(z_train):.2e}, max: {torch.max(z_train):.2e}")
+    print(f"x_target - mean: {torch.mean(x_target):.2e}, std: {torch.std(x_target):.2e}")
+    print(f"x_target - min: {torch.min(x_target):.2e}, max: {torch.max(x_target):.2e}")
+
+    # Normalize input data (z_train)
+    z_mean = torch.mean(z_train, dim=0, keepdim=True)
+    z_std = torch.std(z_train, dim=0, keepdim=True) + 1e-8  # Add small epsilon to avoid division by zero
+    z_train_normalized = (z_train - z_mean) / z_std
+
+    # Normalize target data (x_target)
+    x_mean = torch.mean(x_target, dim=0, keepdim=True)
+    x_std = torch.std(x_target, dim=0, keepdim=True) + 1e-8
+    x_target_normalized = (x_target - x_mean) / x_std
+
+    print("\nData statistics after normalization:")
+    print(f"z_train_normalized - mean: {torch.mean(z_train_normalized):.2e}, std: {torch.std(z_train_normalized):.2e}")
+    print(f"x_target_normalized - mean: {torch.mean(x_target_normalized):.2e}, std: {torch.std(x_target_normalized):.2e}")
+
+
+    class CombinedNormQuadraticManifold(nn.Module):
+        def __init__(self, pod_basis, gamma, z_mean, z_std, x_mean, x_std):
+            super().__init__()
+            pod_basis = pod_basis.double()
+            self.register_buffer('U_r', pod_basis)
+            self.d, self.r = pod_basis.shape
+            self.gamma = gamma
+            
+            # Store normalization parameters
+            self.register_buffer('z_mean', z_mean)
+            self.register_buffer('z_std', z_std)
+            self.register_buffer('x_mean', x_mean)
+            self.register_buffer('x_std', x_std)
+            
+            # Create weight-normalized layer
+            self.weight_layer = nn.Linear(self.r * (self.r + 1) // 2, self.d, bias=False)
+            self.weight_layer = self.weight_layer.double()
+            
+            # Initialize with proper scaling
+            nn.init.kaiming_uniform_(self.weight_layer.weight, nonlinearity='linear')
+            self.weight_layer.weight.data *= 0.01
+            
+            # Apply weight normalization
+            self.weight_layer = weight_norm(self.weight_layer, name='weight', dim=0)
+        
+        def forward(self, z_batch):
+            # Normalize input
+            z_batch = z_batch.double()
+            z_normalized = (z_batch - self.z_mean) / self.z_std
+            
+            # Linear part (on normalized data)
+            x_hat_lin = z_normalized @ self.U_r.T
+            
+            # Quadratic part with weight normalization (on normalized data)
+            z_quad = quadratic_mapping_torch(z_normalized)
+            x_hat_quad = self.weight_layer(z_quad)
+            
+            # Combine
+            x_hat_normalized = x_hat_lin + x_hat_quad
+            
+            # Denormalize output
+            x_hat = x_hat_normalized * self.x_std + self.x_mean
+            
+            return x_hat
+        
+        @property
+        def weight_mat(self):
+            """For compatibility"""
+            return self.weight_layer.weight.T
+
+    # Create combined normalization model
+    qm_model_combined = CombinedNormQuadraticManifold(pod_basis, gamma, z_mean, z_std, x_mean, x_std)
+    qm_model_combined = qm_model_combined.to(device)
+
+    # Training with even higher learning rate
+    # optimizer = optim.Adam(qm_model_combined.parameters(), lr=1, weight_decay=0)  # Very high LR
+    optimizer = optim.SGD(qm_model_combined.parameters(), lr=1, 
+                          momentum=0.99, nesterov=True, weight_decay=0)  # Very high LR
+    mse_loss = nn.MSELoss()
+    qm_model_combined.train()
+    
+    # Learning rate scheduler
+    lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.8, patience=1000)
+
+    print(f"Training combined normalization model...")
+    print(f"Initial learning rate: {optimizer.param_groups[0]['lr']:.2e}")
+    
+
+    # Training loop - should converge very fast
+    for epoch in range(10000):  # Even fewer epochs
+        optimizer.zero_grad()
+        
+        # Forward pass
+        x_pred = qm_model_combined(z_train)
+        loss = regularized_loss_wn(x_pred, x_target, qm_model_combined, gamma)
+        
+        loss.backward()
+        optimizer.step()
+        
+        # Learning rate scheduling
+        lr_scheduler.step(loss)
+        
+        if epoch % 10 == 0:
+            with torch.no_grad():
+                rel_err = torch.norm(x_pred - x_target) / torch.norm(x_target)
+                print(f"Epoch {epoch:4d}: Loss = {loss.item():.6e}, Rel Error = {rel_err.item():.6e}")
+                
+            if rel_err.item() < 1e-12:
+                print(f"Combined normalization converged at epoch {epoch}")
+                break
+
+    # Final evaluation
+    qm_model_combined.eval()
+    with torch.no_grad():
+        x_reconstructed_combined = qm_model_combined(z_train)
+        x_final_combined = x_reconstructed_combined.numpy() + shift_value.T
+
+    rel_error_combined = np.linalg.norm(x_final_combined.T - X_pulse) / np.linalg.norm(X_pulse)
+    print(f"\nFinal combined normalization NN error: {rel_error_combined:.2e}")
+    print(f"Training completed in {epoch} epochs")
 # %%
