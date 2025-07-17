@@ -386,6 +386,58 @@ if __name__ == "__main__":
     # Print the selected modes
     print("Selected modes (I_qm):", I_qm.sort())
 
+
+# %% #====================== Plot the singular values =========================#
+    # Shifted data
+    shift_value_np = np.array(shift_value)
+    X_shift = X - shift_value_np
+
+    pod_basis, Sig, _ = np.linalg.svd(X_shift, full_matrices=False)
+    pod_basis = pod_basis[:, :s_p]  
+    Sig = Sig[:s_p]  
+    
+    # Plot singular values
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Plot 1: Singular values (linear scale)
+    ax1.plot(range(1, len(Sig) + 1), Sig, 'b-o', markersize=4)
+    ax1.set_xlabel('Mode Index')
+    ax1.set_ylabel('Singular Value')
+    ax1.set_title('Singular Values (Linear Scale)')
+    ax1.grid(True, alpha=0.3)
+    
+    # Highlight quadratic manifold modes
+    for mode in I_qm:
+        if mode < len(Sig):
+            ax1.plot(mode + 1, Sig[mode], 'ro', markersize=8, 
+                    markerfacecolor='none', markeredgewidth=2)
+    
+    # Plot 2: Singular values (log scale)
+    ax2.semilogy(range(1, len(Sig) + 1), Sig, 'b-o', markersize=4)
+    ax2.set_xlabel('Mode Index')
+    ax2.set_ylabel('Singular Value (log scale)')
+    ax2.set_title('Singular Values (Log Scale)\n(Red circles = Quadratic Manifold modes)')
+    ax2.grid(True, alpha=0.3)
+    
+    # Highlight quadratic manifold modes
+    for mode in I_qm:
+        if mode < len(Sig):
+            ax2.plot(mode + 1, Sig[mode], 'ro', markersize=8, 
+                    markerfacecolor='none', markeredgewidth=2)
+    
+    plt.tight_layout()
+    plt.savefig('figures/lassonet/wave/singular_values.png', dpi=200)
+    plt.show()
+    
+    # Print statistics
+    print(f"\nSingular Value Statistics:")
+    print(f"Number of modes: {len(Sig)}")
+    print(f"Largest singular value: {Sig[0]:.6e}")
+    print(f"Smallest singular value: {Sig[-1]:.6e}")
+    print(f"Condition number: {Sig[0]/Sig[-1]:.6e}")
+    print(f"Energy captured by first {r_max} modes: {np.sum(Sig[:r_max]**2)/np.sum(Sig**2)*100:.2f}%")
+    print(f"Quadratic manifold modes singular values: {Sig[I_qm]}")
+
 #%% #======================= LassoNet Mode Selection ==========================#
     print("\n" + "="*60)
     print("LASSO MODE SELECTION")
@@ -405,6 +457,7 @@ if __name__ == "__main__":
     Sig = Sig[:s_p]  
     pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float64)).to(device)
     Sig_tensor = torch.from_numpy(Sig.astype(np.float64)).to(device)
+
     
     # Compute the reduced data
     Z_np = pod_basis.T @ X_shift  # (s, n)
