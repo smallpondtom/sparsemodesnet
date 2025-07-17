@@ -767,7 +767,7 @@ ax2.grid(True, alpha=0.3)
 ax2.legend()
 
 plt.tight_layout()
-plt.savefig('figures/lassonet/linear/selected_from_modes/singular_values.png', dpi=200, bbox_inches='tight')
+plt.savefig('figures/lassonet/linear/select_from_modes/singular_values.png', dpi=200, bbox_inches='tight')
 plt.show()
 
 # Print energy statistics
@@ -776,3 +776,5 @@ print(f"  Original data energy: {np.sum(sigma_X**2):.3e}")
 print(f"  True modes energy: {np.sum(sigma_true**2):.3e} ({np.sum(sigma_true**2)/np.sum(sigma_X**2)*100:.1f}%)")
 print(f"  Selected modes energy: {np.sum(sigma_sel**2):.3e} ({np.sum(sigma_sel**2)/np.sum(sigma_X**2)*100:.1f}%)")
 
+
+# %%
