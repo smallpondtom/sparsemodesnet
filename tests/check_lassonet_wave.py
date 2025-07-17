@@ -55,107 +55,102 @@ def quadratic_mapping_numpy(x):
         i_indices, j_indices = np.tril_indices(n)
         result = x[:, i_indices] * x[:, j_indices]
         return result
+    
+class MaskedLayer(torch.nn.Linear):
+    def __init__(
+        self,
+        in_features: int,    # e.g., 6
+        out_features: int,   # e.g., 2
+        mask: torch.Tensor,  # e.g., shape(2,6)
+        dtype: torch.dtype,
+    ):
+        super().__init__(
+            in_features=in_features,
+            out_features=out_features,
+            dtype=dtype,  # Ensure double precision
+            bias=False,      # no need to use a bias in our case
+        )
+        self.mask = mask
 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.nn.functional.linear(x, self.weight * self.mask, self.bias)
+        return x
 
 class QuadraticManifold(nn.Module):
-    def __init__(self, pod_basis: torch.Tensor, svdvals: torch.Tensor, 
+    def __init__(self, pod_basis: torch.Tensor, 
                  lam: float, M: float, alpha: float,
                  gamma: float):
         super(QuadraticManifold, self).__init__()
         
         # Ensure everything is double precision
+        pod_basis = pod_basis.double()
         self.register_buffer('U_s', pod_basis)  # (d, r)
-        self.register_buffer('S_s', svdvals)  # (r,)
         self.d, self.s = pod_basis.shape
         self.M = float(M)
         self.lam = lam
         self.gamma = gamma
         self.alpha = alpha
-        self.weight_mat = torch.zeros_like(
-            self.s*(self.s+1)//2, self.d, dtype=torch.float32)
         
         # Skip‐weights ω ∈ R^s
-        self.omega = nn.Parameter(torch.ones(self.s))
+        self.omega = nn.Parameter(torch.ones(self.s, dtype=torch.float64))
         
-        # First layer (used in proximal step)
-        self.first_layer = nn.Linear(self.s, self.s, bias=False)
+        # NOTE: 
+        # First layer (used in proximal step) as a gate for selected modes.
+        # To make this identical to the quadratic manifold we have to mask
+        # the first layer weights to be the identity matrix so that purely
+        # the selected modes are passed to the quadratic mapping.
+        self.first_layer = MaskedLayer(
+            self.s, self.s, torch.eye(self.s), dtype=torch.float64)
+        self.first_layer.weight.data.fill_(0.5)  # Initialize to ones
         
     
-    # def __init__(self, pod_basis: torch.Tensor, svdvals: torch.Tensor, 
-    #              lam: float, M: float, alpha: float,
-    #              gamma: float, W: torch.Tensor = None):
-    #     super(QuadraticManifold, self).__init__()
-        
-    #     # Ensure everything is double precision
-    #     self.register_buffer('U_s', pod_basis)  # (d, r)
-    #     self.register_buffer('S_s', svdvals)  # (r,)
-    #     self.d, self.s = pod_basis.shape
-    #     self.M = float(M)
-    #     self.lam = lam
-    #     self.gamma = gamma
-    #     self.alpha = alpha
-        
-    #     # Skip‐weights ω ∈ R^s
-    #     self.omega = nn.Parameter(torch.ones(self.s))
-        
-    #     # First layer (used in proximal step)
-    #     self.first_layer = nn.Linear(self.s, self.s, bias=False)
-        
-    #     if W is None:
-    #         # Random initialization
-    #         self.weight_mat = nn.Parameter(
-    #             torch.ones(self.s * (self.s + 1) // 2, self.d, 
-    #                        dtype=torch.float32) * 1e-8)
-    #     else:
-    #         expected_shape = (self.s * (self.s + 1) // 2, self.d)
-            
-    #         if W.shape == expected_shape:
-    #             print(f"✓ W shape {W.shape} matches expected {expected_shape}")
-    #             self.weight_mat = nn.Parameter(W.clone())
-    #         elif W.shape == (expected_shape[1], expected_shape[0]):
-    #             print(f"⚠ W shape {W.shape} needs transpose to match {expected_shape}")
-    #             self.weight_mat = nn.Parameter(W.T.clone())
-    #         else:
-    #             raise ValueError(f"W shape {W.shape} doesn't match expected ",
-    #                              f"{expected_shape} or its transpose")
-                
-        
-    def forward(self, z_batch):
-        z_hat = z_batch * self.omega.unsqueeze(0)
+    def forward(self, z_batch, x_batch):
+        z_batch = z_batch.double()  # Ensure double precision
+        z_hat = z_batch * self.omega.unsqueeze(0) 
         
         # Reconstruct the linear part via projection
         x_hat_lin = z_hat @ self.U_s.T                        
         
-        h = self.first_layer(z_hat)                        
-        z_quad = quadratic_mapping_torch(h)  
-        x_hat_quad = z_quad @ self.weight_mat 
-
+        h = self.first_layer(z_hat)  
+        z_quad = quadratic_mapping_torch(h) 
+        
+        with torch.no_grad():
+            # Compute the residual for the quadratic part
+            residual = x_batch - x_hat_lin 
+            W, _ = self.lstsq_l2_torch(
+                z_quad, residual
+            ) 
+            
+        x_hat_quad = z_quad @ W
         x_hat = x_hat_lin + x_hat_quad
 
         return z_hat, x_hat
    
-    
     @staticmethod 
-    def lstsq_l2_numpy(A, B, reg_magnitude=1e-6):
-        """
-        Numpy version of the JAX lstsq_l2 function for consistency
-        """
-        phi, sigma, psi_t = np.linalg.svd(A, full_matrices=False)
+    def lstsq_l2_torch(A, B, reg_magnitude=1e-6):
+        U, sigma, Vt = torch.linalg.svd(A, full_matrices=False)
         sinv = sigma / (sigma**2 + reg_magnitude**2)
-        x = psi_t.T * sinv @ (phi.T @ B)
+        
+        # Handle both 1D and 2D B cases
+        if B.dim() == 1:
+            # B is 1D: shape (m,)
+            UTB = U.T @ B  # shape (min(m,n),)
+            x = Vt.T @ (sinv * UTB)  # shape (n,)
+        else:
+            # B is 2D: shape (m, k)
+            UTB = U.T @ B  # shape (min(m,n), k)
+            x = Vt.T @ (sinv.unsqueeze(-1) * UTB)  # shape (n, k)
+        
+        # Compute residual
         B_estimate = A @ x
-        resid = np.linalg.norm(B - B_estimate)
+        resid = torch.linalg.norm(B - B_estimate)
+        
         return x, resid
- 
     
     def l1_norm_omega(self):
         """Return ℓ₁-norm of ω."""
         return self.omega.abs().sum()
     
-    def l2_norm_omega(self):
-        """Return ℓ₂-norm of ω."""
-        return self.omega.norm(p=2)
-
     def proximal_step(self, lam):
         """Batched implementation of Algorithm 4 (Group-Hierarchical Proximal) 
         with λ̄ = 0, corrected so that ω_new = x_star * θ (no extra 
@@ -200,7 +195,7 @@ class QuadraticManifold(nn.Module):
 
         # 7) Compute x_vals(m) = ReLU(1 - a_s / ‖v‖) / (1 + m*M^2)
         x_vals = F.relu(1.0 - a_s / (norm_v_col + 1e-16)
-                        ) / (1.0 + m_index * (M**2) + (1-self.alpha)*lam)  # (s, K+1)
+                        ) / (1.0 + m_index * (M**2) + (1 - self.alpha)*lam)  # (s, K+1)
 
         # 8) Compute w_vals(m) = M * x_vals(m) * ‖v‖
         w_vals = M * x_vals * norm_v_col  # (s, K+1)
@@ -239,6 +234,7 @@ def train_quadraticmanifold(model: QuadraticManifold,
                             lr: float,
                             momentum: float,
                             optimizer: str,
+                            rmax: int,
                             device: str):
     """
     Train for exactly num_epochs at whatever model.lam currently is.
@@ -256,10 +252,10 @@ def train_quadraticmanifold(model: QuadraticManifold,
     mse_loss = nn.MSELoss()
     
     lr_schedule = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.8, patience=100,
+        optimizer, mode='min', factor=0.8, patience=1000000,
     )
     lr_new = optimizer.param_groups[0]['lr']
-    history = {'loss': [], 'l1_b': []}
+    history = {'loss': [], 'l1_b': [], 'omegas': []}
     
     for epoch in range(1, num_epochs + 1):
         epoch_loss = 0.0
@@ -272,9 +268,8 @@ def train_quadraticmanifold(model: QuadraticManifold,
             x_batch = x_batch.to(device)  # (batch, d)
 
             optimizer.zero_grad()
-            _, x_hat_batch = model(z_batch)  # (batch, d)
+            _, x_hat_batch = model(z_batch, x_batch)  # (batch, d)
             loss = mse_loss(x_hat_batch, x_batch)
-            # loss += model.gamma * model.l2_norm_omega()
             
             loss.backward()
             optimizer.step()
@@ -293,11 +288,26 @@ def train_quadraticmanifold(model: QuadraticManifold,
         epoch_l1  /= n_samples
         history['loss'].append(epoch_loss)
         history['l1_b'].append(epoch_l1)
+        with torch.no_grad():
+            omega_ = model.omega.detach().cpu().numpy()
+            history['omegas'].append(omega_)
+            nonzero_count = np.count_nonzero(omega_)
 
         # Print every 10 epochs or first:
-        if (epoch % 100 == 0) or (epoch == 1):
+        if (epoch % 10 == 0) or (epoch == 1):
             print(f"  λ={model.lam:.3e} | Epoch {epoch:<4d} | lr={lr_new:.4e} | "
-              f"Recon MSE={epoch_loss:.6e} | ‖ω‖₁={epoch_l1:.6e}")
+                  f"Recon MSE={epoch_loss:.6e} | ‖ω‖₁={epoch_l1:.6e} | "
+                  f"Non-zero modes: {nonzero_count}")
+            print(omega_)
+            
+        if nonzero_count <= rmax:
+            print(f"Reached maximum non-zero modes ({rmax}). Stopping training.")
+            break
+            
+        if epoch_l1 == 0:
+            print("All modes have zero weights. Stopping training.")
+            break
+        
             
     # Find the non-zero modes after training
     with torch.no_grad():
@@ -314,6 +324,7 @@ if __name__ == "__main__":
         device = 'mps'
     else:
         device = 'cpu'
+    device = 'cpu'
     print("Using device:", device)
     
     # Set random seeds for reproducibility
@@ -375,153 +386,6 @@ if __name__ == "__main__":
     # Print the selected modes
     print("Selected modes (I_qm):", I_qm.sort())
 
-
-#%% #======================= LassoNet Mode Selection ==========================#
-    print("\n" + "="*60)
-    print("LASSO MODE SELECTION")
-    print("="*60)
-
-    # Shifted data
-    shift_value_np = np.array(shift_value)
-    X_shift = X - shift_value_np
-
-    # Define the count of the selected modes and omegas
-    I_count = np.zeros(s_p, dtype=int)
-    omegas = np.zeros(s_p, dtype=np.float64).reshape(-1, 1)
-
-    # Compute the pod basis
-    pod_basis, Sig, _ = np.linalg.svd(X_shift, full_matrices=False)
-    pod_basis = pod_basis[:, :s_p]  
-    Sig = Sig[:s_p]  
-    pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float32)).to(device)
-    Sig_tensor = torch.from_numpy(Sig.astype(np.float32)).to(device)
-
-    # Compute the reduced data
-    Z_np = pod_basis.T @ X_shift  # (s, n)
-
-    # Prep the data
-    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_shift)
-    dl_sub = DataLoader(ds_sub, batch_size=n_grids//2, shuffle=True)
-
-    # Initialize the regularization parameter and PID controller
-    lam = 10
-    threshold = 1e-4
-
-    # PID Controller parameters for adaptive eps
-    class PIDController:
-        def __init__(self, kp=0.05, ki=0.001, kd=0.01, target=r_max):
-            self.kp = kp  # Proportional gain
-            self.ki = ki  # Integral gain  
-            self.kd = kd  # Derivative gain
-            self.target = target
-            self.integral = 0.0
-            self.previous_error = 0.0
-            self.eps_min = 0.01  # Minimum eps to prevent stagnation
-            self.eps_max = 2.0   # Maximum eps to prevent overshooting
-            
-        def update(self, current_modes):
-            # Error: positive if we have too many modes, negative if too few
-            error = current_modes - self.target
-            
-            # Proportional term
-            proportional = self.kp * error
-            
-            # Integral term (accumulated error)
-            self.integral += error
-            integral_term = self.ki * self.integral
-            
-            # Derivative term (rate of change of error)
-            derivative = self.kd * (error - self.previous_error)
-            self.previous_error = error
-            
-            # PID output (adjustment to eps)
-            pid_output = proportional + integral_term + derivative
-            
-            # Base eps + PID adjustment
-            eps = pid_output
-            
-            # Clamp eps to reasonable bounds
-            eps = np.clip(eps, self.eps_min, self.eps_max)
-            
-            return eps, error
-
-    # Initialize PID controller
-    pid = PIDController(kp=0.005, ki=0.0, kd=0.001, target=r_max)
-    alpha = 0.6
-
-    # Initialize the model 
-    model = QuadraticManifold(
-        pod_basis=pod_basis_tensor, svdvals=Sig_tensor,
-        M=2.0, lam=lam, gamma=0.0, alpha=alpha
-    ) 
-
-    # Track convergence
-    iteration = 0
-    max_iterations = 50
-    convergence_window = 3  # Number of consecutive iterations within tolerance
-    tolerance = 2  # Allow ±2 modes from target
-    consecutive_good = 0
-
-    print(f"Target modes: {r_max}")
-    print(f"Tolerance: ±{tolerance} modes")
-
-    while iteration < max_iterations:
-        print(f"\nIteration {iteration + 1}: Training with λ = {lam:.3e}")
-        
-        # Train the model
-        omega_, history = train_quadraticmanifold(
-            model=model, dataloader=dl_sub, num_epochs=100, 
-            lr=1e-3, momentum=0.95, optimizer='Adam', 
-            device=device
-        ) 
-        
-        selected_modes = np.where(omega_ > threshold)[0]
-        n_selected = len(selected_modes)
-        
-        if n_selected == 0:
-            print("No modes selected. End loop.")
-            break
-        
-        print(f"Number of selected modes: {n_selected}")
-        
-        # Update PID controller
-        eps, error = pid.update(n_selected)
-        print(f"Error: {error:+d}, Adaptive eps: {eps:.4f}")
-        
-        # Check convergence
-        if abs(error) <= tolerance:
-            consecutive_good += 1
-            print(f"Within tolerance ({consecutive_good}/{convergence_window})")
-            if consecutive_good >= convergence_window:
-                print(f"Converged! Selected {n_selected} modes (target: {r_max})")
-                break
-        else:
-            consecutive_good = 0
-        
-        # Increment the count of the selected modes and omegas
-        I_count[selected_modes] += 1
-        omegas = np.concatenate((omegas, omega_.reshape(-1, 1)), axis=1)
-        
-        # Update lambda with adaptive eps
-        if error > (s_p - r_max) / 5:  # Too many modes - increase lambda more aggressively
-            lam *= (1 + eps)
-        else:  # Too few modes - increase lambda less aggressively or decrease
-            lam *= (1 + eps/2)
-        
-        model.lam = lam
-        iteration += 1
-
-    if iteration >= max_iterations:
-        print(f"\nReached maximum iterations ({max_iterations})")
-
-    # Select the final modes
-    I_nn = np.where(omegas[:, -1] > 0)[0]
-    print(f"\nFinal summary:")
-    print(f"Total iterations: {iteration}")
-    print(f"Final lambda: {lam:.3e}")
-    print(f"Final selected modes: {len(I_nn)}")
-
-
 #%% #======================= LassoNet Mode Selection ==========================#
     print("\n" + "="*60)
     print("LASSO MODE SELECTION")
@@ -539,54 +403,60 @@ if __name__ == "__main__":
     pod_basis, Sig, _ = np.linalg.svd(X_shift, full_matrices=False)
     pod_basis = pod_basis[:, :s_p]  
     Sig = Sig[:s_p]  
-    pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float32)).to(device)
-    Sig_tensor = torch.from_numpy(Sig.astype(np.float32)).to(device)
+    pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float64)).to(device)
+    Sig_tensor = torch.from_numpy(Sig.astype(np.float64)).to(device)
     
     # Compute the reduced data
     Z_np = pod_basis.T @ X_shift  # (s, n)
     
     # Prep the data
-    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_shift)
-    dl_sub = DataLoader(ds_sub, batch_size=n_grids//2, shuffle=True)
+    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_shift, type="float64")
+    dl_sub = DataLoader(ds_sub, batch_size=1000, shuffle=False)
     
     # Initialize the regularization parameter and increase factor
-    lam = 10
-    eps = 0.1
-    alpha = 0.6
-    
+    lam = 100.0
+    eps = 0.05
+    alpha = 1.0
     # Threshold
-    threshold = 1e-4
+    threshold = 1e-6
     
     # Initialize the model 
     model = QuadraticManifold(
-        pod_basis=pod_basis_tensor, svdvals=Sig_tensor,
-        M=0.1, lam=lam, gamma=0.0, alpha=alpha
+        pod_basis=pod_basis_tensor, 
+        M=10.0, lam=lam, gamma=0.0, alpha=alpha
     ) 
     
-    while True:
-        print(f"\nTraining with λ = {lam:.3e}")
+    # while True:
+    #     print(f"\nTraining with λ = {lam:.3e}")
         
-        # Train the model
-        omega_, history = train_quadraticmanifold(
-            model=model, dataloader=dl_sub, num_epochs=2000, 
-            lr=1e-3, momentum=0.95, optimizer='Adam', 
-            device=device
-        ) 
+    #     # Train the model
+    #     omega_, history = train_quadraticmanifold(
+    #         model=model, dataloader=dl_sub, num_epochs=100, 
+    #         lr=1e-3, momentum=0.95, optimizer='Adam', 
+    #         device=device
+    #     ) 
         
-        selected_modes = np.where(omega_ > threshold)[0] 
-        if selected_modes.size == 0:
-            print("No modes selected. End loop.")
-            break
-        else:
-            print(f"Number of selected modes: {len(selected_modes)}")
+    #     selected_modes = np.where(omega_ > threshold)[0] 
+    #     if selected_modes.size == 0:
+    #         print("No modes selected. End loop.")
+    #         break
+    #     else:
+    #         print(f"Number of selected modes: {len(selected_modes)}")
         
-        # Increment the count of the selected modes and omegas
-        I_count[selected_modes] += 1
-        omegas = np.concatenate((omegas, omega_.reshape(-1, 1)), axis=1)
+    #     # Increment the count of the selected modes and omegas
+    #     I_count[selected_modes] += 1
+    #     omegas = np.concatenate((omegas, omega_.reshape(-1, 1)), axis=1)
         
-        # Update lambda
-        lam *= (1 + eps)
-        model.lam = lam
+    #     # Update lambda
+    #     lam *= (1 + eps)
+    #     model.lam = lam
+    
+    # Train the model
+    omega_, history = train_quadraticmanifold(
+        model=model, dataloader=dl_sub, num_epochs=5000, 
+        lr=1e-3, momentum=0.95, optimizer='Adam', rmax=r_max,
+        device=device
+    ) 
         
     # Select the first largest r_max modes
     I_nn = np.where(omegas[:, -1] > 0)[0]
@@ -741,10 +611,16 @@ if __name__ == "__main__":
     rel_recon_error_qm = recon_error_quad / np.linalg.norm(X, ord='fro')
     
     # Compute the reconstruction error (LassoNet)
-    V_nn = pod_basis[:, I_nn]  
+    V_nn = pod_basis[:, I_nn[:r_max]]  
     Z_nn = V_nn.T @ X_shift
     residual = X_shift - V_nn @ Z_nn
     Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T 
+    
+    # V_nn = pod_basis
+    # D = np.diag([1 if i in I_qm else 0 for i in range(s_p)])
+    # Z_nn = D @ V_nn.T @ X_shift  
+    # residual = X_shift - V_nn @ D @ V_nn.T @ X_shift
+    # Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T
         
     def lstsq_l2_numpy(A, B, reg_magnitude=1e-6):
         """
