@@ -9,14 +9,16 @@ class PODReconDataset(Dataset):
     Creates n samples; each sample i returns (z_i, x_i).
     """
 
-    def __init__(self, Z_np: np.ndarray, X_np: np.ndarray):
+    def __init__(self, Z_np: np.ndarray, X_np: np.ndarray, type: str = "float32"):
         assert Z_np.ndim == 2 and X_np.ndim == 2
         s, n1 = Z_np.shape
         d, n2 = X_np.shape
         assert n1 == n2, "Mismatch in number of snapshots."
         # store row‐major so Dataset returns (z_i, x_i)
-        self.Z = Z_np.T.copy().astype(np.float32)  # (n, s)
-        self.X = X_np.T.copy().astype(np.float32)  # (n, d)
+        self.Z = Z_np.T.copy().astype(
+            np.float32 if type == "float32" else np.float64)  # (n, s)
+        self.X = X_np.T.copy().astype(
+            np.float32 if type == "float32" else np.float64)  # (n, d)
 
     def __len__(self):
         return self.Z.shape[0]
