@@ -112,8 +112,8 @@ class QuadraticManifold(nn.Module):
         x_hat_lin = z_hat @ self.U_s.T                        
         
         h = self.first_layer(z_hat)  
+
         # z_quad = quadratic_mapping_torch(h) 
-        
         # with torch.no_grad():
         #     # Compute the residual for the quadratic part
         #     residual = x_batch - x_hat_lin 
@@ -440,6 +440,8 @@ if __name__ == "__main__":
                 cnt += 1
     if cnt == n_mode:
         print(f"All {n_mode} modes were selected correctly.")
+    else:
+        print(f"Only {cnt} out of {n_mode} modes were selected correctly.")
 
 
 # %% #==================== Compute Reconstruction Errors ======================#
@@ -450,6 +452,14 @@ if __name__ == "__main__":
     recon_answer_rel = recon_answer / np.linalg.norm(X, 'fro')
     recon_lassonet = np.linalg.norm(X - V_nn @ V_nn.T @ X, 'fro')
     recon_lassonet_rel = recon_lassonet / np.linalg.norm(X, 'fro')
+
+    # X_tensor = torch.from_numpy(X.astype(np.float64)).to(device).T
+    # Z_tensor = torch.from_numpy(Z_np.astype(np.float64)).to(device).T
+    # with torch.no_grad():
+    #     _, sol = model(Z_tensor, X_tensor)  # (Z_hat, X_hat)
+    #     recon_lassonet = torch.linalg.norm(X_tensor - sol, 'fro')
+    #     recon_lassonet = np.array(recon_lassonet.cpu())
+    # recon_lassonet_rel = recon_lassonet / np.linalg.norm(X, 'fro')
     
     # Print results
     print(f"\nReconstruction errors:")
