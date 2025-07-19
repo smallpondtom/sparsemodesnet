@@ -68,9 +68,9 @@ class MaskedLayer(torch.nn.Linear):
             in_features=in_features,
             out_features=out_features,
             dtype=dtype,  # Ensure double precision
-            bias=False,      # no need to use a bias in our case
+            bias=False,   # no need to use a bias in our case
         )
-        self.mask = mask
+        self.register_buffer('mask', mask)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = torch.nn.functional.linear(x, self.weight * self.mask, self.bias)
@@ -79,20 +79,24 @@ class MaskedLayer(torch.nn.Linear):
 class QuadraticManifold(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, 
                  lam: float, M: float, alpha: float,
-                 gamma: float):
+                 gamma: float, beta: float, 
+                 dtype: torch.dtype = torch.float32):
         super(QuadraticManifold, self).__init__()
         
         # Ensure everything is double precision
-        pod_basis = pod_basis.double()
+        if dtype == torch.float64:
+            pod_basis = pod_basis.double()
         self.register_buffer('U_s', pod_basis)  # (d, r)
         self.d, self.s = pod_basis.shape
         self.M = float(M)
         self.lam = lam
         self.gamma = gamma
         self.alpha = alpha
+        self.beta = beta
+        self.dtype = dtype
         
         # Skip‐weights ω ∈ R^s
-        self.omega = nn.Parameter(torch.ones(self.s, dtype=torch.float64))
+        self.omega = nn.Parameter(torch.ones(self.s, dtype=dtype) * 0.01)
         
         # NOTE: 
         # First layer (used in proximal step) as a gate for selected modes.
@@ -100,12 +104,14 @@ class QuadraticManifold(nn.Module):
         # the first layer weights to be the identity matrix so that purely
         # the selected modes are passed to the quadratic mapping.
         self.first_layer = MaskedLayer(
-            self.s, self.s, torch.eye(self.s), dtype=torch.float64)
-        self.first_layer.weight.data.fill_(0.5)  # Initialize to ones
+            self.s, self.s, torch.eye(self.s), dtype=dtype)
+        self.first_layer.weight.data.fill_(0.001)  # Initialize to ones
         
     
     def forward(self, z_batch, x_batch):
-        z_batch = z_batch.double()  # Ensure double precision
+        if model.dtype == torch.float64:
+            z_batch = z_batch.double()  
+            x_batch = x_batch.double()  
         z_hat = z_batch * self.omega.unsqueeze(0) 
         
         # Reconstruct the linear part via projection
@@ -122,9 +128,8 @@ class QuadraticManifold(nn.Module):
             ) 
             
         x_hat_quad = z_quad @ W
-        x_hat = x_hat_lin + x_hat_quad
 
-        return z_hat, x_hat
+        return z_hat, x_hat_lin, x_hat_quad
    
     @staticmethod 
     def lstsq_l2_torch(A, B, reg_magnitude=1e-6):
@@ -256,6 +261,8 @@ def train_quadraticmanifold(model: QuadraticManifold,
     )
     lr_new = optimizer.param_groups[0]['lr']
     history = {'loss': [], 'l1_b': [], 'omegas': []}
+
+    exit_flag = False
     
     for epoch in range(1, num_epochs + 1):
         epoch_loss = 0.0
@@ -268,8 +275,11 @@ def train_quadraticmanifold(model: QuadraticManifold,
             x_batch = x_batch.to(device)  # (batch, d)
 
             optimizer.zero_grad()
-            _, x_hat_batch = model(z_batch, x_batch)  # (batch, d)
-            loss = mse_loss(x_hat_batch, x_batch)
+            _, x_hat_lin, x_hat_quad = model(z_batch, x_batch)  # (batch, d)
+            loss_lin = mse_loss(x_hat_lin, x_batch)
+            x_batch_perp = x_batch - x_hat_lin 
+            loss_quad = mse_loss(x_hat_quad, x_batch_perp)
+            loss = model.beta * loss_lin + (1 - model.beta) * loss_quad
             
             loss.backward()
             optimizer.step()
@@ -302,6 +312,7 @@ def train_quadraticmanifold(model: QuadraticManifold,
             
         if nonzero_count <= rmax:
             print(f"Reached maximum non-zero modes ({rmax}). Stopping training.")
+            exit_flag = True
             break
             
         if epoch_l1 == 0:
@@ -313,7 +324,7 @@ def train_quadraticmanifold(model: QuadraticManifold,
     with torch.no_grad():
         omega_ = model.omega.detach().cpu().numpy()
 
-    return omega_, history
+    return omega_, history, exit_flag
 
 
 #%% #================================ __main__ ================================#
@@ -324,7 +335,6 @@ if __name__ == "__main__":
         device = 'mps'
     else:
         device = 'cpu'
-    device = 'cpu'
     print("Using device:", device)
     
     # Set random seeds for reproducibility
@@ -455,61 +465,58 @@ if __name__ == "__main__":
     pod_basis, Sig, _ = np.linalg.svd(X_shift, full_matrices=False)
     pod_basis = pod_basis[:, :s_p]  
     Sig = Sig[:s_p]  
-    pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float64)).to(device)
-    Sig_tensor = torch.from_numpy(Sig.astype(np.float64)).to(device)
+    pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float32)).to(device)
+    Sig_tensor = torch.from_numpy(Sig.astype(np.float32)).to(device)
 
     
     # Compute the reduced data
     Z_np = pod_basis.T @ X_shift  # (s, n)
     
     # Prep the data
-    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_shift, type="float64")
+    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_shift, type="float32")
     dl_sub = DataLoader(ds_sub, batch_size=1000, shuffle=False)
     
     # Initialize the regularization parameter and increase factor
-    lam = 100.0
+    lam = 10.0
     eps = 0.05
     alpha = 1.0
+    beta = 0.5
     # Threshold
     threshold = 1e-6
     
     # Initialize the model 
     model = QuadraticManifold(
-        pod_basis=pod_basis_tensor, 
-        M=10.0, lam=lam, gamma=0.0, alpha=alpha
+        pod_basis=pod_basis_tensor, dtype=torch.float32,
+        M=10.0, lam=lam, gamma=0.0, alpha=alpha, beta=beta
     ) 
     
-    # while True:
-    #     print(f"\nTraining with λ = {lam:.3e}")
+    while True:
+        print(f"\nTraining with λ = {lam:.3e}")
         
-    #     # Train the model
-    #     omega_, history = train_quadraticmanifold(
-    #         model=model, dataloader=dl_sub, num_epochs=100, 
-    #         lr=1e-3, momentum=0.95, optimizer='Adam', 
-    #         device=device
-    #     ) 
+        # Train the model
+        omega_, history, flag = train_quadraticmanifold(
+            model=model, dataloader=dl_sub, num_epochs=100, 
+            lr=1e-3, momentum=0.95, optimizer='Adam', 
+            device=device, rmax=r_max
+        ) 
         
-    #     selected_modes = np.where(omega_ > threshold)[0] 
-    #     if selected_modes.size == 0:
-    #         print("No modes selected. End loop.")
-    #         break
-    #     else:
-    #         print(f"Number of selected modes: {len(selected_modes)}")
+        selected_modes = np.where(omega_ > threshold)[0] 
+        if selected_modes.size == 0:
+            print("No modes selected. End loop.")
+            break
+        else:
+            print(f"Number of selected modes: {len(selected_modes)}")
+
+        # Increment the count of the selected modes and omegas
+        I_count[selected_modes] += 1
+        omegas = np.concatenate((omegas, omega_.reshape(-1, 1)), axis=1)
+
+        if flag:
+            break
         
-    #     # Increment the count of the selected modes and omegas
-    #     I_count[selected_modes] += 1
-    #     omegas = np.concatenate((omegas, omega_.reshape(-1, 1)), axis=1)
-        
-    #     # Update lambda
-    #     lam *= (1 + eps)
-    #     model.lam = lam
-    
-    # Train the model
-    omega_, history = train_quadraticmanifold(
-        model=model, dataloader=dl_sub, num_epochs=5000, 
-        lr=1e-3, momentum=0.95, optimizer='Adam', rmax=r_max,
-        device=device
-    ) 
+        # Update lambda
+        lam *= (1 + eps)
+        model.lam = lam
         
     # Select the first largest r_max modes
     I_nn = np.where(omegas[:, -1] > 0)[0]
