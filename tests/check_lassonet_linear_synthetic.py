@@ -351,7 +351,7 @@ if __name__ == "__main__":
     
 #%% #============== Generate the Modes while Adding Dummy Modes ===============#
     print("\n" + "="*60)
-    print("SELECT ONLY A FEW MODES AND RECONSTRUCTI DATA")
+    print("SELECT ONLY A FEW MODES AND RECONSTRUCTING DATA")
     print("="*60)
 
     n_total = 100
