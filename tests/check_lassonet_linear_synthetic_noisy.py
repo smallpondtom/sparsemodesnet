@@ -112,17 +112,6 @@ class QuadraticManifold(nn.Module):
         x_hat_lin = z_hat @ self.U_s.T                        
         
         h = self.first_layer(z_hat)  
-
-        # z_quad = quadratic_mapping_torch(h) 
-        # with torch.no_grad():
-        #     # Compute the residual for the quadratic part
-        #     residual = x_batch - x_hat_lin 
-        #     W, _ = self.lstsq_l2_torch(
-        #         z_quad, residual
-        #     ) 
-            
-        # x_hat_quad = z_quad @ W
-        # x_hat = x_hat_lin + x_hat_quad
         x_hat = x_hat_lin
 
         return z_hat, x_hat

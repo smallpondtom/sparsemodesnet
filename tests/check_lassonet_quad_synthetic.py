@@ -78,8 +78,7 @@ class MaskedLayer(torch.nn.Linear):
 
 class QuadraticManifold(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, 
-                 lam: float, M: float, alpha: float,
-                 gamma: float):
+                 lam: float, M: float, alpha: float, gamma: float):
         super(QuadraticManifold, self).__init__()
         
         # Ensure everything is double precision
@@ -93,7 +92,7 @@ class QuadraticManifold(nn.Module):
         self.W = nn.Parameter(
             torch.ones(self.s * (self.s + 1) // 2, self.d, dtype=torch.float32)
         )
-        
+
         # Skip‐weights ω ∈ R^s
         self.omega = nn.Parameter(torch.ones(self.s, dtype=torch.float32) * 0.01)
         
@@ -107,29 +106,17 @@ class QuadraticManifold(nn.Module):
             dtype=torch.float32)
         self.first_layer.weight.data.fill_(0.1)  # Initialize to ones
         
-    
     def forward(self, z_batch, x_batch):
         # z_batch = z_batch.double()  # Ensure double precision
         z_hat = z_batch * self.omega.unsqueeze(0) 
-        
         # Reconstruct the linear part via projection
         x_hat_lin = z_hat @ self.U_s.T                        
-        
         h = self.first_layer(z_hat)  
-
         z_quad = quadratic_mapping_torch(h) 
-        # with torch.no_grad():
-        #     # Compute the residual for the quadratic part
-        #     residual = x_batch - x_hat_lin 
-        #     W, _ = self.lstsq_l2_torch(
-        #         z_quad, residual
-        #     ) 
-            
         x_hat_quad = z_quad @ self.W
         x_hat = x_hat_lin + x_hat_quad
-
         return z_hat, x_hat
-   
+
     @staticmethod 
     def lstsq_l2_torch(A, B, reg_magnitude=1e-6):
         U, sigma, Vt = torch.linalg.svd(A, full_matrices=False)
@@ -382,7 +369,6 @@ if __name__ == "__main__":
     V = np.linalg.svd(X, full_matrices=False)[0][:, :n_total]
     selected_modes = np.random.choice(n_total, n_mode, replace=False)
     V_mode = V[:, selected_modes]
-    X = V_mode @ V_mode.T @ X  # Reconstruct X using the modes
     I_nn = selected_modes
     print(f"V shape: {V.shape}")
     print(f"Number of modes: {n_mode}, Total number of modes: {n_total}")
@@ -426,8 +412,8 @@ if __name__ == "__main__":
     
     # Initialize the model 
     model = QuadraticManifold(
-        pod_basis=V_tensor, 
-        M=10.0, lam=lam, gamma=0.0, alpha=alpha
+        pod_basis=V_tensor,
+        M=10.0, lam=lam, gamma=0.0, alpha=alpha,
     ) 
 
     all_histories = []
@@ -550,7 +536,7 @@ if __name__ == "__main__":
     ax2.legend()
 
     plt.tight_layout()
-    plt.savefig('figures/lassonet/quad/select_from_modes/omega_evolution.png', dpi=200)
+    # plt.savefig('figures/lassonet/quad/select_from_modes/omega_evolution.png', dpi=200)
     plt.show()
     
 # %% #======================= Enhanced Visualizations ========================#
@@ -832,3 +818,5 @@ print(f"  Selected modes energy: {np.sum(sigma_sel**2):.3e} ({np.sum(sigma_sel**
 
 
 
+
+# %%
