@@ -19,6 +19,17 @@ from sparsemodesnet.dataset import PODReconDataset
 from quadmani import quadmani_greedy
 
 #%% 
+def lstsq_l2_numpy(A, B, reg_magnitude=1e-6):
+    """
+    Numpy version of the JAX lstsq_l2 function for consistency
+    """
+    phi, sigma, psi_t = np.linalg.svd(A, full_matrices=False)
+    sinv = sigma / (sigma**2 + reg_magnitude**2)
+    x = psi_t.T * sinv @ (phi.T @ B)
+    B_estimate = A @ x
+    resid = np.linalg.norm(B - B_estimate)
+    return x, resid
+
 def quadratic_mapping_torch(x):
     """
     Vectorized computation of unique Kronecker product x ⊗ x.
@@ -78,26 +89,40 @@ class MaskedLayer(torch.nn.Linear):
 
 class QuadraticManifold(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, 
+                 svdvals: torch.Tensor,
+                 right_basis: torch.Tensor,
                  lam: float, M: float, alpha: float,
-                 gamma: float, beta: float, 
+                 gamma: float, threshold: float,
                  dtype: torch.dtype = torch.float32):
         super(QuadraticManifold, self).__init__()
         
         # Ensure everything is double precision
         if dtype == torch.float64:
             pod_basis = pod_basis.double()
-        self.register_buffer('U_s', pod_basis)  # (d, r)
+        self.register_buffer('U_s', pod_basis) 
+        self.register_buffer('S_p', svdvals)
+        self.register_buffer('Vt_p', right_basis)  
         self.d, self.s = pod_basis.shape
+        self.p = len(svdvals)
         self.M = float(M)
         self.lam = lam
         self.gamma = gamma
         self.alpha = alpha
-        self.beta = beta
+        self.threshold = threshold
         self.dtype = dtype
         
         # Skip‐weights ω ∈ R^s
         self.omega = nn.Parameter(torch.ones(self.s, dtype=dtype) * 0.01)
-        
+
+        # Weight matrix for quadratic manifold
+        # self.W = nn.Parameter(
+        #     torch.zeros(self.s * (self.s + 1) // 2, self.p, dtype=dtype)
+        # )
+
+        self.W = nn.Parameter(
+            torch.ones(self.s * (self.s + 1) // 2, self.d, dtype=dtype)
+        )
+
         # NOTE: 
         # First layer (used in proximal step) as a gate for selected modes.
         # To make this identical to the quadratic manifold we have to mask
@@ -105,32 +130,50 @@ class QuadraticManifold(nn.Module):
         # the selected modes are passed to the quadratic mapping.
         self.first_layer = MaskedLayer(
             self.s, self.s, torch.eye(self.s), dtype=dtype)
-        self.first_layer.weight.data.fill_(0.001)  # Initialize to ones
-        
-    
+        self.first_layer.weight.data.fill_(0.1)  # Initialize to ones
+
+    # Forward map 1
     def forward(self, z_batch, x_batch):
         if model.dtype == torch.float64:
             z_batch = z_batch.double()  
             x_batch = x_batch.double()  
+
         z_hat = z_batch * self.omega.unsqueeze(0) 
-        
-        # Reconstruct the linear part via projection
-        x_hat_lin = z_hat @ self.U_s.T                        
-        
+        x_hat_lin = z_hat @ self.U_s.T                  
         h = self.first_layer(z_hat)  
         z_quad = quadratic_mapping_torch(h) 
-        
-        with torch.no_grad():
-            # Compute the residual for the quadratic part
-            residual = x_batch - x_hat_lin 
-            W, _ = self.lstsq_l2_torch(
-                z_quad, residual
-            ) 
-            
-        x_hat_quad = z_quad @ W
 
-        return z_hat, x_hat_lin, x_hat_quad
-   
+        # with torch.no_grad():
+        #     # Compute the residual for the quadratic part
+        #     residual = x_batch - x_hat_lin 
+        #     W, _ = self.lstsq_l2_torch(
+        #         z_quad, residual
+        #     ) 
+            
+        x_hat_quad = z_quad @ self.W
+        x_hat = x_hat_lin + x_hat_quad
+
+        return z_hat, x_hat
+
+    # # Forward map 2 
+    # def forward(self, z_batch, x_batch):
+    #     if model.dtype == torch.float64:
+    #         z_batch = z_batch.double()  
+    #         x_batch = x_batch.double()  
+
+    #     z_hat = z_batch * self.omega.unsqueeze(0) 
+    #     h = self.first_layer(z_hat)  
+    #     z_quad = quadratic_mapping_torch(h) 
+
+    #     with torch.no_grad():
+    #         I_nn = torch.where(self.omega.abs() > self.threshold)
+    #         D_nn = torch.eye(self.p, device=z_batch.device, dtype=z_batch.dtype)
+    #         D_nn[I_nn] = 0.0
+    #         SDVt = self.S_p @ D_nn @ self.Vt_p
+
+    #     return z_hat, z_quad @ self.W, SDVt
+
+
     @staticmethod 
     def lstsq_l2_torch(A, B, reg_magnitude=1e-6):
         U, sigma, Vt = torch.linalg.svd(A, full_matrices=False)
@@ -151,6 +194,7 @@ class QuadraticManifold(nn.Module):
         resid = torch.linalg.norm(B - B_estimate)
         
         return x, resid
+
     
     def l1_norm_omega(self):
         """Return ℓ₁-norm of ω."""
@@ -275,12 +319,16 @@ def train_quadraticmanifold(model: QuadraticManifold,
             x_batch = x_batch.to(device)  # (batch, d)
 
             optimizer.zero_grad()
-            _, x_hat_lin, x_hat_quad = model(z_batch, x_batch)  # (batch, d)
-            loss_lin = mse_loss(x_hat_lin, x_batch)
-            x_batch_perp = x_batch - x_hat_lin 
-            loss_quad = mse_loss(x_hat_quad, x_batch_perp)
-            loss = model.beta * loss_lin + (1 - model.beta) * loss_quad
-            
+
+            # Forward map 1
+            _, x_hat_batch = model(z_batch, x_batch)  # (batch, d)
+            loss = mse_loss(x_hat_batch, x_batch)
+            loss += model.gamma * torch.norm(model.W)**2
+
+            # # Forward map 2
+            # _, z_quad_W, SDVt = model(z_batch, x_batch)  # (batch, d)
+            # loss = mse_loss(z_quad_W, SDVt.T)
+
             loss.backward()
             optimizer.step()
 
@@ -298,6 +346,7 @@ def train_quadraticmanifold(model: QuadraticManifold,
         epoch_l1  /= n_samples
         history['loss'].append(epoch_loss)
         history['l1_b'].append(epoch_l1)
+
         with torch.no_grad():
             omega_ = model.omega.detach().cpu().numpy()
             history['omegas'].append(omega_)
@@ -325,6 +374,27 @@ def train_quadraticmanifold(model: QuadraticManifold,
         omega_ = model.omega.detach().cpu().numpy()
 
     return omega_, history, exit_flag
+
+
+def zca_whitening_matrix(X, epsilon=1e-5):
+    """
+    Function to compute ZCA whitening matrix (aka Mahalanobis whitening).
+    INPUT:  X: [M x N] matrix.
+        Rows: Variables
+        Columns: Observations
+    OUTPUT: ZCAMatrix: [M x M] matrix
+    """
+    # Covariance matrix [column-wise variables]: Sigma = (X-mu)' * (X-mu) / N
+    sigma = np.cov(X, rowvar=True) # [M x M]
+    # Singular Value Decomposition. X = U * np.diag(S) * V
+    U,S,_ = np.linalg.svd(sigma)
+        # U: [M x M] eigenvectors of sigma.
+        # S: [M x 1] eigenvalues of sigma.
+        # V: [M x M] transpose of U
+    # Whitening constant: prevents division by zero
+    # ZCA Whitening matrix: U * Lambda * U'
+    ZCAMatrix = np.dot(U, np.dot(np.diag(1.0/np.sqrt(S + epsilon)), U.T)) # [M x M]
+    return ZCAMatrix
 
 
 #%% #================================ __main__ ================================#
@@ -452,42 +522,59 @@ if __name__ == "__main__":
     print("\n" + "="*60)
     print("LASSO MODE SELECTION")
     print("="*60)
-    
+
     # Shifted data
     shift_value_np = np.array(shift_value)
     X_shift = X - shift_value_np
-    
+
+    zcaMat = zca_whitening_matrix(X_shift, epsilon=1e-4)
+    X_white = np.dot(zcaMat, X_shift)  # Apply ZCA whitening
+
+    # from whitening_algorithms import whiten
+    # X_shift = whiten(X_shift, method='zca', eps=1e-4, return_W=False, center=False)
+
     # Define the count of the selected modes and omegas
     I_count = np.zeros(s_p, dtype=int)
-    omegas = np.zeros(s_p, dtype=np.float64).reshape(-1, 1)
+    omegas = np.zeros(s_p, dtype=np.float32).reshape(-1, 1)
     
     # Compute the pod basis
-    pod_basis, Sig, _ = np.linalg.svd(X_shift, full_matrices=False)
+    pod_basis, Sig, Wt = np.linalg.svd(X_white, full_matrices=False)
     pod_basis = pod_basis[:, :s_p]  
-    Sig = Sig[:s_p]  
     pod_basis_tensor = torch.from_numpy(pod_basis.astype(np.float32)).to(device)
     Sig_tensor = torch.from_numpy(Sig.astype(np.float32)).to(device)
+    Wt_tensor = torch.from_numpy(Wt.astype(np.float32)).to(device)
 
+    # # Process the data so that it only includes the modes selected by the 
+    # # greedy quadratic manifold algorithm.
+    # I_c = set(np.arange(s_p)) - set(np.array(I_qm))
+    # I_c = np.random.choice(list(I_c), 20, replace=False)
+    # V_tmp = np.hstack((V, pod_basis[:, I_c]))
+    # X_proc = (V_tmp @ V_tmp.T @ X_shift) # + W @ quadratic_mapping_numpy(X_shift.T @ V).T
+    # X_proc = np.array(X_proc, dtype=np.float32)  
+    X_proc = X_white
     
     # Compute the reduced data
-    Z_np = pod_basis.T @ X_shift  # (s, n)
+    Z_np = pod_basis.T @ X_proc  # (s, n)
+    # Z_np = np.array(V).T @ X  # (s, n)
     
     # Prep the data
-    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_shift, type="float32")
-    dl_sub = DataLoader(ds_sub, batch_size=1000, shuffle=False)
+    ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_proc, type="float32")
+    dl_sub = DataLoader(ds_sub, batch_size=200, shuffle=True)
     
     # Initialize the regularization parameter and increase factor
-    lam = 10.0
-    eps = 0.05
+    lam = 5.0
+    eps = 0.0005
     alpha = 1.0
-    beta = 0.5
     # Threshold
-    threshold = 1e-6
+    threshold = 1e-5
     
     # Initialize the model 
     model = QuadraticManifold(
-        pod_basis=pod_basis_tensor, dtype=torch.float32,
-        M=10.0, lam=lam, gamma=0.0, alpha=alpha, beta=beta
+        pod_basis=pod_basis_tensor, 
+        svdvals=Sig_tensor,
+        right_basis=Wt_tensor,
+        dtype=torch.float32, threshold=threshold,
+        M=12.0, lam=lam, gamma=1e-6, alpha=alpha,
     ) 
     
     while True:
@@ -520,6 +607,54 @@ if __name__ == "__main__":
         
     # Select the first largest r_max modes
     I_nn = np.where(omegas[:, -1] > 0)[0]
+
+
+# %% #==================== Compute Reconstruction Errors ======================#
+    # Compute the reconstruction error (Quadratic Manifold)
+    Z_qm = V.T @ X_shift
+    Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
+    recon_error_quad = np.linalg.norm(
+        X - V @ Z_qm - W @ Z_quad_qm - shift_value, ord='fro')
+    rel_recon_error_qm = recon_error_quad / np.linalg.norm(X, ord='fro')
+    
+    # Compute the reconstruction error (LassoNet)
+    V_nn = pod_basis[:, I_nn[:r_max]]  
+    Z_nn = V_nn.T @ X_shift
+    residual = X_shift - V_nn @ Z_nn
+    Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T 
+    W_nn_T, analytical_resid = lstsq_l2_numpy(
+        Z_quad_nn.T, residual.T, reg_magnitude=1e-15
+    )
+    W_nn = W_nn_T.T
+    recon_error = np.linalg.norm(
+        X - V_nn @ Z_nn - W_nn @ Z_quad_nn - shift_value, ord='fro')
+    rel_recon_error_nn = recon_error / np.linalg.norm(X, ord='fro') 
+    
+    # Print results
+    print(f"\nReconstruction errors:")
+    print(f"Quadratic Manifold: ||X - V @ Z - W @ Z_quad||_F = {recon_error_quad:.6e}")
+    print(f"Relative error: {rel_recon_error_qm:.6e}")
+    print(f"LassoNet: ||X - V_nn @ Z - W_nn @ Z_quad||_F = {recon_error:.6e}")
+    print(f"Relative error: {rel_recon_error_nn:.6e}")
+
+
+# %% #========================= Verify the Selected Modes =====================#
+    # Sort the indices of the selected modes by their omega values
+    sort_idx = np.argsort(-I_count, kind="mergesort")
+    I_guess = sort_idx[0:r_max]
+
+    cnt = 0
+    for idx in I_guess:
+        V_guess_i = pod_basis[:, idx]
+        for j in range(r_max):
+            V_j = V[:, j]
+            if np.allclose(V_guess_i, V_j, atol=1e-14):
+                print(f"Selected mode {idx} matches mode {j} in greedy QM.")
+                cnt += 1
+    if cnt == r_max:
+        print(f"All {r_max} modes were selected correctly.")
+    else:
+        print(f"Only {cnt} out of {r_max} modes were selected correctly.")
     
 
 # %% #========================= Plot the omegas ===============================#
@@ -531,24 +666,23 @@ if __name__ == "__main__":
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # Plot 1: Omega evolution over lambda iterations
-    ax1.plot(omegas.T, alpha=0.7, linewidth=1)
+    for mode in range(s_p):
+        if mode in I_nn:
+            ax1.plot(np.abs(omegas[mode, :]), linewidth=2, 
+                     label=f'Mode {mode+1}', color='orange')
+        else:
+            ax1.plot(np.abs(omegas[mode, :]), linewidth=1, alpha=0.5, 
+                     color='darkblue', linestyle='--')
+
     ax1.set_xlabel('Lambda iteration')
     ax1.set_ylabel('Omega values')
     ax1.set_title('Evolution of Omega Values During Training')
     ax1.grid(True, alpha=0.3)
-    # ax1.set_yscale('log')
-
-    # Highlight the final omega values
-    final_omegas = np.abs(omegas[:, -1])
-    non_zero_modes = np.where(final_omegas > 1e-13)[0]
-    for mode in non_zero_modes:
-        ax1.plot(np.abs(omegas[mode, :]), linewidth=2, label=f'Mode {mode+1}')
-
-    # Only show legend if there are few enough modes
-    if len(non_zero_modes) <= 10:
-        ax1.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax1.set_yscale('log')
 
     # Plot 2: Final omega values
+    final_omegas = np.abs(omegas[:, -1])
+    non_zero_modes = np.where(final_omegas > 1e-13)[0]
     mode_indices = np.arange(len(final_omegas))
     bars = ax2.bar(mode_indices, final_omegas, alpha=0.7, color='darkblue')
 
@@ -560,7 +694,7 @@ if __name__ == "__main__":
     for mode in I_qm:
         if mode < len(bars):
             bars[mode].set_edgecolor('red')
-            bars[mode].set_linewidth(2)
+            bars[mode].set_linewidth(0.5)
 
     ax2.set_xlabel('Mode Index')
     ax2.set_ylabel('Final Omega (Abs) Value')
@@ -575,7 +709,7 @@ if __name__ == "__main__":
     ax2.legend()
 
     plt.tight_layout()
-    plt.savefig('figures/lassonet/omega_evolution.png', dpi=200)
+    plt.savefig('figures/lassonet/wave/omega_evolution.png', dpi=200)
     plt.show()
 
     # Print statistics about omega values
@@ -583,7 +717,8 @@ if __name__ == "__main__":
     print(f"Number of lambda iterations: {omegas.shape[1]}")
     print(f"Final non-zero omegas: {len(non_zero_modes)}")
     print(f"Max final omega: {np.max(final_omegas):.6e}")
-    print(f"Min final omega: {np.min(final_omegas[final_omegas > 1e-13]):.6e}" if len(non_zero_modes) > 0 else "No non-zero omegas")
+    print(f"Min final omega: {np.min(final_omegas[final_omegas > 1e-13]):.6e}" 
+          if len(non_zero_modes) > 0 else "No non-zero omegas")
     print(f"Final selected modes: {non_zero_modes}")
     
 
@@ -662,57 +797,5 @@ if __name__ == "__main__":
     print(f"Overlapping modes: {np.sort(overlap)}")
     
 
-# %% #==================== Compute Reconstruction Errors ======================#
-    # Compute the reconstruction error (Quadratic Manifold)
-    Z_qm = V.T @ X_shift
-    Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
-    recon_error_quad = np.linalg.norm(
-        X - V @ Z_qm - W @ Z_quad_qm - shift_value, ord='fro')
-    rel_recon_error_qm = recon_error_quad / np.linalg.norm(X, ord='fro')
-    
-    # Compute the reconstruction error (LassoNet)
-    V_nn = pod_basis[:, I_nn[:r_max]]  
-    Z_nn = V_nn.T @ X_shift
-    residual = X_shift - V_nn @ Z_nn
-    Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T 
-    
-    # V_nn = pod_basis
-    # D = np.diag([1 if i in I_qm else 0 for i in range(s_p)])
-    # Z_nn = D @ V_nn.T @ X_shift  
-    # residual = X_shift - V_nn @ D @ V_nn.T @ X_shift
-    # Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T
-        
-    def lstsq_l2_numpy(A, B, reg_magnitude=1e-6):
-        """
-        Numpy version of the JAX lstsq_l2 function for consistency
-        """
-        phi, sigma, psi_t = np.linalg.svd(A, full_matrices=False)
-        sinv = sigma / (sigma**2 + reg_magnitude**2)
-        x = psi_t.T * sinv @ (phi.T @ B)
-        B_estimate = A @ x
-        resid = np.linalg.norm(B - B_estimate)
-        return x, resid
-
-    W_nn_T, analytical_resid = lstsq_l2_numpy(
-        Z_quad_nn.T, residual.T, reg_magnitude=1e-15
-    )
-    W_nn = W_nn_T.T
-    
-    recon_error = np.linalg.norm(
-        X - V_nn @ Z_nn - W_nn @ Z_quad_nn - shift_value, ord='fro')
-    # with torch.no_grad():
-    #     Z_tensor = torch.from_numpy(Z_np.astype(np.float32)).to(device)
-    #     _, res = model(Z_tensor.T)
-    #     res = res.cpu().numpy()
-    #     recon_error = np.linalg.norm(
-    #         X - res.T, ord='fro')
-    rel_recon_error_nn = recon_error / np.linalg.norm(X, ord='fro') 
-    
-    # Print results
-    print(f"\nReconstruction errors:")
-    print(f"Quadratic Manifold: ||X - V @ Z - W @ Z_quad||_F = {recon_error_quad:.6e}")
-    print(f"Relative error: {rel_recon_error_qm:.6e}")
-    print(f"LassoNet: ||X - V_nn @ Z - W_nn @ Z_quad||_F = {recon_error:.6e}")
-    print(f"Relative error: {rel_recon_error_nn:.6e}")
 
 # %%
