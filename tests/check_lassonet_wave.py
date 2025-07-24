@@ -471,8 +471,7 @@ if __name__ == "__main__":
     eps = 0.0005
     alpha = 1.0
     gamma = 1e-6
-    # Threshold
-    threshold = 1e-5
+    threshold = 1e-8
     
     # Initialize the model 
     model = QuadraticManifold(
