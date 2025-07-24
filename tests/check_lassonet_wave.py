@@ -515,6 +515,17 @@ if __name__ == "__main__":
     # Select the first largest r_max modes
     I_nn = np.where(omegas[:, -1] > 0)[0]
 
+#%% #======================= Greedy Quadratic Manifold ========================#
+    print("\n" + "="*60)
+    print("GREEDY QUADRATIC MANIFOLD")
+    
+    V, W, shift_tmp, I_qm = quadmani_greedy(
+        X_white, r_max, s_p, 1e-6, np.array([], dtype=int))
+    shift_tmp = shift_tmp.reshape(-1, 1)
+
+    # Print the selected modes
+    print("Selected modes (I_qm):", I_qm.sort())
+
 
 # %% #==================== Compute Reconstruction Errors ======================#
     # Compute the reconstruction error (Quadratic Manifold)
@@ -731,7 +742,172 @@ if __name__ == "__main__":
     overlap = np.intersect1d(I_nn, I_qm)
     print(f"Overlap between methods: {len(overlap)} modes")
     print(f"Overlapping modes: {np.sort(overlap)}")
-    
+
+#%% #===================== Plot Reconstructions and Errors ====================# 
+print("\n" + "="*60)
+print("PLOTTING RECONSTRUCTIONS AND ERRORS")
+print("="*60)
+
+# Compute reconstructions for comparison
+# 1. Original data (shifted back)
+X_original = X
+
+# 2. POD reconstruction (using top r_max modes)
+pod_basis = np.linalg.svd(X_shift, full_matrices=False)[0]
+pod_basis_top = pod_basis[:, :r_max]
+Z_pod = pod_basis_top.T @ X_shift
+X_pod_recon = pod_basis_top @ Z_pod + shift_value_np
+
+# 3. Quadratic Manifold reconstruction
+Z_qm = V.T @ X_shift
+Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
+X_qm_recon = V @ Z_qm + W @ Z_quad_qm + shift_value_np
+
+# 4. LassoNet reconstruction  
+V_nn = V_white[:, I_nn[:r_max]]  
+Z_nn = V_nn.T @ X_shift
+residual = X_shift - V_nn @ Z_nn
+Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T 
+W_nn_T, _ = lstsq_l2_numpy(Z_quad_nn.T, residual.T, reg_magnitude=1e-15)
+W_nn = W_nn_T.T
+X_lassonet_recon = V_nn @ Z_nn + W_nn @ Z_quad_nn + shift_value_np
+
+# Compute errors
+pod_error = X_original - X_pod_recon
+qm_error = X_original - X_qm_recon  
+lassonet_error = X_original - X_lassonet_recon
+
+# Set consistent color scales
+recon_vmin = min(X_original.min(), X_pod_recon.min(), X_qm_recon.min(), X_lassonet_recon.min())
+recon_vmax = max(X_original.max(), X_pod_recon.max(), X_qm_recon.max(), X_lassonet_recon.max())
+
+error_vals = [pod_error, qm_error, lassonet_error]
+error_vmax = max([np.abs(err).max() for err in error_vals])
+error_vmin = -error_vmax
+
+# Create the comparison plot
+fig, axes = plt.subplots(2, 4, figsize=(20, 10))
+
+# Row 1: Reconstructions
+# (1,1) Original data
+im1 = axes[0,0].imshow(
+    X_original, aspect='auto', cmap='viridis', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=recon_vmin, vmax=recon_vmax)
+axes[0,0].set_ylabel('Space (x)', fontsize=14)
+axes[0,0].set_title('Original Data', fontsize=15)
+
+# (1,2) POD reconstruction
+im2 = axes[0,1].imshow(
+    X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=recon_vmin, vmax=recon_vmax)
+axes[0,1].set_title('POD Reconstruction', fontsize=15)
+
+# (1,3) Quadratic Manifold reconstruction
+im3 = axes[0,2].imshow(
+    X_qm_recon, aspect='auto', cmap='viridis', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=recon_vmin, vmax=recon_vmax)
+axes[0,2].set_title('Quadratic Manifold Reconstruction', fontsize=15)
+
+# (1,4) LassoNet reconstruction
+im4 = axes[0,3].imshow(
+    X_lassonet_recon, aspect='auto', cmap='viridis', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=recon_vmin, vmax=recon_vmax)
+axes[0,3].set_title('LassoNet Reconstruction', fontsize=15)
+
+# Row 2: Errors
+# (2,1) Empty - no error for original data
+axes[1,0].axis('off')
+
+# (2,2) POD error
+im5 = axes[1,1].imshow(
+    pod_error, aspect='auto', cmap='RdBu_r', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=error_vmin, vmax=error_vmax)
+axes[1,1].set_xlabel('Time', fontsize=14)
+axes[1,1].set_ylabel('Space (x)', fontsize=14)
+axes[1,1].set_title('POD Error', fontsize=15)
+
+# (2,3) Quadratic Manifold error
+im6 = axes[1,2].imshow(
+    qm_error, aspect='auto', cmap='RdBu_r', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=error_vmin, vmax=error_vmax)
+axes[1,2].set_xlabel('Time', fontsize=14)
+axes[1,2].set_title('Quadratic Manifold Error', fontsize=15)
+
+# (2,4) LassoNet error
+im7 = axes[1,3].imshow(
+    lassonet_error, aspect='auto', cmap='RdBu_r', origin='lower',
+    extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    vmin=error_vmin, vmax=error_vmax)
+axes[1,3].set_xlabel('Time', fontsize=14)
+axes[1,3].set_title('LassoNet Error', fontsize=15)
+
+# Add colorbars
+cax1 = fig.add_axes([0.92, 0.57, 0.02, 0.35])
+cbar1 = plt.colorbar(im4, cax=cax1, label='u(x,t)')
+cbar1.set_label('u(x,t)', fontsize=14)
+
+cax2 = fig.add_axes([0.92, 0.11, 0.02, 0.35])
+cbar2 = plt.colorbar(im7, cax=cax2, label='Abs. Error')
+cbar1.set_label('Abs. Error', fontsize=14)
+
+plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, wspace=0.3, hspace=0.3)
+plt.suptitle('Reconstruction Comparison: Wave Data', fontsize=19, y=0.98)
+plt.savefig('figures/lassonet/wave/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close(fig)
+
+#%% Plot waves at specific time points
+print("\nPlotting waves at specific time points...")
+
+# Select 3 equally spaced time points
+n_times = len(tspan)
+time_indices = [n_times//4, n_times//2, 3*n_times//4]
+time_points = [tspan[i] for i in time_indices]
+
+# Create subplots
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices, time_points)):
+    # Plot original data
+    ax.plot(xspan, X_original[:, t_idx], 'k-', linewidth=3, label='Original', alpha=0.9)
+    # Plot POD reconstruction
+    ax.plot(xspan, X_pod_recon[:, t_idx], 'b--', linewidth=2, label='POD', alpha=0.8)
+    # Plot Quadratic Manifold reconstruction
+    ax.plot(xspan, X_qm_recon[:, t_idx], 'g-.', linewidth=2, label='Quad. Manifold', alpha=0.8)
+    # Plot LassoNet reconstruction
+    ax.plot(xspan, X_lassonet_recon[:, t_idx], 'r:', linewidth=2, label='LassoNet', alpha=0.8)
+
+    ax.set_xlabel('Space (x)', fontsize=14)
+    ax.set_ylabel('u(x,t)', fontsize=14)
+    ax.set_title(f't = {t_val:.3f}', fontsize=16)
+    ax.grid(True, alpha=0.3)
+    if i == 0:
+        ax.legend(fontsize=16)
+
+plt.tight_layout()
+plt.suptitle('Wave Profiles at Different Time Points', fontsize=19, y=1.02)
+plt.savefig('figures/lassonet/wave/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
+plt.show()
+plt.close(fig)
+
+# Print reconstruction error statistics
+print(f"\nReconstruction Error Statistics:")
+print(f"POD Error (Frobenius norm): {np.linalg.norm(pod_error):.6e}")
+print(f"Quadratic Manifold Error: {np.linalg.norm(qm_error):.6e}")  
+print(f"LassoNet Error: {np.linalg.norm(lassonet_error):.6e}")
+
+print(f"\nRelative Errors (normalized by original data norm):")
+data_norm = np.linalg.norm(X_original)
+print(f"POD Relative Error: {np.linalg.norm(pod_error)/data_norm:.6e}")
+print(f"Quadratic Manifold Relative Error: {np.linalg.norm(qm_error)/data_norm:.6e}")
+print(f"LassoNet Relative Error: {np.linalg.norm(lassonet_error)/data_norm:.6e}")
+
 
 # # %% #========================= Verify the Selected Modes =====================#
 #     # Sort the indices of the selected modes by their omega values
