@@ -443,10 +443,6 @@ if __name__ == "__main__":
     else:
         X_white = X_shift
 
-    # Define the count of the selected modes and omegas
-    I_count = np.zeros(s_p, dtype=int)
-    omegas = np.zeros(s_p, dtype=np.float32).reshape(-1, 1)
-    
     # Compute the pod basis
     V_white, _, _ = np.linalg.svd(X_white, full_matrices=False)
     V_white = V_white[:, :s_p]  
@@ -483,6 +479,10 @@ if __name__ == "__main__":
         pod_basis=V_white_tensor, dtype=torch.float32, 
         M=12.0, lam=lam, gamma=gamma, alpha=alpha,
     ) 
+
+    # Define the count of the selected modes and omegas
+    I_count = np.zeros(s_p, dtype=int)
+    omegas = model.omega.detach().numpy().reshape(-1, 1)
     
     while True:
         print(f"\nTraining with λ = {lam:.3e}")
