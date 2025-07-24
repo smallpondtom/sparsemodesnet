@@ -358,10 +358,6 @@ if __name__ == "__main__":
     print("LASSO MODE SELECTION")
     print("="*60)
     
-    # Define the count of the selected modes and omegas
-    I_count = np.zeros(s, dtype=int)
-    omegas = np.zeros(s, dtype=np.float64).reshape(-1, 1)
-    
     # Compute the pod basis
     V_tensor = torch.from_numpy(V.astype(np.float64)).to(device)
     
@@ -384,6 +380,10 @@ if __name__ == "__main__":
         pod_basis=V_tensor, 
         M=10.0, lam=lam, gamma=0.0, alpha=alpha
     ) 
+
+    # Define the count of the selected modes and omegas
+    I_count = np.zeros(s, dtype=int)
+    omegas = model.omega.detach().numpy().reshape(-1, 1)
 
     all_histories = []
 
