@@ -853,7 +853,7 @@ cbar1.set_label('u(x,t)', fontsize=14)
 
 cax2 = fig.add_axes([0.92, 0.11, 0.02, 0.35])
 cbar2 = plt.colorbar(im7, cax=cax2, label='Abs. Error')
-cbar1.set_label('Abs. Error', fontsize=14)
+cbar2.set_label('Abs. Error', fontsize=14)
 
 plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, wspace=0.3, hspace=0.3)
 plt.suptitle('Reconstruction Comparison: Wave Data', fontsize=19, y=0.98)
