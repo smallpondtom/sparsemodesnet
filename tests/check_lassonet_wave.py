@@ -725,7 +725,7 @@ if __name__ == "__main__":
                 spine.set_visible(False)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to fit title
-    plt.savefig('figures/lassonet/selected_modes_plot.png', dpi=200)
+    plt.savefig('figures/lassonet/wave/selected_modes_plot.png', dpi=200)
     plt.show()
 
     # Print summary statistics

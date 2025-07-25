@@ -537,7 +537,7 @@ if __name__ == "__main__":
     residual = X_shift - V_nn @ Z_nn
     Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T 
     W_nn_T, analytical_resid = lstsq_l2_numpy(
-        Z_quad_nn.T, residual.T, reg_magnitude=1e-15
+        Z_quad_nn.T, residual.T, reg_magnitude=1e-12
     )
     W_nn = W_nn_T.T
     recon_error = np.linalg.norm(
@@ -722,7 +722,7 @@ if __name__ == "__main__":
                 spine.set_visible(False)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to fit title
-    plt.savefig('figures/lassonet/selected_modes_plot.png', dpi=200)
+    plt.savefig('figures/lassonet/kse/selected_modes_plot.png', dpi=200)
     plt.show()
 
     # Print summary statistics
