@@ -2,6 +2,7 @@
 import numpy as np
 import os
 import sys
+import copy
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -441,7 +442,7 @@ if __name__ == "__main__":
         zcaMat = zca_whitening_matrix(X_shift, epsilon=1e-4)
         X_white = np.dot(zcaMat, X_shift)  # Apply ZCA whitening
     else:
-        X_white = X_shift
+        X_white = copy.deepcopy(X_shift)
 
     # Compute the pod basis
     V_white, _, _ = np.linalg.svd(X_white, full_matrices=False)
@@ -457,7 +458,7 @@ if __name__ == "__main__":
         X_proc = (V_tmp @ V_tmp.T @ X_shift) # + W @ quadratic_mapping_numpy(X_shift.T @ V).T
         X_proc = np.array(X_proc, dtype=np.float32)  
     else:
-        X_proc = X_white
+        X_proc = copy.deepcopy(X_white)
     
     # Compute the reduced data
     Z_np = V_white.T @ X_proc  # (s, n)
@@ -519,7 +520,7 @@ if __name__ == "__main__":
     print("GREEDY QUADRATIC MANIFOLD")
     
     V, W, shift_tmp, I_qm = quadmani_greedy(
-        X_white, r_max, s_p, 1e-6, np.array([], dtype=int))
+        X_proc, r_max, s_p, 1e-15, np.array([], dtype=int))
     shift_tmp = shift_tmp.reshape(-1, 1)
 
     # Print the selected modes

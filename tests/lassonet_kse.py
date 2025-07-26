@@ -368,7 +368,7 @@ if __name__ == "__main__":
     # Set random seeds for reproducibility
     torch.manual_seed(42)
     
-#%% #===================== Main Experiment with Pulse Data ====================#
+#%% #===================== Main Experiment with KSE Data ======================#
     # Parameters
     r_max = 15
     n_grids = 2**10
