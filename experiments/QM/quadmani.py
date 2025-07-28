@@ -39,6 +39,7 @@ def quadmani_greedy(
     reg_magnitude=None,
     idx_in=None,
     feature_map=default_feature_map,
+    shifting=True,
 ):
     if r is None:
         r = REDUCED_DIMENSION.value
@@ -48,7 +49,10 @@ def quadmani_greedy(
         reg_magnitude = REG_MAGNITUDE.value
     if idx_in is None:
         idx_in = jnp.asarray(IDX_IN.value, dtype=jnp.int32)
-    shift_value = jnp.mean(data_points, axis=1)
+    if shifting:
+        shift_value = jnp.mean(data_points, axis=1)
+    else:
+        shift_value = jnp.zeros(data_points.shape[0])
     phi, sigma, psit = jnp.linalg.svd(shift_data(data_points, shift_value))
     shifted_svd = ShiftedSVD(phi, sigma, psit, shift_value)
     return quadmani_greedy_from_svd(
