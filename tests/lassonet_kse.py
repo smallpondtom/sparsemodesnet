@@ -424,37 +424,45 @@ if __name__ == "__main__":
     print("LASSO MODE SELECTION")
     print("="*60)
 
-    WHITENING = True
+    NORMALIZE = True
+    WHITENING = False
     USE_ONLY_QM_MODES = False
 
     # Shifted data
     shift_value_np = np.array(shift_value)
     X_shift = X - shift_value_np
 
-    if WHITENING:
-        zcaMat = zca_whitening_matrix(X_shift, epsilon=1e-1)
-        X_white = np.dot(zcaMat, X_shift)  # Apply ZCA whitening
-
-        # from whitening_algorithms import whiten
-        # X_white = whiten(X_shift, method='zca-cor', eps=1e-4)
+    if NORMALIZE:
+        # Normalize each row to [0,1]
+        X_shift_min, X_shift_max = X_shift.min(axis=1), X_shift.max(axis=1)
+        X_shift_shift = X_shift_min.reshape(-1, 1)
+        X_shift_scale = (X_shift_max - X_shift_min).reshape(-1, 1)
+        X_shift_norm = (X_shift - X_shift_shift) / X_shift_scale
+        X_proc = X_shift_norm
+        V_white = np.linalg.svd(X_proc, full_matrices=False)[0][:, :s_ks] 
+        V_white_tensor = torch.from_numpy(V_white.astype(np.float32)).to(device)
     else:
-        X_white = X_shift
+        if WHITENING:
+            zcaMat = zca_whitening_matrix(X_shift, epsilon=1e-1)
+            X_white = np.dot(zcaMat, X_shift)  # Apply ZCA whitening
+        else:
+            X_white = X_shift
 
-    # Compute the pod basis
-    V_white, _, _ = np.linalg.svd(X_white, full_matrices=False)
-    V_white = V_white[:, :s_ks]  
-    V_white_tensor = torch.from_numpy(V_white.astype(np.float32)).to(device)
+        # Compute the pod basis
+        V_white, _, _ = np.linalg.svd(X_white, full_matrices=False)
+        V_white = V_white[:, :s_ks]  
+        V_white_tensor = torch.from_numpy(V_white.astype(np.float32)).to(device)
 
-    if USE_ONLY_QM_MODES:
-        # Process the data so that it only includes the modes selected by the 
-        # greedy quadratic manifold algorithm.
-        I_c = set(np.arange(s_ks)) - set(np.array(I_qm))
-        I_c = np.random.choice(list(I_c), 20, replace=False)
-        V_tmp = np.hstack((V, V_white[:, I_c]))
-        X_proc = (V_tmp @ V_tmp.T @ X_shift) # + W @ quadratic_mapping_numpy(X_shift.T @ V).T
-        X_proc = np.array(X_proc, dtype=np.float32)  
-    else:
-        X_proc = X_white
+        if USE_ONLY_QM_MODES:
+            # Process the data so that it only includes the modes selected by the 
+            # greedy quadratic manifold algorithm.
+            I_c = set(np.arange(s_ks)) - set(np.array(I_qm))
+            I_c = np.random.choice(list(I_c), 20, replace=False)
+            V_tmp = np.hstack((V, V_white[:, I_c]))
+            X_proc = (V_tmp @ V_tmp.T @ X_shift) # + W @ quadratic_mapping_numpy(X_shift.T @ V).T
+            X_proc = np.array(X_proc, dtype=np.float32)  
+        else:
+            X_proc = X_white
     
     # Compute the reduced data
     Z_np = V_white.T @ X_proc  # (s, n)
@@ -479,7 +487,12 @@ if __name__ == "__main__":
     # Define the count of the selected modes and omegas
     I_count = np.zeros(s_ks, dtype=int)
     omegas = model.omega.detach().numpy().reshape(-1, 1)
-    
+
+    # Add tracking variables before the while loop
+    prev_num_selected = None
+    no_change_iterations = 0
+    max_no_change = 70  # Number of consecutive iterations with no change before breaking
+
     while True:
         print(f"\nTraining with λ = {lam:.3e}")
         
@@ -491,11 +504,24 @@ if __name__ == "__main__":
         ) 
         
         selected_modes = np.where(omega_ > threshold)[0] 
+        num_selected = len(selected_modes)
+        
         if selected_modes.size == 0:
             print("No modes selected. End loop.")
             break
         else:
-            print(f"Number of selected modes: {len(selected_modes)}")
+            print(f"Number of selected modes: {num_selected}")
+
+        # Check for convergence based on number of selected modes
+        if prev_num_selected is None:
+            prev_num_selected = num_selected
+            no_change_iterations = 0
+        elif num_selected == prev_num_selected:
+            no_change_iterations += 1
+            print(f"Number of selected modes unchanged for {no_change_iterations} consecutive iterations.")
+        else:
+            prev_num_selected = num_selected
+            no_change_iterations = 0
 
         # Increment the count of the selected modes and omegas
         I_count[selected_modes] += 1
@@ -503,13 +529,19 @@ if __name__ == "__main__":
 
         if flag:
             break
+            
+        # Break if number of selected modes hasn't changed for several iterations
+        if no_change_iterations >= max_no_change:
+            print(f"Number of selected modes unchanged for {max_no_change} consecutive iterations. Assuming convergence.")
+            break
         
         # Update lambda
         lam *= (1 + eps)
         model.lam = lam
-        
+#%%  
     # Select the first largest r_max modes
     I_nn = np.where(omegas[:, -1] > 0)[0]
+    # I_nn = np.argsort(omegas[:, -1])[::-1]
 
 #%% #======================= Greedy Quadratic Manifold ========================#
     print("\n" + "="*60)
@@ -533,15 +565,24 @@ if __name__ == "__main__":
     
     # Compute the reconstruction error (LassoNet)
     V_nn = V_white[:, I_nn[:r_max]]  
-    Z_nn = V_nn.T @ X_shift
-    residual = X_shift - V_nn @ Z_nn
+    if NORMALIZE:
+        Z_nn = V_nn.T @ X_proc
+        residual = X_proc - V_nn @ Z_nn
+    else:
+        Z_nn = V_nn.T @ X_shift
+        residual = X_shift - V_nn @ Z_nn
     Z_quad_nn = quadratic_mapping_numpy(Z_nn.T).T 
     W_nn_T, analytical_resid = lstsq_l2_numpy(
         Z_quad_nn.T, residual.T, reg_magnitude=1e-12
     )
     W_nn = W_nn_T.T
-    recon_error = np.linalg.norm(
-        X - V_nn @ Z_nn - W_nn @ Z_quad_nn - shift_value, ord='fro')
+    if NORMALIZE:
+        recon_error = np.linalg.norm(
+            X - ((V_nn @ Z_nn + W_nn @ Z_quad_nn)*X_shift_scale + X_shift_shift) 
+            - shift_value, ord='fro')
+    else:
+        recon_error = np.linalg.norm(
+            X - V_nn @ Z_nn - W_nn @ Z_quad_nn - shift_value, ord='fro')
     rel_recon_error_nn = recon_error / np.linalg.norm(X, ord='fro') 
     
     # Print results
@@ -652,7 +693,7 @@ if __name__ == "__main__":
     ax2.legend()
 
     plt.tight_layout()
-    plt.savefig('figures/lassonet/kse/omega_evolution.png', dpi=200)
+    # plt.savefig('figures/lassonet/kse/omega_evolution.png', dpi=200)
     plt.show()
 
     # Print statistics about omega values
@@ -854,7 +895,7 @@ cbar2.set_label('Abs. Error', fontsize=14)
 
 plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, wspace=0.3, hspace=0.3)
 plt.suptitle('Reconstruction Comparison: KSE Data', fontsize=19, y=0.98)
-plt.savefig('figures/lassonet/kse/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
+# plt.savefig('figures/lassonet/kse/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close(fig)
 
@@ -888,7 +929,7 @@ for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices, time_points)):
 
 plt.tight_layout()
 plt.suptitle('KSE Flow Profiles at Different Time Points', fontsize=19, y=1.02)
-plt.savefig('figures/lassonet/kse/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
+# plt.savefig('figures/lassonet/kse/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close(fig)
 
@@ -903,3 +944,5 @@ data_norm = np.linalg.norm(X_original)
 print(f"POD Relative Error: {np.linalg.norm(pod_error)/data_norm:.6e}")
 print(f"Quadratic Manifold Relative Error: {np.linalg.norm(qm_error)/data_norm:.6e}")
 print(f"LassoNet Relative Error: {np.linalg.norm(lassonet_error)/data_norm:.6e}")
+
+# %%
