@@ -10,7 +10,7 @@ from scipy.integrate import solve_ivp
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from sparsemodesnet.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
+from sparsemodesnet.models.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
 
 def create_stable_polynomial_without_linear_ode(input_dim: int, max_order: int, seed: int = 42) -> List[np.ndarray]:
     """

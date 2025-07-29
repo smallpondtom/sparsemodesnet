@@ -1,0 +1,5 @@
+Reconstruction errors:
+Quadratic Manifold: ||X - V @ Z - W @ Z_quad||_F = 2.946424e-05
+Relative error: 6.896757e-09
+LassoNet: ||X - V_nn @ Z - W_nn @ Z_quad||_F = 3.638218e-06
+Relative error: 8.516053e-10

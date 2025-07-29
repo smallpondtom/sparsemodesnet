@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.pulse import generate_advecting_pulse
 from sparsemodesnet import run_sparsemodesnet
-from sparsemodesnet.pod import compute_pod_basis
+from sparsemodesnet.linalg.pod import compute_pod_basis
 
 #%%
 if __name__ == "__main__":

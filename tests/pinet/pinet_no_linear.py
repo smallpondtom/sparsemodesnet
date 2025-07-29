@@ -9,7 +9,7 @@ import os
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from sparsemodesnet.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
+from sparsemodesnet.models.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
 
 
 def generate_polynomial_data_no_linear(

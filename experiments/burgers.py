@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.burgers import generate_burgers_data
 from sparsemodesnet import run_sparsemodesnet
-from sparsemodesnet.pod import compute_pod_basis
+from sparsemodesnet.linalg.pod import compute_pod_basis
 
 def normalize(u, mu, sigma):
     # u: (d,) or (batch,d)
