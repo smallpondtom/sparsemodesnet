@@ -9,14 +9,12 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-# Add the src and example directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'examples'))
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'experiments', 'QM'))
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from kse import generate_kse_data
+from examples.kse import generate_kse_data
 from sparsemodesnet.dataset import PODReconDataset
-from quadmani import quadmani_greedy
+from experiments.QM.quadmani import quadmani_greedy
 
 #%% 
 def lstsq_l2_numpy(A, B, reg_magnitude=1e-6):
@@ -314,7 +312,7 @@ def train_quadraticmanifold(model: QuadraticManifold,
                   f"Non-zero modes: {nonzero_count}")
             print(omega_)
             
-        if nonzero_count <= rmax:
+        if nonzero_count <= rmax + 5:
             print(f"Reached maximum non-zero modes ({rmax}). Stopping training.")
             exit_flag = True
             break
@@ -538,7 +536,7 @@ if __name__ == "__main__":
         # Update lambda
         lam *= (1 + eps)
         model.lam = lam
-#%%  
+
     # Select the first largest r_max modes
     I_nn = np.where(omegas[:, -1] > 0)[0]
     # I_nn = np.argsort(omegas[:, -1])[::-1]
@@ -592,6 +590,88 @@ if __name__ == "__main__":
     print(f"LassoNet: ||X - V_nn @ Z - W_nn @ Z_quad||_F = {recon_error:.6e}")
     print(f"Relative error: {rel_recon_error_nn:.6e}")
 
+
+# %% #===================== Plot reconstruction Errors ========================#
+    # Collect reconstruction errors for different numbers of modes
+    mode_counts = []
+    qm_errors = []
+    nn_errors = []
+    linear_errors = []
+    
+    # Test different numbers of modes
+    for r_test in range(1, min(r_max + 1, 21)):  # Test up to 20 modes or r_max
+        # Quadratic Manifold with r_test modes
+        V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
+            X, r_test, s_ks, 1e-15, np.array([], dtype=int))
+        
+        Z_qm_test = V_test.T @ X_shift
+        Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
+        recon_error_qm_test = np.linalg.norm(
+            X - V_test @ Z_qm_test - W_test @ Z_quad_qm_test - shift_value, ord='fro')
+        rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
+        
+        # Linear reconstruction with leading r_test modes
+        V_linear_test = np.linalg.svd(X, full_matrices=False)[0][:, :r_test] 
+        Z_linear_test = V_linear_test.T @ X_shift
+        recon_error_linear_test = np.linalg.norm(
+            X - V_linear_test @ Z_linear_test - shift_value, ord='fro')
+        rel_recon_error_linear_test = recon_error_linear_test / np.linalg.norm(X, ord='fro')
+        
+        # LassoNet with first r_test modes from selected modes
+        if len(I_nn) >= r_test:
+            V_nn_test = V_white[:, I_nn[:r_test]]
+            if NORMALIZE and WHITENING:
+                Z_nn_test = V_nn_test.T @ X_shift_norm
+                residual_test = X_shift_norm - V_nn_test @ Z_nn_test
+            elif NORMALIZE:
+                Z_nn_test = V_nn_test.T @ X_proc
+                residual_test = X_proc - V_nn_test @ Z_nn_test
+            else:
+                Z_nn_test = V_nn_test.T @ X_shift
+                residual_test = X_shift - V_nn_test @ Z_nn_test
+                
+            Z_quad_nn_test = quadratic_mapping_numpy(Z_nn_test.T).T
+            W_nn_test_T, _ = lstsq_l2_numpy(
+                Z_quad_nn_test.T, residual_test.T, reg_magnitude=1e-15)
+            W_nn_test = W_nn_test_T.T
+            
+            if NORMALIZE:
+                recon_error_nn_test = np.linalg.norm(
+                    X - ((V_nn_test @ Z_nn_test + W_nn_test @ Z_quad_nn_test)*X_shift_scale + X_shift_shift) 
+                    - shift_value, ord='fro')
+            else:
+                recon_error_nn_test = np.linalg.norm(
+                    X - V_nn_test @ Z_nn_test - W_nn_test @ Z_quad_nn_test - shift_value, ord='fro')
+            rel_recon_error_nn_test = recon_error_nn_test / np.linalg.norm(X, ord='fro')
+        else:
+            rel_recon_error_nn_test = np.nan
+        
+        mode_counts.append(r_test)
+        qm_errors.append(rel_recon_error_qm_test)
+        nn_errors.append(rel_recon_error_nn_test)
+        linear_errors.append(rel_recon_error_linear_test)
+    
+    # Plot reconstruction errors
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+    
+    ax.semilogy(mode_counts, qm_errors, 'b-o', label='Quadratic Manifold', markersize=10, linewidth=4)
+    ax.semilogy(mode_counts, linear_errors, 'g-^', label='Linear POD (leading-r)', markersize=10, linewidth=4)
+    valid_nn_errors = [err for err in nn_errors if not np.isnan(err)]
+    valid_mode_counts = [mode_counts[i] for i, err in enumerate(nn_errors) if not np.isnan(err)]
+    ax.semilogy(valid_mode_counts, valid_nn_errors, 'r-s', label='LassoNet', markersize=10, linewidth=4)
+    
+    ax.set_xlabel('Number of Modes', fontsize=16)
+    ax.set_ylabel('Relative Reconstruction Error', fontsize=16)
+    ax.set_title('Reconstruction Error vs Number of Modes', fontsize=18)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=14)
+    ax.set_xlim(left=0)
+    plt.tight_layout()
+    plt.savefig('figures/kse/reconstruction_errors.png', dpi=200)
+    plt.show()
+
+
 # %% #====================== Plot the singular values =========================#
     # Compute the singular values of the shifted data
     pod_basis, Sig, _ = np.linalg.svd(X_shift, full_matrices=False)
@@ -628,7 +708,7 @@ if __name__ == "__main__":
                     markerfacecolor='none', markeredgewidth=2)
     
     plt.tight_layout()
-    plt.savefig('figures/lassonet/kse/singular_values.png', dpi=200)
+    plt.savefig('figures/kse/singular_values.png', dpi=200)
     plt.show()
     
     # Print statistics
@@ -647,7 +727,7 @@ if __name__ == "__main__":
     print("="*60)
 
     # Create figure with subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig, (ax1) = plt.subplots(1, 1, figsize=(11, 6))
 
     # Plot 1: Omega evolution over lambda iterations
     for mode in range(s_ks):
@@ -658,52 +738,54 @@ if __name__ == "__main__":
             ax1.plot(np.abs(omegas[mode, :]), linewidth=1, alpha=0.5, 
                      color='darkblue', linestyle='--')
 
-    ax1.set_xlabel('Lambda iteration')
-    ax1.set_ylabel('Omega values')
-    ax1.set_title('Evolution of Omega Values During Training')
+    ax1.set_xlabel('Lambda iteration', fontsize=16)
+    ax1.set_ylabel('Omega values', fontsize=16)
+    ax1.set_title('Evolution of Omega Values During Training', fontsize=18)
     ax1.grid(True, alpha=0.3)
     ax1.set_yscale('log')
+    ax.tick_params(axis='both', which='major', labelsize=16)
+    ax.legend(fontsize=14)
 
-    # Plot 2: Final omega values
-    final_omegas = np.abs(omegas[:, -1])
-    non_zero_modes = np.where(final_omegas > 1e-13)[0]
-    mode_indices = np.arange(len(final_omegas))
-    bars = ax2.bar(mode_indices, final_omegas, alpha=0.7, color='darkblue')
+    # # Plot 2: Final omega values
+    # final_omegas = np.abs(omegas[:, -1])
+    # non_zero_modes = np.where(final_omegas > 1e-13)[0]
+    # mode_indices = np.arange(len(final_omegas))
+    # bars = ax2.bar(mode_indices, final_omegas, alpha=0.7, color='darkblue')
 
-    # Highlight selected modes
-    for mode in non_zero_modes:
-        bars[mode].set_color('orange')
+    # # Highlight selected modes
+    # for mode in non_zero_modes:
+    #     bars[mode].set_color('orange')
 
-    # Highlight quadratic manifold modes
-    for mode in I_qm:
-        if mode < len(bars):
-            bars[mode].set_edgecolor('red')
-            bars[mode].set_linewidth(0.5)
+    # # Highlight quadratic manifold modes
+    # for mode in I_qm:
+    #     if mode < len(bars):
+    #         bars[mode].set_edgecolor('red')
+    #         bars[mode].set_linewidth(0.5)
 
-    ax2.set_xlabel('Mode Index')
-    ax2.set_ylabel('Final Omega (Abs) Value')
-    ax2.set_title('Final Omega (Abs) Values\n(Orange = Selected by LassoNet, '
-                  'Red border = Quadratic Manifold)')
-    ax2.set_yscale('log')
-    ax2.grid(True, alpha=0.3)
+    # ax2.set_xlabel('Mode Index')
+    # ax2.set_ylabel('Final Omega (Abs) Value')
+    # ax2.set_title('Final Omega (Abs) Values\n(Orange = Selected by LassoNet, '
+    #               'Red border = Quadratic Manifold)')
+    # ax2.set_yscale('log')
+    # ax2.grid(True, alpha=0.3)
 
-    # Add threshold line
-    ax2.axhline(y=threshold, color='red', linestyle='--', alpha=0.5, 
-                label='Selection threshold')
-    ax2.legend()
+    # # Add threshold line
+    # ax2.axhline(y=threshold, color='red', linestyle='--', alpha=0.5, 
+    #             label='Selection threshold')
+    # ax2.legend()
 
     plt.tight_layout()
-    # plt.savefig('figures/lassonet/kse/omega_evolution.png', dpi=200)
+    plt.savefig('figures/kse/omega_evolution.png', dpi=200)
     plt.show()
 
     # Print statistics about omega values
     print(f"\nOmega Statistics:")
     print(f"Number of lambda iterations: {omegas.shape[1]}")
-    print(f"Final non-zero omegas: {len(non_zero_modes)}")
-    print(f"Max final omega: {np.max(final_omegas):.6e}")
-    print(f"Min final omega: {np.min(final_omegas[final_omegas > 1e-13]):.6e}" 
-          if len(non_zero_modes) > 0 else "No non-zero omegas")
-    print(f"Final selected modes: {non_zero_modes}")
+    # print(f"Final non-zero omegas: {len(non_zero_modes)}")
+    # print(f"Max final omega: {np.max(final_omegas):.6e}")
+    # print(f"Min final omega: {np.min(final_omegas[final_omegas > 1e-13]):.6e}" 
+    #       if len(non_zero_modes) > 0 else "No non-zero omegas")
+    # print(f"Final selected modes: {non_zero_modes}")
     
 
 # %% #======================== Plot selected modes ============================#
@@ -763,7 +845,7 @@ if __name__ == "__main__":
                 spine.set_visible(False)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to fit title
-    plt.savefig('figures/lassonet/kse/selected_modes_plot.png', dpi=200)
+    plt.savefig('figures/kse/selected_modes_plot.png', dpi=200)
     plt.show()
 
     # Print summary statistics
@@ -895,7 +977,7 @@ cbar2.set_label('Abs. Error', fontsize=14)
 
 plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, wspace=0.3, hspace=0.3)
 plt.suptitle('Reconstruction Comparison: KSE Data', fontsize=19, y=0.98)
-# plt.savefig('figures/lassonet/kse/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
+plt.savefig('figures/kse/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close(fig)
 
@@ -929,7 +1011,7 @@ for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices, time_points)):
 
 plt.tight_layout()
 plt.suptitle('KSE Flow Profiles at Different Time Points', fontsize=19, y=1.02)
-# plt.savefig('figures/lassonet/kse/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
+plt.savefig('figures/kse/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close(fig)
 
