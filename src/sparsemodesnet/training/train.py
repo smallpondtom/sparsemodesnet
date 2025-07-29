@@ -13,6 +13,7 @@ def train_sparsemodesnet(model: SparseModesNet,
                          optimizer: str,
                          momentum: float,
                          max_num_modes: int,
+                         extra_modes: int,
                          device: str):
     """
     Train SparseModesNet for exactly num_epochs at whatever model.lam currently 
@@ -90,7 +91,7 @@ def train_sparsemodesnet(model: SparseModesNet,
                   f"Recon MSE={epoch_loss:.6e} | ‖ω‖₁={epoch_l1:.6e} | "
                   f"Non-zero modes: {nonzero_count}")
             
-        if nonzero_count <= max_num_modes:
+        if nonzero_count <= max_num_modes + extra_modes:
             print(f"Reached maximum non-zero modes ({max_num_modes}). " 
                   f"Stopping training.")
             exit_flag = True

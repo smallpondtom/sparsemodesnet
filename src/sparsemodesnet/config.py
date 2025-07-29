@@ -25,6 +25,7 @@ class TrainingConfig:
     I_nn: Optional[np.ndarray] = None
     momentum: float = 0.9
     max_no_change: int = 50
+    extra_modes: int = 0
 
 @dataclass
 class PreprocessingConfig:
@@ -49,6 +50,7 @@ class SparsityConfig:
     max_iters: int = 1000
     max_num_modes: int = 20
     skip_sparse: bool = False
+    selection_method: str = 'weight'
 
 @dataclass
 class ExperimentConfig:

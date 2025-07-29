@@ -64,6 +64,7 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_np: np.ndarray,
             config.training.optimizer, 
             config.training.momentum,
             config.sparsity.max_num_modes,
+            config.training.extra_modes,
             config.training.device
         )
 
@@ -87,7 +88,8 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_np: np.ndarray,
             
         # Break if number of selected modes hasn't changed for several iterations
         if no_change_iterations >= config.training.max_no_change:
-            print(f"Number of selected modes unchanged for {config.training.max_no_change} "
+            print(f"Number of selected modes unchanged for " 
+                  f"{config.training.max_no_change} "
                   f"consecutive iterations. Assuming convergence.")
             break
 
@@ -104,11 +106,20 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_np: np.ndarray,
         lam = lam * (1.0 + config.sparsity.epsilon)
 
         if iter_count >= config.sparsity.max_iters:
-            print(f"Reached max_iters={config.sparsity.max_iters} on λ-path; stopping early.\n")
+            print(f"Reached max_iters={config.sparsity.max_iters} " 
+                  f"on λ-path; stopping early.\n")
             break
 
     # Select the modes with the highest final weights
-    I_nn = np.argsort(omegas[:, -1])[::-1][:config.training.max_num_modes]
+    if config.sparsity.selection_method == 'weight':
+        I_nn = np.argsort(omegas[:, -1])[::-1][:config.training.max_num_modes]
+    elif config.sparsity.selection_method == 'leading':
+        I_nn = np.where(omegas[:, -1] > 0)[0][:config.training.max_num_modes]
+    else:
+        raise ValueError(f"Unknown selection method: " 
+                         f"{config.sparsity.selection_method}."
+                         f" Supported methods are 'weight' and 'leading'.")
+
     print(f"\nFinal selected modes (indices): {I_nn.tolist()}")
 
     return I_nn, omegas, path_history
