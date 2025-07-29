@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Callable
 import numpy as np
 
 @dataclass
@@ -22,7 +22,22 @@ class TrainingConfig:
     batch_size: int = 32
     optimizer: str = 'Adam'
     device: str = 'cpu'
-    I_NN: Optional[np.ndarray] = None
+    I_nn: Optional[np.ndarray] = None
+    momentum: float = 0.9
+    max_no_change: int = 50
+
+@dataclass
+class PreprocessingConfig:
+    """Configuration for preprocessing steps"""
+    normalize: bool = True
+    center: bool = True
+    whiten: bool = False
+    whitening_epsilon: float = 1e-5
+    lift: Callable | None = None
+    unlift: Callable | None = None
+    mu: np.ndarray | None = None
+    shift: np.ndarray | None = None
+    scale: np.ndarray | None = None
 
 @dataclass
 class SparsityConfig:
@@ -31,27 +46,9 @@ class SparsityConfig:
     nonzero_thresh: float = 1e-6
     lam0: float = 1e-6
     epsilon: float = 0.1
-    max_iters: int = 100
-
-@dataclass
-class SelectionConfig:
-    """Configuration for mode selection methods"""
-    mode_selection: str = 'dense2sparse'
-    knee_method: str = 'dfdt'
-    r_max: Optional[int] = None
-    
-    # For CV
-    k_folds: int = 5
-    lambdas: Optional[np.ndarray] = None
-    
-    # For Stability Selection
-    num_subsamples: int = 100
-    pi_thresh: float = 0.6
-    
-    # For Knockoffs
-    fdr: float = 0.1
-    knockoff_method: str = 'mvr'
-    feature_stat: str = 'lasso'
+    max_iters: int = 1000
+    max_num_modes: int = 20
+    skip_sparse: bool = False
 
 @dataclass
 class ExperimentConfig:
@@ -69,8 +66,9 @@ class SparseModesNetConfig:
     # Configuration groups
     network: NetworkConfig
     training: TrainingConfig
+    preprocessing: PreprocessingConfig
     sparsity: SparsityConfig
-    selection: SelectionConfig
+    # selection: SelectionConfig
     experiment: ExperimentConfig
     
     @classmethod
@@ -89,16 +87,16 @@ class SparseModesNetConfig:
                 if k in TrainingConfig.__dataclass_fields__
             }
         )
+        preprocess = PreprocessingConfig(
+            **{
+                k: v for k, v in config_dict.items() 
+                if k in PreprocessingConfig.__dataclass_fields__
+            }
+        )
         sparsity = SparsityConfig(
             **{
                 k: v for k, v in config_dict.items() 
                 if k in SparsityConfig.__dataclass_fields__
-            }
-        )
-        selection = SelectionConfig(
-            **{
-                k: v for k, v in config_dict.items() 
-                if k in SelectionConfig.__dataclass_fields__
             }
         )
         experiment = ExperimentConfig(
@@ -112,10 +110,10 @@ class SparseModesNetConfig:
         remaining = {
             k: v for k, v in config_dict.items() 
             if k not in (
-                NetworkConfig.__dataclass_fields__   | 
-                TrainingConfig.__dataclass_fields__  |
-                SparsityConfig.__dataclass_fields__  |
-                SelectionConfig.__dataclass_fields__ |
+                NetworkConfig.__dataclass_fields__       | 
+                TrainingConfig.__dataclass_fields__      |
+                PreprocessingConfig.__dataclass_fields__ |
+                SparsityConfig.__dataclass_fields__      |
                 ExperimentConfig.__dataclass_fields__
             )
         }
@@ -123,8 +121,8 @@ class SparseModesNetConfig:
         return cls(
             network=network,
             training=training, 
+            preprocessing=preprocess,
             sparsity=sparsity,
-            selection=selection,
             experiment=experiment,
             **remaining
         )

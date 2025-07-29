@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from sparsemodesnet.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
+from sparsemodesnet.models.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
+from sparsemodesnet.models.mask import MaskedLayer
 
 class SparseModesNet(nn.Module):
     """
@@ -50,9 +51,9 @@ class SparseModesNet(nn.Module):
         self.omega = nn.Parameter(torch.ones(self.s))
         
         # Assertion for network type
-        assert network_type in ['FF', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'], \
+        assert network_type in ['FF', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', 'QM'], \
             f"Unsupported network type: {network_type}. " \
-            "Use 'FF', 'PiNetCCP', 'PiNetNCP', or 'PiNetNCPSkip'."
+            "Use 'FF', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', or 'QM'."
         self.network_type = network_type
         
         # Pi-Net dictionary
@@ -72,7 +73,7 @@ class SparseModesNet(nn.Module):
                 layers.append(nn.Dropout(p=0.1)) 
             layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
             self.net = nn.Sequential(*layers)
-        else:
+        elif 'PiNet' in network_type:
             # PiNetCCP, PiNetNCP, or PiNetNCPSkip (with/without ProdPoly)
             assert len(hidden_units) == 3, \
                 "PiNetCCP requires exactly 3 hidden units: \
@@ -107,6 +108,12 @@ class SparseModesNet(nn.Module):
                     poly_order=poly_order, drop_linear=drop_linear,
                     drop_constant=drop_constant, normalize=normalize
                 )
+        else:
+            self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
+            self.first_layer.weight.data.fill_(0.1)  
+            self.quadmap = _quadratic_mapping_vectorized
+            self.projection = nn.Parameter(
+                torch.zeros(self.r * (self.r + 1) // 2, self.d))
     
     def forward(self, z_batch):
         """
@@ -129,9 +136,14 @@ class SparseModesNet(nn.Module):
         if self.network_type == 'FF': 
             # Apply the NN to the reduced states 
             x_hat_nn = self.net(z_hat)                  # (batch, d)
-        else:
+        elif 'PiNet' in self.network_type:
             h        = self.first_layer(z_hat)          # (batch, inter_dim)
             x_hat_nn = self.pinet(h)                    # (batch, out_dim)
+        else:
+            # Apply the quadratic mapping
+            h        = self.first_layer(z_hat)          
+            z_quad   = self.quadmap(z_hat)              # (batch, r*(r+1)//2)
+            x_hat_nn = z_quad @ self.projection         # (batch, d)
 
         # --- Reconstruct x_hat ---
         x_hat = x_hat_lin + x_hat_nn

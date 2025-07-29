@@ -2,24 +2,23 @@
 SparseModesNet: POD-based sparse mode selection with neural networks
 """
 
-from .model import SparseModesNet
-from .pod import compute_pod_basis
+from .models.model import SparseModesNet
+from .linalg.pod import compute_pod_basis
+from .linalg.zca import zca_whitening_matrix
 from .dataset import PODReconDataset
-from .train import train_sparsemodesnet
-from .driver import run_sparsemodesnet, run_sparsemodesnet_d2s
-from .cv import run_sparsemodesnet_cv
+from .training.train import train_sparsemodesnet
+from .fit import fit
 
 __all__ = [
     # Core components
     'SparseModesNet',
     'PODReconDataset',
     'compute_pod_basis',
+    'zca_whitening_matrix',
     'train_sparsemodesnet',
     
-    # Main driver functions
-    'run_sparsemodesnet',
-    'run_sparsemodesnet_d2s',
-    'run_sparsemodesnet_cv',
+    # Main driver function
+    'fit'
 ]
 
 __version__ = "0.1.0"
