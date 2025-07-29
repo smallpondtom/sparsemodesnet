@@ -9,7 +9,7 @@
 .DS_Store
 
 # Old files
-/__old__
+__old__/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
