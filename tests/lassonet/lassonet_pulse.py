@@ -688,7 +688,7 @@ if __name__ == "__main__":
     ax.legend(fontsize=14)
     ax.set_xlim(left=0)
     plt.tight_layout()
-    plt.savefig('figures/wave/reconstruction_errors.png', dpi=200)
+    plt.savefig('figures/pulse/reconstruction_errors.png', dpi=200)
     plt.show()
 
 # %% #====================== Plot the singular values =========================#
@@ -727,7 +727,7 @@ if __name__ == "__main__":
                     markerfacecolor='none', markeredgewidth=2)
     
     plt.tight_layout()
-    plt.savefig('figures/wave/singular_values.png', dpi=200)
+    plt.savefig('figures/pulse/singular_values.png', dpi=200)
     plt.show()
     
     # Print statistics
@@ -794,7 +794,7 @@ if __name__ == "__main__":
     # ax2.legend()
 
     plt.tight_layout()
-    plt.savefig('figures/wave/omega_evolution.png', dpi=200)
+    plt.savefig('figures/pulse/omega_evolution.png', dpi=200)
     plt.show()
 
     # Print statistics about omega values
@@ -864,7 +864,7 @@ if __name__ == "__main__":
                 spine.set_visible(False)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust layout to fit title
-    plt.savefig('figures/wave/selected_modes_plot.png', dpi=200)
+    plt.savefig('figures/pulse/selected_modes_plot.png', dpi=200)
     plt.show()
 
     # Print summary statistics
@@ -995,13 +995,13 @@ cbar2 = plt.colorbar(im7, cax=cax2, label='Abs. Error')
 cbar2.set_label('Abs. Error', fontsize=14)
 
 plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, wspace=0.3, hspace=0.3)
-plt.suptitle('Reconstruction Comparison: Wave Data', fontsize=19, y=0.98)
-plt.savefig('figures/wave/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
+plt.suptitle('Reconstruction Comparison: pulse Data', fontsize=19, y=0.98)
+plt.savefig('figures/pulse/reconstruction_comparison.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close(fig)
 
-#%% Plot waves at specific time points
-print("\nPlotting waves at specific time points...")
+#%% Plot pulses at specific time points
+print("\nPlotting pulses at specific time points...")
 
 # Select 3 equally spaced time points
 n_times = len(tspan)
@@ -1030,7 +1030,7 @@ for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices, time_points)):
 
 plt.tight_layout()
 plt.suptitle('Wave Profiles at Different Time Points', fontsize=19, y=1.02)
-plt.savefig('figures/wave/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
+plt.savefig('figures/pulse/wave_profiles_comparison.png', dpi=300, bbox_inches='tight')
 plt.show()
 plt.close(fig)
 
