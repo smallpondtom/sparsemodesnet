@@ -1,0 +1,1639 @@
+2025-07-30 11:38:30,250 - sparsemodesnet.advecting_pulse - INFO - Starting advecting_pulse experiment
+2025-07-30 11:38:30,251 - sparsemodesnet.advecting_pulse - INFO - Log file: logs/advecting_pulse_20250730_113830.log
+2025-07-30 11:38:30,251 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+2025-07-30 11:38:30,251 - sparsemodesnet.advecting_pulse - INFO - EXPERIMENT CONFIGURATION
+2025-07-30 11:38:30,252 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+2025-07-30 11:38:30,252 - sparsemodesnet.advecting_pulse - INFO - Data shape: (1024, 1000)
+2025-07-30 11:38:30,252 - sparsemodesnet.advecting_pulse - INFO - Data type: float64
+2025-07-30 11:38:30,253 - sparsemodesnet.advecting_pulse - INFO - Data range: [0.000000, 25.231325]
+2025-07-30 11:38:30,253 - sparsemodesnet.advecting_pulse - INFO - Data mean: 0.999023
+2025-07-30 11:38:30,255 - sparsemodesnet.advecting_pulse - INFO - Data std: 4.101923
+2025-07-30 11:38:30,255 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,255 - sparsemodesnet.advecting_pulse - INFO - CORE PARAMETERS
+2025-07-30 11:38:30,255 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,256 - sparsemodesnet.advecting_pulse - INFO - s (latent dimension): 100
+2025-07-30 11:38:30,256 - sparsemodesnet.advecting_pulse - INFO - I_nn provided: False
+2025-07-30 11:38:30,256 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,256 - sparsemodesnet.advecting_pulse - INFO - NETWORK CONFIGURATION
+2025-07-30 11:38:30,257 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,257 - sparsemodesnet.advecting_pulse - INFO - Network type: FF
+2025-07-30 11:38:30,257 - sparsemodesnet.advecting_pulse - INFO - Hidden units: [100, 2000, 100]
+2025-07-30 11:38:30,257 - sparsemodesnet.advecting_pulse - INFO - Polynomial order: 2
+2025-07-30 11:38:30,258 - sparsemodesnet.advecting_pulse - INFO - Number of polynomials: 2
+2025-07-30 11:38:30,258 - sparsemodesnet.advecting_pulse - INFO - Drop linear: False
+2025-07-30 11:38:30,258 - sparsemodesnet.advecting_pulse - INFO - Drop constant: False
+2025-07-30 11:38:30,258 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,258 - sparsemodesnet.advecting_pulse - INFO - TRAINING CONFIGURATION
+2025-07-30 11:38:30,259 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,259 - sparsemodesnet.advecting_pulse - INFO - Learning rate: 0.001
+2025-07-30 11:38:30,259 - sparsemodesnet.advecting_pulse - INFO - Number of epochs: 100
+2025-07-30 11:38:30,259 - sparsemodesnet.advecting_pulse - INFO - Batch size: 200
+2025-07-30 11:38:30,259 - sparsemodesnet.advecting_pulse - INFO - Optimizer: Adam
+2025-07-30 11:38:30,260 - sparsemodesnet.advecting_pulse - INFO - Device: mps
+2025-07-30 11:38:30,260 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,260 - sparsemodesnet.advecting_pulse - INFO - PREPROCESSING CONFIGURATION
+2025-07-30 11:38:30,260 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,261 - sparsemodesnet.advecting_pulse - INFO - Normalize: True
+2025-07-30 11:38:30,261 - sparsemodesnet.advecting_pulse - INFO - Center: True
+2025-07-30 11:38:30,261 - sparsemodesnet.advecting_pulse - INFO - Whiten: False
+2025-07-30 11:38:30,261 - sparsemodesnet.advecting_pulse - INFO - Whitening epsilon: 1e-05
+2025-07-30 11:38:30,261 - sparsemodesnet.advecting_pulse - INFO - Forward function provided: False
+2025-07-30 11:38:30,262 - sparsemodesnet.advecting_pulse - INFO - Backward function provided: False
+2025-07-30 11:38:30,262 - sparsemodesnet.advecting_pulse - INFO - Mean (mu) provided: False
+2025-07-30 11:38:30,262 - sparsemodesnet.advecting_pulse - INFO - Shift provided: False
+2025-07-30 11:38:30,262 - sparsemodesnet.advecting_pulse - INFO - Scale provided: False
+2025-07-30 11:38:30,263 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,263 - sparsemodesnet.advecting_pulse - INFO - SPARSITY CONFIGURATION
+2025-07-30 11:38:30,263 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,263 - sparsemodesnet.advecting_pulse - INFO - M (penalty parameter): 12.0
+2025-07-30 11:38:30,264 - sparsemodesnet.advecting_pulse - INFO - Nonzero threshold: 1e-06
+2025-07-30 11:38:30,264 - sparsemodesnet.advecting_pulse - INFO - Lambda 0: 5.0
+2025-07-30 11:38:30,264 - sparsemodesnet.advecting_pulse - INFO - Epsilon: 0.0005
+2025-07-30 11:38:30,264 - sparsemodesnet.advecting_pulse - INFO - Max iterations: 1000
+2025-07-30 11:38:30,265 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,265 - sparsemodesnet.advecting_pulse - INFO - EXPERIMENT CONFIGURATION
+2025-07-30 11:38:30,265 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 11:38:30,265 - sparsemodesnet.advecting_pulse - INFO - Label: Advecting Pulse
+2025-07-30 11:38:30,266 - sparsemodesnet.advecting_pulse - INFO - Logs directory: ./logs
+2025-07-30 11:38:30,266 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+
+=== SparseModesNet (Mode Selection) on Advecting Pulse: d=1024, n=1000, s=100 ===
+
+=== Dense-To-Sparse (default) λ-Path ===
+
+-- Path iteration 1, λ = 5.000e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=2.804621e-02 | ‖ω‖₁=8.238016e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.461678e-03 | ‖ω‖₁=8.690253e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=3.373018e-03 | ‖ω‖₁=9.003559e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=2.201588e-03 | ‖ω‖₁=9.228026e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=1.708846e-03 | ‖ω‖₁=9.357843e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=1.421668e-03 | ‖ω‖₁=9.484584e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=1.343719e-03 | ‖ω‖₁=9.582568e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=1.240790e-03 | ‖ω‖₁=9.604445e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=1.162447e-03 | ‖ω‖₁=9.634258e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=1.112022e-03 | ‖ω‖₁=9.660868e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=1.037540e-03 | ‖ω‖₁=9.683057e-01 | Non-zero modes: 100
+  → at λ=5.000e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 2, λ = 5.002e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=1.106409e-03 | ‖ω‖₁=9.704875e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=1.052623e-03 | ‖ω‖₁=9.635256e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=1.009293e-03 | ‖ω‖₁=9.598663e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=1.019325e-03 | ‖ω‖₁=9.557971e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.875980e-04 | ‖ω‖₁=9.537581e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.991642e-04 | ‖ω‖₁=9.508108e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.462575e-04 | ‖ω‖₁=9.507615e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=1.001584e-03 | ‖ω‖₁=9.465277e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.526817e-04 | ‖ω‖₁=9.436626e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.607227e-04 | ‖ω‖₁=9.416267e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.341152e-04 | ‖ω‖₁=9.365336e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 1 consecutive iterations.
+  → at λ=5.002e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 3, λ = 5.005e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.881457e-04 | ‖ω‖₁=9.404120e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.790428e-04 | ‖ω‖₁=9.359174e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.367709e-04 | ‖ω‖₁=9.303458e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.243246e-04 | ‖ω‖₁=9.255189e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.569386e-04 | ‖ω‖₁=9.222142e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.330003e-04 | ‖ω‖₁=9.184981e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.363925e-04 | ‖ω‖₁=9.171220e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.174320e-04 | ‖ω‖₁=9.122511e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.647180e-04 | ‖ω‖₁=9.075086e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.511232e-04 | ‖ω‖₁=9.097509e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.495926e-04 | ‖ω‖₁=9.044999e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 2 consecutive iterations.
+  → at λ=5.005e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 4, λ = 5.008e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.787303e-04 | ‖ω‖₁=9.082292e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.592938e-04 | ‖ω‖₁=9.012487e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.749689e-04 | ‖ω‖₁=8.979444e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.561076e-04 | ‖ω‖₁=8.961413e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.731598e-04 | ‖ω‖₁=8.950063e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.530027e-04 | ‖ω‖₁=8.928654e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.521453e-04 | ‖ω‖₁=8.900278e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.795362e-04 | ‖ω‖₁=8.875201e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.213353e-04 | ‖ω‖₁=8.842010e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.697972e-04 | ‖ω‖₁=8.800990e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.239821e-04 | ‖ω‖₁=8.756493e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 3 consecutive iterations.
+  → at λ=5.008e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 5, λ = 5.010e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.696583e-04 | ‖ω‖₁=8.804009e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.506476e-04 | ‖ω‖₁=8.751575e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.468593e-04 | ‖ω‖₁=8.689527e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.393474e-04 | ‖ω‖₁=8.659560e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.501462e-04 | ‖ω‖₁=8.623570e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.490195e-04 | ‖ω‖₁=8.619511e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.473736e-04 | ‖ω‖₁=8.607890e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.426798e-04 | ‖ω‖₁=8.558273e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.344575e-04 | ‖ω‖₁=8.517495e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.752174e-04 | ‖ω‖₁=8.507188e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.710957e-04 | ‖ω‖₁=8.460680e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 4 consecutive iterations.
+  → at λ=5.010e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 6, λ = 5.013e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.340181e-04 | ‖ω‖₁=8.491271e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.354118e-04 | ‖ω‖₁=8.437211e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.457183e-04 | ‖ω‖₁=8.398128e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.525059e-04 | ‖ω‖₁=8.367187e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.271317e-04 | ‖ω‖₁=8.358624e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.717379e-04 | ‖ω‖₁=8.320042e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.456856e-04 | ‖ω‖₁=8.298331e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.220176e-04 | ‖ω‖₁=8.279081e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.500171e-04 | ‖ω‖₁=8.244600e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.044506e-04 | ‖ω‖₁=8.215606e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.430486e-04 | ‖ω‖₁=8.215173e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 5 consecutive iterations.
+  → at λ=5.013e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 7, λ = 5.015e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.541283e-04 | ‖ω‖₁=8.252663e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.319033e-04 | ‖ω‖₁=8.201921e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.389309e-04 | ‖ω‖₁=8.153256e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.220720e-04 | ‖ω‖₁=8.115932e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.597468e-04 | ‖ω‖₁=8.101314e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.339252e-04 | ‖ω‖₁=8.072010e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.481554e-04 | ‖ω‖₁=8.038727e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.270457e-04 | ‖ω‖₁=8.022123e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.316545e-04 | ‖ω‖₁=8.008430e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.039305e-04 | ‖ω‖₁=7.959614e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.392221e-04 | ‖ω‖₁=7.936991e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 6 consecutive iterations.
+  → at λ=5.015e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 8, λ = 5.018e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.893140e-04 | ‖ω‖₁=7.980640e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.139285e-04 | ‖ω‖₁=7.938887e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.397029e-04 | ‖ω‖₁=7.908544e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.810459e-04 | ‖ω‖₁=7.892924e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.532665e-04 | ‖ω‖₁=7.862873e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.188513e-04 | ‖ω‖₁=7.856061e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.408611e-04 | ‖ω‖₁=7.826190e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.295832e-04 | ‖ω‖₁=7.785896e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.665542e-04 | ‖ω‖₁=7.774062e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.321425e-04 | ‖ω‖₁=7.752288e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.424401e-04 | ‖ω‖₁=7.702425e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 7 consecutive iterations.
+  → at λ=5.018e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 9, λ = 5.020e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.782035e-04 | ‖ω‖₁=7.737804e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.288994e-04 | ‖ω‖₁=7.692080e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.173261e-04 | ‖ω‖₁=7.652419e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.360888e-04 | ‖ω‖₁=7.639424e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.590633e-04 | ‖ω‖₁=7.625972e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.189964e-04 | ‖ω‖₁=7.588000e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.456821e-04 | ‖ω‖₁=7.583235e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.401229e-04 | ‖ω‖₁=7.558541e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.419817e-04 | ‖ω‖₁=7.519258e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.585792e-04 | ‖ω‖₁=7.485641e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.137031e-04 | ‖ω‖₁=7.475277e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 8 consecutive iterations.
+  → at λ=5.020e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 10, λ = 5.023e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.913975e-04 | ‖ω‖₁=7.530414e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.201646e-04 | ‖ω‖₁=7.470292e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.222605e-04 | ‖ω‖₁=7.438272e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.371714e-04 | ‖ω‖₁=7.419205e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.505342e-04 | ‖ω‖₁=7.401043e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.317331e-04 | ‖ω‖₁=7.367291e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.351126e-04 | ‖ω‖₁=7.342426e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.159238e-04 | ‖ω‖₁=7.318834e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=1.000285e-03 | ‖ω‖₁=7.308970e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.561398e-04 | ‖ω‖₁=7.326592e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.362092e-04 | ‖ω‖₁=7.312574e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 9 consecutive iterations.
+  → at λ=5.023e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 11, λ = 5.025e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.679605e-04 | ‖ω‖₁=7.343621e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.536283e-04 | ‖ω‖₁=7.278139e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.506910e-04 | ‖ω‖₁=7.242774e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.249432e-04 | ‖ω‖₁=7.217055e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.221285e-04 | ‖ω‖₁=7.218273e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.131114e-04 | ‖ω‖₁=7.177591e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.284472e-04 | ‖ω‖₁=7.158970e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.228727e-04 | ‖ω‖₁=7.158054e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.164839e-04 | ‖ω‖₁=7.120974e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.447820e-04 | ‖ω‖₁=7.108778e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.268673e-04 | ‖ω‖₁=7.089925e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 10 consecutive iterations.
+  → at λ=5.025e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 12, λ = 5.028e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.664750e-04 | ‖ω‖₁=7.128783e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.442236e-04 | ‖ω‖₁=7.089451e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.382828e-04 | ‖ω‖₁=7.074984e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.362609e-04 | ‖ω‖₁=7.074084e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.286148e-04 | ‖ω‖₁=7.033935e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.649104e-04 | ‖ω‖₁=7.019186e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.062836e-04 | ‖ω‖₁=7.011642e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.295801e-04 | ‖ω‖₁=7.009584e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.987315e-04 | ‖ω‖₁=6.965826e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.584853e-04 | ‖ω‖₁=6.961874e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.631691e-04 | ‖ω‖₁=6.938445e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 11 consecutive iterations.
+  → at λ=5.028e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 13, λ = 5.030e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.455550e-04 | ‖ω‖₁=6.980243e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.552929e-04 | ‖ω‖₁=6.919069e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.040197e-04 | ‖ω‖₁=6.884754e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.346744e-04 | ‖ω‖₁=6.871717e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.328140e-04 | ‖ω‖₁=6.870205e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.350789e-04 | ‖ω‖₁=6.866877e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.287052e-04 | ‖ω‖₁=6.847265e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.210745e-04 | ‖ω‖₁=6.813122e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.101641e-04 | ‖ω‖₁=6.795209e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.351264e-04 | ‖ω‖₁=6.800125e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.398045e-04 | ‖ω‖₁=6.758754e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 12 consecutive iterations.
+  → at λ=5.030e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 14, λ = 5.033e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.295927e-04 | ‖ω‖₁=6.796897e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.351410e-04 | ‖ω‖₁=6.765737e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.076192e-04 | ‖ω‖₁=6.715444e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.298441e-04 | ‖ω‖₁=6.693127e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.431706e-04 | ‖ω‖₁=6.670867e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.985020e-04 | ‖ω‖₁=6.674353e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.009511e-04 | ‖ω‖₁=6.641942e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.237078e-04 | ‖ω‖₁=6.624309e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.636516e-04 | ‖ω‖₁=6.616072e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.565130e-04 | ‖ω‖₁=6.634073e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.240998e-04 | ‖ω‖₁=6.614426e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 13 consecutive iterations.
+  → at λ=5.033e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 15, λ = 5.035e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.308448e-04 | ‖ω‖₁=6.663796e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.139173e-04 | ‖ω‖₁=6.593605e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.241874e-04 | ‖ω‖₁=6.576590e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.437517e-04 | ‖ω‖₁=6.548859e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.311346e-04 | ‖ω‖₁=6.540038e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.237474e-04 | ‖ω‖₁=6.521481e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.084752e-04 | ‖ω‖₁=6.501453e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.348416e-04 | ‖ω‖₁=6.479016e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.157432e-04 | ‖ω‖₁=6.474719e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.304566e-04 | ‖ω‖₁=6.451167e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.444637e-04 | ‖ω‖₁=6.456806e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 14 consecutive iterations.
+  → at λ=5.035e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 16, λ = 5.038e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.583676e-04 | ‖ω‖₁=6.503370e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.288137e-04 | ‖ω‖₁=6.473592e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.248017e-04 | ‖ω‖₁=6.424594e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.122226e-04 | ‖ω‖₁=6.406125e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.228494e-04 | ‖ω‖₁=6.381531e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.661479e-04 | ‖ω‖₁=6.366678e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.461281e-04 | ‖ω‖₁=6.353333e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.169378e-04 | ‖ω‖₁=6.318006e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.353970e-04 | ‖ω‖₁=6.311551e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.438991e-04 | ‖ω‖₁=6.294731e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.480547e-04 | ‖ω‖₁=6.270200e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 15 consecutive iterations.
+  → at λ=5.038e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 17, λ = 5.040e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.334992e-04 | ‖ω‖₁=6.305645e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.274681e-04 | ‖ω‖₁=6.282652e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.283177e-04 | ‖ω‖₁=6.262003e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.526600e-04 | ‖ω‖₁=6.273950e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.221186e-04 | ‖ω‖₁=6.250061e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.919197e-04 | ‖ω‖₁=6.245069e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.023378e-04 | ‖ω‖₁=6.224331e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.384187e-04 | ‖ω‖₁=6.192785e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.369065e-04 | ‖ω‖₁=6.171142e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.503809e-04 | ‖ω‖₁=6.127524e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.394227e-04 | ‖ω‖₁=6.112345e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 16 consecutive iterations.
+  → at λ=5.040e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 18, λ = 5.043e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.713511e-04 | ‖ω‖₁=6.154240e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.256192e-04 | ‖ω‖₁=6.115728e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.233828e-04 | ‖ω‖₁=6.094669e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.557981e-04 | ‖ω‖₁=6.100388e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.406446e-04 | ‖ω‖₁=6.078151e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.440984e-04 | ‖ω‖₁=6.068655e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.986937e-04 | ‖ω‖₁=6.032004e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.336646e-04 | ‖ω‖₁=6.022933e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.274394e-04 | ‖ω‖₁=6.031196e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.263903e-04 | ‖ω‖₁=6.006635e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.010144e-04 | ‖ω‖₁=5.988761e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 17 consecutive iterations.
+  → at λ=5.043e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 19, λ = 5.045e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.511860e-04 | ‖ω‖₁=6.031710e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.934047e-04 | ‖ω‖₁=6.022326e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.202774e-04 | ‖ω‖₁=5.967690e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.217677e-04 | ‖ω‖₁=5.937889e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.202676e-04 | ‖ω‖₁=5.922861e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.140888e-04 | ‖ω‖₁=5.908872e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.138755e-04 | ‖ω‖₁=5.891943e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.202052e-04 | ‖ω‖₁=5.878524e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.379781e-04 | ‖ω‖₁=5.861573e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.162005e-04 | ‖ω‖₁=5.844041e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.187006e-04 | ‖ω‖₁=5.849451e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 18 consecutive iterations.
+  → at λ=5.045e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 20, λ = 5.048e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.615529e-04 | ‖ω‖₁=5.888005e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.196707e-04 | ‖ω‖₁=5.841539e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.002657e-04 | ‖ω‖₁=5.840231e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.246329e-04 | ‖ω‖₁=5.819971e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.250149e-04 | ‖ω‖₁=5.820470e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.141213e-04 | ‖ω‖₁=5.799494e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.294099e-04 | ‖ω‖₁=5.805415e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.343021e-04 | ‖ω‖₁=5.800403e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.315146e-04 | ‖ω‖₁=5.779661e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.294149e-04 | ‖ω‖₁=5.753388e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.186616e-04 | ‖ω‖₁=5.751770e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 19 consecutive iterations.
+  → at λ=5.048e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 21, λ = 5.050e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.195470e-04 | ‖ω‖₁=5.792414e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.070784e-04 | ‖ω‖₁=5.736093e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.464625e-04 | ‖ω‖₁=5.733949e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.369823e-04 | ‖ω‖₁=5.706936e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.246406e-04 | ‖ω‖₁=5.692115e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.150634e-04 | ‖ω‖₁=5.716501e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.135917e-04 | ‖ω‖₁=5.683356e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.954159e-04 | ‖ω‖₁=5.686072e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.899265e-04 | ‖ω‖₁=5.670815e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.416846e-04 | ‖ω‖₁=5.643718e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.232301e-04 | ‖ω‖₁=5.638120e-01 | Non-zero modes: 100
+Number of selected modes unchanged for 20 consecutive iterations.
+  → at λ=5.050e+00: r(λ)=100
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 22, λ = 5.053e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.602250e-04 | ‖ω‖₁=5.685016e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.228674e-04 | ‖ω‖₁=5.624109e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.233517e-04 | ‖ω‖₁=5.611237e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.412860e-04 | ‖ω‖₁=5.609873e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.322016e-04 | ‖ω‖₁=5.591933e-01 | Non-zero modes: 100
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.114416e-04 | ‖ω‖₁=5.603004e-01 | Non-zero modes: 99
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.199718e-04 | ‖ω‖₁=5.582902e-01 | Non-zero modes: 99
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.054327e-04 | ‖ω‖₁=5.564346e-01 | Non-zero modes: 99
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.820896e-04 | ‖ω‖₁=5.566381e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.414120e-04 | ‖ω‖₁=5.551116e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.183994e-04 | ‖ω‖₁=5.537993e-01 | Non-zero modes: 98
+  → at λ=5.053e+00: r(λ)=98
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 23, λ = 5.055e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.134663e-04 | ‖ω‖₁=5.581702e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.077124e-04 | ‖ω‖₁=5.563690e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.132527e-04 | ‖ω‖₁=5.554947e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.707199e-04 | ‖ω‖₁=5.533582e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.628485e-04 | ‖ω‖₁=5.516824e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.249530e-04 | ‖ω‖₁=5.484388e-01 | Non-zero modes: 98
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.412445e-04 | ‖ω‖₁=5.480278e-01 | Non-zero modes: 97
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.769873e-04 | ‖ω‖₁=5.451578e-01 | Non-zero modes: 97
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.473552e-04 | ‖ω‖₁=5.443833e-01 | Non-zero modes: 97
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.100144e-04 | ‖ω‖₁=5.427075e-01 | Non-zero modes: 97
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.231039e-04 | ‖ω‖₁=5.428993e-01 | Non-zero modes: 97
+  → at λ=5.055e+00: r(λ)=97
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+-- Path iteration 24, λ = 5.058e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.308935e-04 | ‖ω‖₁=5.472458e-01 | Non-zero modes: 97
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.053624e-04 | ‖ω‖₁=5.455713e-01 | Non-zero modes: 96
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.101966e-04 | ‖ω‖₁=5.424560e-01 | Non-zero modes: 95
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.329957e-04 | ‖ω‖₁=5.428315e-01 | Non-zero modes: 92
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.541334e-04 | ‖ω‖₁=5.399740e-01 | Non-zero modes: 92
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.189348e-04 | ‖ω‖₁=5.388208e-01 | Non-zero modes: 92
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.080734e-04 | ‖ω‖₁=5.365763e-01 | Non-zero modes: 92
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.181300e-04 | ‖ω‖₁=5.377854e-01 | Non-zero modes: 91
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.501312e-04 | ‖ω‖₁=5.366074e-01 | Non-zero modes: 90
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.215261e-04 | ‖ω‖₁=5.388670e-01 | Non-zero modes: 90
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.445135e-04 | ‖ω‖₁=5.390087e-01 | Non-zero modes: 89
+  → at λ=5.058e+00: r(λ)=89
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 78, 79, 82, 83, 84, 85, 86, 87, 90, 91, 93, 94, 98, 99]
+
+-- Path iteration 25, λ = 5.060e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.519907e-04 | ‖ω‖₁=5.426442e-01 | Non-zero modes: 89
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.277933e-04 | ‖ω‖₁=5.364340e-01 | Non-zero modes: 89
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.430443e-04 | ‖ω‖₁=5.332585e-01 | Non-zero modes: 89
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.586390e-04 | ‖ω‖₁=5.325242e-01 | Non-zero modes: 89
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=8.944381e-04 | ‖ω‖₁=5.332485e-01 | Non-zero modes: 87
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.548890e-04 | ‖ω‖₁=5.289316e-01 | Non-zero modes: 87
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.206184e-04 | ‖ω‖₁=5.303830e-01 | Non-zero modes: 85
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.138075e-04 | ‖ω‖₁=5.291259e-01 | Non-zero modes: 83
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.296806e-04 | ‖ω‖₁=5.294505e-01 | Non-zero modes: 83
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.547946e-04 | ‖ω‖₁=5.268552e-01 | Non-zero modes: 83
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.423258e-04 | ‖ω‖₁=5.270521e-01 | Non-zero modes: 82
+  → at λ=5.060e+00: r(λ)=82
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 82, 83, 84, 85, 86, 91, 99]
+
+-- Path iteration 26, λ = 5.063e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.430111e-04 | ‖ω‖₁=5.314436e-01 | Non-zero modes: 82
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.028230e-04 | ‖ω‖₁=5.261608e-01 | Non-zero modes: 82
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.151918e-04 | ‖ω‖₁=5.264847e-01 | Non-zero modes: 81
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.105912e-04 | ‖ω‖₁=5.258038e-01 | Non-zero modes: 81
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.406362e-04 | ‖ω‖₁=5.250215e-01 | Non-zero modes: 79
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.162751e-04 | ‖ω‖₁=5.253856e-01 | Non-zero modes: 78
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.356321e-04 | ‖ω‖₁=5.257063e-01 | Non-zero modes: 78
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.224106e-04 | ‖ω‖₁=5.266781e-01 | Non-zero modes: 78
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.010502e-04 | ‖ω‖₁=5.239154e-01 | Non-zero modes: 77
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.379794e-04 | ‖ω‖₁=5.236425e-01 | Non-zero modes: 77
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.916202e-04 | ‖ω‖₁=5.246038e-01 | Non-zero modes: 76
+  → at λ=5.063e+00: r(λ)=76
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74, 85, 99]
+
+-- Path iteration 27, λ = 5.065e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.156973e-04 | ‖ω‖₁=5.286780e-01 | Non-zero modes: 76
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.403559e-04 | ‖ω‖₁=5.234184e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.683457e-04 | ‖ω‖₁=5.225566e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.380417e-04 | ‖ω‖₁=5.215038e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.581125e-04 | ‖ω‖₁=5.218474e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.111778e-04 | ‖ω‖₁=5.198189e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.372710e-04 | ‖ω‖₁=5.208233e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.576103e-04 | ‖ω‖₁=5.197395e-01 | Non-zero modes: 75
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.498099e-04 | ‖ω‖₁=5.181965e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.404343e-04 | ‖ω‖₁=5.162070e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.079320e-04 | ‖ω‖₁=5.163045e-01 | Non-zero modes: 74
+  → at λ=5.065e+00: r(λ)=74
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74]
+
+-- Path iteration 28, λ = 5.068e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.145478e-04 | ‖ω‖₁=5.202594e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.411433e-04 | ‖ω‖₁=5.158728e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.527059e-04 | ‖ω‖₁=5.137002e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.992903e-04 | ‖ω‖₁=5.155100e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.084438e-04 | ‖ω‖₁=5.179808e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.725031e-04 | ‖ω‖₁=5.168561e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.277272e-04 | ‖ω‖₁=5.155885e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.341192e-04 | ‖ω‖₁=5.127084e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.947867e-04 | ‖ω‖₁=5.153205e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.091664e-04 | ‖ω‖₁=5.134998e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.356784e-04 | ‖ω‖₁=5.137355e-01 | Non-zero modes: 74
+Number of selected modes unchanged for 1 consecutive iterations.
+  → at λ=5.068e+00: r(λ)=74
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 74]
+
+-- Path iteration 29, λ = 5.070e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.439578e-04 | ‖ω‖₁=5.181436e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.497971e-04 | ‖ω‖₁=5.136032e-01 | Non-zero modes: 74
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.236454e-04 | ‖ω‖₁=5.144930e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.934706e-04 | ‖ω‖₁=5.131469e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.231990e-04 | ‖ω‖₁=5.113940e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.962591e-04 | ‖ω‖₁=5.110253e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.985271e-04 | ‖ω‖₁=5.107557e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.059219e-04 | ‖ω‖₁=5.103166e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.488643e-04 | ‖ω‖₁=5.120158e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.089654e-04 | ‖ω‖₁=5.100922e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.457939e-04 | ‖ω‖₁=5.100584e-01 | Non-zero modes: 73
+  → at λ=5.070e+00: r(λ)=73
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 74]
+
+-- Path iteration 30, λ = 5.073e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.086385e-04 | ‖ω‖₁=5.138904e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.758513e-04 | ‖ω‖₁=5.113004e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.256387e-04 | ‖ω‖₁=5.066420e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.549181e-04 | ‖ω‖₁=5.074721e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.237759e-04 | ‖ω‖₁=5.054022e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.273846e-04 | ‖ω‖₁=5.043620e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.554703e-04 | ‖ω‖₁=5.067574e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.332404e-04 | ‖ω‖₁=5.045012e-01 | Non-zero modes: 73
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.056536e-04 | ‖ω‖₁=5.012710e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.318131e-04 | ‖ω‖₁=5.025283e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.480872e-04 | ‖ω‖₁=5.035639e-01 | Non-zero modes: 72
+  → at λ=5.073e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 31, λ = 5.076e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.189203e-04 | ‖ω‖₁=5.077998e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.377155e-04 | ‖ω‖₁=5.048660e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.216906e-04 | ‖ω‖₁=5.046203e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.673408e-04 | ‖ω‖₁=5.026072e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.140996e-04 | ‖ω‖₁=5.011927e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.146187e-04 | ‖ω‖₁=5.015107e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.527974e-04 | ‖ω‖₁=4.996522e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.622572e-04 | ‖ω‖₁=4.970492e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.092390e-04 | ‖ω‖₁=4.972358e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.004830e-04 | ‖ω‖₁=4.974908e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.539669e-04 | ‖ω‖₁=4.956494e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 1 consecutive iterations.
+  → at λ=5.076e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 32, λ = 5.078e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.627171e-04 | ‖ω‖₁=5.007671e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.023050e-04 | ‖ω‖₁=4.999888e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.992912e-04 | ‖ω‖₁=4.973587e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.211450e-04 | ‖ω‖₁=4.948676e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.411516e-04 | ‖ω‖₁=4.960772e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.372922e-04 | ‖ω‖₁=4.963512e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.645266e-04 | ‖ω‖₁=4.937654e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.007195e-04 | ‖ω‖₁=4.912742e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.473569e-04 | ‖ω‖₁=4.918990e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.097935e-04 | ‖ω‖₁=4.934897e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.049507e-04 | ‖ω‖₁=4.934920e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 2 consecutive iterations.
+  → at λ=5.078e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 33, λ = 5.081e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.454227e-04 | ‖ω‖₁=4.985213e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.232280e-04 | ‖ω‖₁=4.967822e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.557810e-04 | ‖ω‖₁=4.958315e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.109189e-04 | ‖ω‖₁=4.940782e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.466367e-04 | ‖ω‖₁=4.909927e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.086627e-04 | ‖ω‖₁=4.894303e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.040845e-04 | ‖ω‖₁=4.907730e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.056408e-04 | ‖ω‖₁=4.902667e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.785636e-04 | ‖ω‖₁=4.901015e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.371801e-04 | ‖ω‖₁=4.908392e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.145190e-04 | ‖ω‖₁=4.899693e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 3 consecutive iterations.
+  → at λ=5.081e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 34, λ = 5.083e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.124782e-04 | ‖ω‖₁=4.949271e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.313719e-04 | ‖ω‖₁=4.930368e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.390679e-04 | ‖ω‖₁=4.905920e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.295790e-04 | ‖ω‖₁=4.902928e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.036112e-04 | ‖ω‖₁=4.882181e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.322028e-04 | ‖ω‖₁=4.863523e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=1.005052e-03 | ‖ω‖₁=4.877579e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.467216e-04 | ‖ω‖₁=4.877003e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.756693e-04 | ‖ω‖₁=4.868087e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.217363e-04 | ‖ω‖₁=4.900603e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.095497e-04 | ‖ω‖₁=4.877506e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 4 consecutive iterations.
+  → at λ=5.083e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 35, λ = 5.086e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.673096e-04 | ‖ω‖₁=4.923366e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.121048e-04 | ‖ω‖₁=4.903718e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.286922e-04 | ‖ω‖₁=4.874987e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.361277e-04 | ‖ω‖₁=4.875551e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.286256e-04 | ‖ω‖₁=4.862452e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.190444e-04 | ‖ω‖₁=4.859159e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.937757e-04 | ‖ω‖₁=4.822376e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.034945e-04 | ‖ω‖₁=4.841657e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.139326e-04 | ‖ω‖₁=4.842799e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.166049e-04 | ‖ω‖₁=4.844694e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.618936e-04 | ‖ω‖₁=4.844825e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 5 consecutive iterations.
+  → at λ=5.086e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 36, λ = 5.088e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.509957e-04 | ‖ω‖₁=4.879468e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.213724e-04 | ‖ω‖₁=4.836972e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.189032e-04 | ‖ω‖₁=4.836808e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.446886e-04 | ‖ω‖₁=4.835571e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.017659e-04 | ‖ω‖₁=4.822449e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.159971e-04 | ‖ω‖₁=4.829486e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.425096e-04 | ‖ω‖₁=4.829326e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.016083e-04 | ‖ω‖₁=4.797499e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.777277e-04 | ‖ω‖₁=4.808712e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.488407e-04 | ‖ω‖₁=4.814931e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.957276e-04 | ‖ω‖₁=4.826644e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 6 consecutive iterations.
+  → at λ=5.088e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 37, λ = 5.091e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.440139e-04 | ‖ω‖₁=4.868029e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.152572e-04 | ‖ω‖₁=4.815650e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.938110e-04 | ‖ω‖₁=4.785546e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.285844e-04 | ‖ω‖₁=4.789871e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=8.895604e-04 | ‖ω‖₁=4.782025e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.082973e-04 | ‖ω‖₁=4.787549e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.138505e-04 | ‖ω‖₁=4.753718e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.568082e-04 | ‖ω‖₁=4.761253e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.376224e-04 | ‖ω‖₁=4.774469e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.233448e-04 | ‖ω‖₁=4.778394e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.326019e-04 | ‖ω‖₁=4.774977e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 7 consecutive iterations.
+  → at λ=5.091e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 38, λ = 5.093e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.559937e-04 | ‖ω‖₁=4.821734e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.124822e-04 | ‖ω‖₁=4.786808e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.119648e-04 | ‖ω‖₁=4.792051e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.371734e-04 | ‖ω‖₁=4.768022e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.274177e-04 | ‖ω‖₁=4.762933e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.391728e-04 | ‖ω‖₁=4.754669e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.261053e-04 | ‖ω‖₁=4.792364e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.030057e-04 | ‖ω‖₁=4.798231e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.537947e-04 | ‖ω‖₁=4.788816e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.316021e-04 | ‖ω‖₁=4.788496e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.331923e-04 | ‖ω‖₁=4.784382e-01 | Non-zero modes: 72
+Number of selected modes unchanged for 8 consecutive iterations.
+  → at λ=5.093e+00: r(λ)=72
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+
+-- Path iteration 39, λ = 5.096e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.711078e-04 | ‖ω‖₁=4.836515e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.171704e-04 | ‖ω‖₁=4.788854e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.361017e-04 | ‖ω‖₁=4.796520e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.068112e-04 | ‖ω‖₁=4.782681e-01 | Non-zero modes: 72
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.163188e-04 | ‖ω‖₁=4.787868e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.343107e-04 | ‖ω‖₁=4.779162e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.185810e-04 | ‖ω‖₁=4.770047e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.580711e-04 | ‖ω‖₁=4.763949e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.479965e-04 | ‖ω‖₁=4.753411e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.108334e-04 | ‖ω‖₁=4.774643e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.805719e-04 | ‖ω‖₁=4.774878e-01 | Non-zero modes: 71
+  → at λ=5.096e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 40, λ = 5.098e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.221611e-04 | ‖ω‖₁=4.821460e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.011254e-04 | ‖ω‖₁=4.771297e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.388298e-04 | ‖ω‖₁=4.755219e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.124491e-04 | ‖ω‖₁=4.738924e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.332898e-04 | ‖ω‖₁=4.757346e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.264935e-04 | ‖ω‖₁=4.756577e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.030936e-04 | ‖ω‖₁=4.738565e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.766343e-04 | ‖ω‖₁=4.744583e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.159480e-04 | ‖ω‖₁=4.748037e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.294630e-04 | ‖ω‖₁=4.743197e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.892306e-04 | ‖ω‖₁=4.756139e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 1 consecutive iterations.
+  → at λ=5.098e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 41, λ = 5.101e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.630889e-04 | ‖ω‖₁=4.793135e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.169168e-04 | ‖ω‖₁=4.764780e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.370310e-04 | ‖ω‖₁=4.739950e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.327734e-04 | ‖ω‖₁=4.768641e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.348987e-04 | ‖ω‖₁=4.761747e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.114398e-04 | ‖ω‖₁=4.757153e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.573726e-04 | ‖ω‖₁=4.736650e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.096393e-04 | ‖ω‖₁=4.745510e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.246232e-04 | ‖ω‖₁=4.745714e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.113621e-04 | ‖ω‖₁=4.727994e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.368485e-04 | ‖ω‖₁=4.715020e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 2 consecutive iterations.
+  → at λ=5.101e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 42, λ = 5.104e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.433281e-04 | ‖ω‖₁=4.760325e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.236798e-04 | ‖ω‖₁=4.727852e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.251304e-04 | ‖ω‖₁=4.745069e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.247790e-04 | ‖ω‖₁=4.744051e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.317547e-04 | ‖ω‖₁=4.742900e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.286619e-04 | ‖ω‖₁=4.728767e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.296998e-04 | ‖ω‖₁=4.724063e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.050371e-04 | ‖ω‖₁=4.722917e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.333721e-04 | ‖ω‖₁=4.722812e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.610816e-04 | ‖ω‖₁=4.716859e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.670878e-04 | ‖ω‖₁=4.703862e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 3 consecutive iterations.
+  → at λ=5.104e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 43, λ = 5.106e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.110750e-04 | ‖ω‖₁=4.750781e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.298171e-04 | ‖ω‖₁=4.741269e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.140273e-04 | ‖ω‖₁=4.707704e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.283695e-04 | ‖ω‖₁=4.692906e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.086522e-04 | ‖ω‖₁=4.700908e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.635219e-04 | ‖ω‖₁=4.733653e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.244712e-04 | ‖ω‖₁=4.714849e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.186952e-04 | ‖ω‖₁=4.711464e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.336315e-04 | ‖ω‖₁=4.717624e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.981473e-04 | ‖ω‖₁=4.751358e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.906455e-04 | ‖ω‖₁=4.738267e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 4 consecutive iterations.
+  → at λ=5.106e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 44, λ = 5.109e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.306668e-04 | ‖ω‖₁=4.786187e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.098846e-04 | ‖ω‖₁=4.738819e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.178061e-04 | ‖ω‖₁=4.716066e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.334953e-04 | ‖ω‖₁=4.710475e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.190449e-04 | ‖ω‖₁=4.698697e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.271635e-04 | ‖ω‖₁=4.706558e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.341316e-04 | ‖ω‖₁=4.715427e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.393171e-04 | ‖ω‖₁=4.705246e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.413845e-04 | ‖ω‖₁=4.707362e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.393310e-04 | ‖ω‖₁=4.706237e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.035149e-04 | ‖ω‖₁=4.679956e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 5 consecutive iterations.
+  → at λ=5.109e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 45, λ = 5.111e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.621533e-04 | ‖ω‖₁=4.728689e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.369946e-04 | ‖ω‖₁=4.725276e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.505808e-04 | ‖ω‖₁=4.695983e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.117996e-04 | ‖ω‖₁=4.704681e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.445440e-04 | ‖ω‖₁=4.712742e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.298444e-04 | ‖ω‖₁=4.717029e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.055464e-04 | ‖ω‖₁=4.710435e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.044030e-04 | ‖ω‖₁=4.696264e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.193041e-04 | ‖ω‖₁=4.698350e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.174850e-04 | ‖ω‖₁=4.696923e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.540854e-04 | ‖ω‖₁=4.726556e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 6 consecutive iterations.
+  → at λ=5.111e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 46, λ = 5.114e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.438949e-04 | ‖ω‖₁=4.754232e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.003573e-04 | ‖ω‖₁=4.715163e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.223844e-04 | ‖ω‖₁=4.701476e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.400734e-04 | ‖ω‖₁=4.694318e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.283288e-04 | ‖ω‖₁=4.684245e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.291281e-04 | ‖ω‖₁=4.677170e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.352576e-04 | ‖ω‖₁=4.674237e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.472097e-04 | ‖ω‖₁=4.684329e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.035604e-04 | ‖ω‖₁=4.701116e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.488876e-04 | ‖ω‖₁=4.715558e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.301120e-04 | ‖ω‖₁=4.694624e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 7 consecutive iterations.
+  → at λ=5.114e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 47, λ = 5.116e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.533116e-04 | ‖ω‖₁=4.736446e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.999714e-04 | ‖ω‖₁=4.696770e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.241743e-04 | ‖ω‖₁=4.692147e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.302417e-04 | ‖ω‖₁=4.685968e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.460532e-04 | ‖ω‖₁=4.690296e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.140564e-04 | ‖ω‖₁=4.685907e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.054467e-04 | ‖ω‖₁=4.684584e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.276677e-04 | ‖ω‖₁=4.681671e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.987486e-04 | ‖ω‖₁=4.666560e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.422746e-04 | ‖ω‖₁=4.687165e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.267957e-04 | ‖ω‖₁=4.666696e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 8 consecutive iterations.
+  → at λ=5.116e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 48, λ = 5.119e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.440691e-04 | ‖ω‖₁=4.710663e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.581333e-04 | ‖ω‖₁=4.697401e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.032935e-04 | ‖ω‖₁=4.692619e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.436023e-04 | ‖ω‖₁=4.681086e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.213642e-04 | ‖ω‖₁=4.669501e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.503690e-04 | ‖ω‖₁=4.674925e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.177300e-04 | ‖ω‖₁=4.674668e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.771699e-04 | ‖ω‖₁=4.679201e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.259180e-04 | ‖ω‖₁=4.674506e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.315616e-04 | ‖ω‖₁=4.661550e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.158947e-04 | ‖ω‖₁=4.661169e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 9 consecutive iterations.
+  → at λ=5.119e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 49, λ = 5.121e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.287904e-04 | ‖ω‖₁=4.710944e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.948443e-04 | ‖ω‖₁=4.662378e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.761577e-04 | ‖ω‖₁=4.673864e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.566462e-04 | ‖ω‖₁=4.684446e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.088706e-04 | ‖ω‖₁=4.674719e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.044845e-04 | ‖ω‖₁=4.686915e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.583614e-04 | ‖ω‖₁=4.680831e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.230452e-04 | ‖ω‖₁=4.679567e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.840007e-04 | ‖ω‖₁=4.669314e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.706479e-04 | ‖ω‖₁=4.628030e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.013872e-04 | ‖ω‖₁=4.645852e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 10 consecutive iterations.
+  → at λ=5.121e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 50, λ = 5.124e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.392636e-04 | ‖ω‖₁=4.683522e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.118056e-04 | ‖ω‖₁=4.678823e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.413442e-04 | ‖ω‖₁=4.654251e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.345402e-04 | ‖ω‖₁=4.636217e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.745456e-04 | ‖ω‖₁=4.627237e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.677181e-04 | ‖ω‖₁=4.637553e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.176339e-04 | ‖ω‖₁=4.632633e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.144175e-04 | ‖ω‖₁=4.632893e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.286725e-04 | ‖ω‖₁=4.625272e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.265553e-04 | ‖ω‖₁=4.622693e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.162803e-04 | ‖ω‖₁=4.625122e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 11 consecutive iterations.
+  → at λ=5.124e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 51, λ = 5.127e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.451880e-04 | ‖ω‖₁=4.668514e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.068525e-04 | ‖ω‖₁=4.649063e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.184276e-04 | ‖ω‖₁=4.639968e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.073730e-04 | ‖ω‖₁=4.619005e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.347189e-04 | ‖ω‖₁=4.610983e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.019468e-04 | ‖ω‖₁=4.606776e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.376723e-04 | ‖ω‖₁=4.597604e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.572308e-04 | ‖ω‖₁=4.603942e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.015406e-04 | ‖ω‖₁=4.619386e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.060960e-04 | ‖ω‖₁=4.596732e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.219575e-04 | ‖ω‖₁=4.595725e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 12 consecutive iterations.
+  → at λ=5.127e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 52, λ = 5.129e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.254093e-04 | ‖ω‖₁=4.638488e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.278298e-04 | ‖ω‖₁=4.624235e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.038632e-04 | ‖ω‖₁=4.624435e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.374166e-04 | ‖ω‖₁=4.609785e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.170078e-04 | ‖ω‖₁=4.617889e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.291106e-04 | ‖ω‖₁=4.608217e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.286927e-04 | ‖ω‖₁=4.617900e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.180414e-04 | ‖ω‖₁=4.616752e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.185663e-04 | ‖ω‖₁=4.610198e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.955362e-04 | ‖ω‖₁=4.625303e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.085277e-04 | ‖ω‖₁=4.611474e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 13 consecutive iterations.
+  → at λ=5.129e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 53, λ = 5.132e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.528318e-04 | ‖ω‖₁=4.650112e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.384203e-04 | ‖ω‖₁=4.621228e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.297480e-04 | ‖ω‖₁=4.607841e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.716759e-04 | ‖ω‖₁=4.594183e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.499877e-04 | ‖ω‖₁=4.587708e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.963290e-04 | ‖ω‖₁=4.597394e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.104806e-04 | ‖ω‖₁=4.583592e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.718914e-04 | ‖ω‖₁=4.595836e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.965562e-04 | ‖ω‖₁=4.586737e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.081787e-04 | ‖ω‖₁=4.611912e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.531908e-04 | ‖ω‖₁=4.600962e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 14 consecutive iterations.
+  → at λ=5.132e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 54, λ = 5.134e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.656593e-04 | ‖ω‖₁=4.645015e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.230506e-04 | ‖ω‖₁=4.603356e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.627913e-04 | ‖ω‖₁=4.600243e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.061499e-04 | ‖ω‖₁=4.587359e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.641139e-04 | ‖ω‖₁=4.595927e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.182778e-04 | ‖ω‖₁=4.586786e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.539786e-04 | ‖ω‖₁=4.598895e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.476117e-04 | ‖ω‖₁=4.583605e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.234536e-04 | ‖ω‖₁=4.584963e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.275434e-04 | ‖ω‖₁=4.574896e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.217019e-04 | ‖ω‖₁=4.578174e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 15 consecutive iterations.
+  → at λ=5.134e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 55, λ = 5.137e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.444700e-04 | ‖ω‖₁=4.626337e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.298017e-04 | ‖ω‖₁=4.598257e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.564048e-04 | ‖ω‖₁=4.581282e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.458321e-04 | ‖ω‖₁=4.557070e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.550920e-04 | ‖ω‖₁=4.567732e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.142359e-04 | ‖ω‖₁=4.568971e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.261474e-04 | ‖ω‖₁=4.569881e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.000186e-04 | ‖ω‖₁=4.549290e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.802264e-04 | ‖ω‖₁=4.566605e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.280014e-04 | ‖ω‖₁=4.577123e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.221193e-04 | ‖ω‖₁=4.566107e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 16 consecutive iterations.
+  → at λ=5.137e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 56, λ = 5.139e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.549972e-04 | ‖ω‖₁=4.612016e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.392233e-04 | ‖ω‖₁=4.588859e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.189431e-04 | ‖ω‖₁=4.610621e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.485411e-04 | ‖ω‖₁=4.581553e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.022967e-04 | ‖ω‖₁=4.610834e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.199105e-04 | ‖ω‖₁=4.596517e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.474229e-04 | ‖ω‖₁=4.603965e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.195237e-04 | ‖ω‖₁=4.590945e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.332185e-04 | ‖ω‖₁=4.588887e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.343829e-04 | ‖ω‖₁=4.595604e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.025779e-04 | ‖ω‖₁=4.596253e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 17 consecutive iterations.
+  → at λ=5.139e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 57, λ = 5.142e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.133568e-04 | ‖ω‖₁=4.639924e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.307671e-04 | ‖ω‖₁=4.603319e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.379462e-04 | ‖ω‖₁=4.586478e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.270662e-04 | ‖ω‖₁=4.585522e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.657189e-04 | ‖ω‖₁=4.603242e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.215447e-04 | ‖ω‖₁=4.595522e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.239451e-04 | ‖ω‖₁=4.573150e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.035095e-04 | ‖ω‖₁=4.594250e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.270832e-04 | ‖ω‖₁=4.589260e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.826026e-04 | ‖ω‖₁=4.591886e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.100651e-04 | ‖ω‖₁=4.570984e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 18 consecutive iterations.
+  → at λ=5.142e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 58, λ = 5.145e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.529895e-04 | ‖ω‖₁=4.620100e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.432060e-04 | ‖ω‖₁=4.594089e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.210007e-04 | ‖ω‖₁=4.579819e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.258392e-04 | ‖ω‖₁=4.571002e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.265766e-04 | ‖ω‖₁=4.567441e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.819232e-04 | ‖ω‖₁=4.573742e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.200291e-04 | ‖ω‖₁=4.571893e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.042623e-04 | ‖ω‖₁=4.592199e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.695163e-04 | ‖ω‖₁=4.580915e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.813469e-04 | ‖ω‖₁=4.590465e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.896683e-04 | ‖ω‖₁=4.604302e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 19 consecutive iterations.
+  → at λ=5.145e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 59, λ = 5.147e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.549508e-04 | ‖ω‖₁=4.657465e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.344089e-04 | ‖ω‖₁=4.644091e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.647583e-04 | ‖ω‖₁=4.614188e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.196067e-04 | ‖ω‖₁=4.589210e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.163521e-04 | ‖ω‖₁=4.582135e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.378338e-04 | ‖ω‖₁=4.591784e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.212284e-04 | ‖ω‖₁=4.575385e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.053104e-04 | ‖ω‖₁=4.579628e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.064925e-04 | ‖ω‖₁=4.566063e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.642869e-04 | ‖ω‖₁=4.584975e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.015134e-04 | ‖ω‖₁=4.573808e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 20 consecutive iterations.
+  → at λ=5.147e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 60, λ = 5.150e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.507515e-04 | ‖ω‖₁=4.616857e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.333312e-04 | ‖ω‖₁=4.576460e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.255578e-04 | ‖ω‖₁=4.569762e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.245054e-04 | ‖ω‖₁=4.577785e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=8.647814e-04 | ‖ω‖₁=4.582428e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.575332e-04 | ‖ω‖₁=4.595883e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.116451e-04 | ‖ω‖₁=4.583740e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.522639e-04 | ‖ω‖₁=4.600407e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.300688e-04 | ‖ω‖₁=4.592085e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.888922e-04 | ‖ω‖₁=4.586426e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.232275e-04 | ‖ω‖₁=4.577050e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 21 consecutive iterations.
+  → at λ=5.150e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 61, λ = 5.152e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.684709e-04 | ‖ω‖₁=4.617195e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.124276e-04 | ‖ω‖₁=4.604553e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.230530e-04 | ‖ω‖₁=4.589352e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.459643e-04 | ‖ω‖₁=4.585180e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.283824e-04 | ‖ω‖₁=4.578898e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.369003e-04 | ‖ω‖₁=4.570100e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.987710e-04 | ‖ω‖₁=4.566948e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.518847e-04 | ‖ω‖₁=4.558655e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.330033e-04 | ‖ω‖₁=4.577668e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.232961e-04 | ‖ω‖₁=4.583264e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.205932e-04 | ‖ω‖₁=4.569717e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 22 consecutive iterations.
+  → at λ=5.152e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 62, λ = 5.155e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.743184e-04 | ‖ω‖₁=4.602353e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.319527e-04 | ‖ω‖₁=4.581461e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.400724e-04 | ‖ω‖₁=4.580147e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.110523e-04 | ‖ω‖₁=4.553191e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.051380e-04 | ‖ω‖₁=4.566582e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.096034e-04 | ‖ω‖₁=4.556334e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.205498e-04 | ‖ω‖₁=4.541285e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.827375e-04 | ‖ω‖₁=4.532940e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.133739e-04 | ‖ω‖₁=4.546976e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.712351e-04 | ‖ω‖₁=4.531179e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.315471e-04 | ‖ω‖₁=4.535232e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 23 consecutive iterations.
+  → at λ=5.155e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 63, λ = 5.157e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.172052e-04 | ‖ω‖₁=4.567285e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.546258e-04 | ‖ω‖₁=4.546540e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.864544e-04 | ‖ω‖₁=4.534024e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.421148e-04 | ‖ω‖₁=4.522860e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.126290e-04 | ‖ω‖₁=4.507550e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.824048e-04 | ‖ω‖₁=4.505344e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.429143e-04 | ‖ω‖₁=4.517803e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.435074e-04 | ‖ω‖₁=4.517899e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.372682e-04 | ‖ω‖₁=4.524052e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.108281e-04 | ‖ω‖₁=4.515035e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.477543e-04 | ‖ω‖₁=4.507096e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 24 consecutive iterations.
+  → at λ=5.157e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 64, λ = 5.160e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.968168e-04 | ‖ω‖₁=4.551806e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.974811e-04 | ‖ω‖₁=4.519114e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.997729e-04 | ‖ω‖₁=4.528885e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.095370e-04 | ‖ω‖₁=4.490746e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.569842e-04 | ‖ω‖₁=4.511117e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.896736e-04 | ‖ω‖₁=4.526703e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.323588e-04 | ‖ω‖₁=4.554034e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.014457e-04 | ‖ω‖₁=4.529896e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.254035e-04 | ‖ω‖₁=4.522774e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.165993e-04 | ‖ω‖₁=4.523793e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.110702e-04 | ‖ω‖₁=4.520501e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 25 consecutive iterations.
+  → at λ=5.160e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 65, λ = 5.163e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.509606e-04 | ‖ω‖₁=4.578624e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.346178e-04 | ‖ω‖₁=4.510613e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.058684e-04 | ‖ω‖₁=4.520222e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.033653e-04 | ‖ω‖₁=4.496478e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.180610e-04 | ‖ω‖₁=4.506242e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.445678e-04 | ‖ω‖₁=4.485525e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.318110e-04 | ‖ω‖₁=4.472637e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.285097e-04 | ‖ω‖₁=4.497913e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.348239e-04 | ‖ω‖₁=4.486497e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.089572e-04 | ‖ω‖₁=4.478681e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.859869e-04 | ‖ω‖₁=4.500807e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 26 consecutive iterations.
+  → at λ=5.163e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 66, λ = 5.165e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.121357e-04 | ‖ω‖₁=4.544090e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.354047e-04 | ‖ω‖₁=4.514877e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.915587e-04 | ‖ω‖₁=4.504658e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.299986e-04 | ‖ω‖₁=4.495259e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.219273e-04 | ‖ω‖₁=4.492896e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.973114e-04 | ‖ω‖₁=4.507922e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.120718e-04 | ‖ω‖₁=4.491816e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.706165e-04 | ‖ω‖₁=4.479696e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.857044e-04 | ‖ω‖₁=4.470651e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.488581e-04 | ‖ω‖₁=4.464683e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.772063e-04 | ‖ω‖₁=4.456965e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 27 consecutive iterations.
+  → at λ=5.165e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 67, λ = 5.168e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.689360e-04 | ‖ω‖₁=4.505901e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.759991e-04 | ‖ω‖₁=4.485905e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.708786e-04 | ‖ω‖₁=4.479724e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=1.000423e-03 | ‖ω‖₁=4.481950e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.261691e-04 | ‖ω‖₁=4.455638e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.048591e-04 | ‖ω‖₁=4.476519e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.481914e-04 | ‖ω‖₁=4.496103e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.873994e-04 | ‖ω‖₁=4.487385e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.196575e-04 | ‖ω‖₁=4.499069e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.211141e-04 | ‖ω‖₁=4.499709e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.363916e-04 | ‖ω‖₁=4.477692e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 28 consecutive iterations.
+  → at λ=5.168e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 68, λ = 5.170e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.551622e-04 | ‖ω‖₁=4.535467e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.242532e-04 | ‖ω‖₁=4.523751e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.270164e-04 | ‖ω‖₁=4.518945e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.332106e-04 | ‖ω‖₁=4.509138e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.063863e-04 | ‖ω‖₁=4.486947e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.266928e-04 | ‖ω‖₁=4.490807e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.730516e-04 | ‖ω‖₁=4.469589e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.232010e-04 | ‖ω‖₁=4.478989e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.094600e-04 | ‖ω‖₁=4.470989e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.247256e-04 | ‖ω‖₁=4.486933e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.116836e-04 | ‖ω‖₁=4.468176e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 29 consecutive iterations.
+  → at λ=5.170e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 69, λ = 5.173e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.796432e-04 | ‖ω‖₁=4.517866e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.283237e-04 | ‖ω‖₁=4.487242e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.938972e-04 | ‖ω‖₁=4.458382e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.017739e-04 | ‖ω‖₁=4.471316e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=8.764293e-04 | ‖ω‖₁=4.479822e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.004999e-04 | ‖ω‖₁=4.486792e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.982987e-04 | ‖ω‖₁=4.500085e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.262277e-04 | ‖ω‖₁=4.480906e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.090052e-04 | ‖ω‖₁=4.484932e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.420126e-04 | ‖ω‖₁=4.495622e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.231096e-04 | ‖ω‖₁=4.476615e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 30 consecutive iterations.
+  → at λ=5.173e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 70, λ = 5.175e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.839934e-04 | ‖ω‖₁=4.526468e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.559270e-04 | ‖ω‖₁=4.482952e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.911596e-04 | ‖ω‖₁=4.454658e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.266239e-04 | ‖ω‖₁=4.461686e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.406856e-04 | ‖ω‖₁=4.476537e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.287113e-04 | ‖ω‖₁=4.479041e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.140195e-04 | ‖ω‖₁=4.493602e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.816214e-04 | ‖ω‖₁=4.485700e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.245055e-04 | ‖ω‖₁=4.511313e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.180102e-04 | ‖ω‖₁=4.500124e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.309742e-04 | ‖ω‖₁=4.489260e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 31 consecutive iterations.
+  → at λ=5.175e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 71, λ = 5.178e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.775086e-04 | ‖ω‖₁=4.532720e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.902175e-04 | ‖ω‖₁=4.527753e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.546324e-04 | ‖ω‖₁=4.517000e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.097926e-04 | ‖ω‖₁=4.507364e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.659787e-04 | ‖ω‖₁=4.507286e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.424012e-04 | ‖ω‖₁=4.506704e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.164836e-04 | ‖ω‖₁=4.509348e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.038370e-04 | ‖ω‖₁=4.505713e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.878354e-04 | ‖ω‖₁=4.513338e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.064447e-04 | ‖ω‖₁=4.514564e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.266691e-04 | ‖ω‖₁=4.513747e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 32 consecutive iterations.
+  → at λ=5.178e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 72, λ = 5.181e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=1.004637e-03 | ‖ω‖₁=4.549836e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.205546e-04 | ‖ω‖₁=4.513258e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.284532e-04 | ‖ω‖₁=4.505533e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.135256e-04 | ‖ω‖₁=4.480286e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.466307e-04 | ‖ω‖₁=4.478979e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.457871e-04 | ‖ω‖₁=4.487768e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.196086e-04 | ‖ω‖₁=4.497477e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.148784e-04 | ‖ω‖₁=4.500957e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.275189e-04 | ‖ω‖₁=4.503185e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.188679e-04 | ‖ω‖₁=4.491990e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.772719e-04 | ‖ω‖₁=4.511476e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 33 consecutive iterations.
+  → at λ=5.181e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 73, λ = 5.183e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.558094e-04 | ‖ω‖₁=4.549444e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.113983e-04 | ‖ω‖₁=4.522593e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.010546e-04 | ‖ω‖₁=4.505478e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.987508e-04 | ‖ω‖₁=4.502553e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.355627e-04 | ‖ω‖₁=4.525564e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.292850e-04 | ‖ω‖₁=4.508135e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.253799e-04 | ‖ω‖₁=4.514402e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.271180e-04 | ‖ω‖₁=4.503459e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.455999e-04 | ‖ω‖₁=4.494899e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.649325e-04 | ‖ω‖₁=4.521596e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.228751e-04 | ‖ω‖₁=4.532856e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 34 consecutive iterations.
+  → at λ=5.183e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 74, λ = 5.186e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.309615e-04 | ‖ω‖₁=4.570663e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.975409e-04 | ‖ω‖₁=4.543981e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.016280e-04 | ‖ω‖₁=4.540114e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.411183e-04 | ‖ω‖₁=4.524372e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.126787e-04 | ‖ω‖₁=4.518454e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.404619e-04 | ‖ω‖₁=4.510009e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.403415e-04 | ‖ω‖₁=4.530406e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.159438e-04 | ‖ω‖₁=4.518362e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.973529e-04 | ‖ω‖₁=4.542399e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.248202e-04 | ‖ω‖₁=4.532925e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.156272e-04 | ‖ω‖₁=4.540813e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 35 consecutive iterations.
+  → at λ=5.186e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 75, λ = 5.188e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.726840e-04 | ‖ω‖₁=4.596602e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.979311e-04 | ‖ω‖₁=4.543622e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.840057e-04 | ‖ω‖₁=4.528342e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.118911e-04 | ‖ω‖₁=4.540324e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.211914e-04 | ‖ω‖₁=4.542522e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.795604e-04 | ‖ω‖₁=4.540818e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.226428e-04 | ‖ω‖₁=4.570837e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.154088e-04 | ‖ω‖₁=4.546073e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.207080e-04 | ‖ω‖₁=4.529331e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.310255e-04 | ‖ω‖₁=4.535076e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.350681e-04 | ‖ω‖₁=4.533156e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 36 consecutive iterations.
+  → at λ=5.188e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 76, λ = 5.191e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.626227e-04 | ‖ω‖₁=4.572422e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.314990e-04 | ‖ω‖₁=4.525175e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.614994e-04 | ‖ω‖₁=4.527131e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.004791e-04 | ‖ω‖₁=4.523953e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.267649e-04 | ‖ω‖₁=4.529813e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.254151e-04 | ‖ω‖₁=4.515287e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.048091e-04 | ‖ω‖₁=4.527336e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.458277e-04 | ‖ω‖₁=4.524516e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.996671e-04 | ‖ω‖₁=4.569938e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.236926e-04 | ‖ω‖₁=4.543519e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.369452e-04 | ‖ω‖₁=4.514098e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 37 consecutive iterations.
+  → at λ=5.191e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 77, λ = 5.194e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.463107e-04 | ‖ω‖₁=4.557995e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.372596e-04 | ‖ω‖₁=4.535411e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.340944e-04 | ‖ω‖₁=4.515428e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.727402e-04 | ‖ω‖₁=4.511149e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.023102e-04 | ‖ω‖₁=4.520714e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.276296e-04 | ‖ω‖₁=4.487077e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.136859e-04 | ‖ω‖₁=4.493823e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.550578e-04 | ‖ω‖₁=4.505199e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.643939e-04 | ‖ω‖₁=4.504946e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.090621e-04 | ‖ω‖₁=4.497383e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.972744e-04 | ‖ω‖₁=4.481583e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 38 consecutive iterations.
+  → at λ=5.194e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 78, λ = 5.196e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.462608e-04 | ‖ω‖₁=4.518718e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.882252e-04 | ‖ω‖₁=4.502129e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.425760e-04 | ‖ω‖₁=4.474756e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.262527e-04 | ‖ω‖₁=4.477910e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.621317e-04 | ‖ω‖₁=4.483756e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.655203e-04 | ‖ω‖₁=4.491372e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.331043e-04 | ‖ω‖₁=4.468728e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.263490e-04 | ‖ω‖₁=4.509955e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.482578e-04 | ‖ω‖₁=4.505578e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.399225e-04 | ‖ω‖₁=4.498722e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.176204e-04 | ‖ω‖₁=4.502564e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 39 consecutive iterations.
+  → at λ=5.196e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 79, λ = 5.199e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.191392e-04 | ‖ω‖₁=4.542590e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.072780e-04 | ‖ω‖₁=4.512496e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.403583e-04 | ‖ω‖₁=4.512286e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.378332e-04 | ‖ω‖₁=4.521043e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.256495e-04 | ‖ω‖₁=4.517488e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.990183e-04 | ‖ω‖₁=4.499608e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.267216e-04 | ‖ω‖₁=4.496045e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.051809e-04 | ‖ω‖₁=4.481457e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.830940e-04 | ‖ω‖₁=4.488478e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.572181e-04 | ‖ω‖₁=4.465040e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.102018e-04 | ‖ω‖₁=4.461079e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 40 consecutive iterations.
+  → at λ=5.199e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 80, λ = 5.201e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.348978e-04 | ‖ω‖₁=4.509708e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.304268e-04 | ‖ω‖₁=4.490176e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.195911e-04 | ‖ω‖₁=4.473748e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.396160e-04 | ‖ω‖₁=4.502232e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.171600e-04 | ‖ω‖₁=4.499265e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.041462e-04 | ‖ω‖₁=4.486685e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.414506e-04 | ‖ω‖₁=4.484461e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.198713e-04 | ‖ω‖₁=4.499767e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.021817e-04 | ‖ω‖₁=4.483466e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.045959e-04 | ‖ω‖₁=4.500188e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.824536e-04 | ‖ω‖₁=4.483748e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 41 consecutive iterations.
+  → at λ=5.201e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 81, λ = 5.204e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.482312e-04 | ‖ω‖₁=4.517922e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.596354e-04 | ‖ω‖₁=4.504381e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.763992e-04 | ‖ω‖₁=4.487922e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.980576e-04 | ‖ω‖₁=4.503590e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=8.997263e-04 | ‖ω‖₁=4.493132e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.268070e-04 | ‖ω‖₁=4.478111e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.210289e-04 | ‖ω‖₁=4.449183e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.108723e-04 | ‖ω‖₁=4.467783e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.992218e-04 | ‖ω‖₁=4.460855e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.914556e-04 | ‖ω‖₁=4.461932e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.346906e-04 | ‖ω‖₁=4.472017e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 42 consecutive iterations.
+  → at λ=5.204e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 82, λ = 5.207e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.530306e-04 | ‖ω‖₁=4.524255e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.057706e-04 | ‖ω‖₁=4.479954e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.286438e-04 | ‖ω‖₁=4.456209e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.341285e-04 | ‖ω‖₁=4.461903e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.426293e-04 | ‖ω‖₁=4.473264e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.265656e-04 | ‖ω‖₁=4.474192e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.246589e-04 | ‖ω‖₁=4.467643e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.414684e-04 | ‖ω‖₁=4.466438e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.398060e-04 | ‖ω‖₁=4.485382e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.893610e-04 | ‖ω‖₁=4.492650e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.619254e-04 | ‖ω‖₁=4.485973e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 43 consecutive iterations.
+  → at λ=5.207e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 83, λ = 5.209e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.522751e-04 | ‖ω‖₁=4.515775e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.235322e-04 | ‖ω‖₁=4.501205e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.404461e-04 | ‖ω‖₁=4.505806e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.623909e-04 | ‖ω‖₁=4.512430e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.536318e-04 | ‖ω‖₁=4.507636e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.317259e-04 | ‖ω‖₁=4.498462e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.043400e-04 | ‖ω‖₁=4.502526e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.106516e-04 | ‖ω‖₁=4.509404e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.560960e-04 | ‖ω‖₁=4.483489e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=1.020572e-03 | ‖ω‖₁=4.494274e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.336008e-04 | ‖ω‖₁=4.488811e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 44 consecutive iterations.
+  → at λ=5.209e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 84, λ = 5.212e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.724558e-04 | ‖ω‖₁=4.541854e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.149077e-04 | ‖ω‖₁=4.521232e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.350512e-04 | ‖ω‖₁=4.504894e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.112925e-04 | ‖ω‖₁=4.516762e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.328043e-04 | ‖ω‖₁=4.535756e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.227294e-04 | ‖ω‖₁=4.512751e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.115122e-04 | ‖ω‖₁=4.525189e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.017222e-04 | ‖ω‖₁=4.515435e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.122071e-04 | ‖ω‖₁=4.508028e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.298331e-04 | ‖ω‖₁=4.494792e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.204802e-04 | ‖ω‖₁=4.509244e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 45 consecutive iterations.
+  → at λ=5.212e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 85, λ = 5.214e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.185981e-04 | ‖ω‖₁=4.544216e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.277921e-04 | ‖ω‖₁=4.508134e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.069742e-04 | ‖ω‖₁=4.504567e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.085266e-04 | ‖ω‖₁=4.487317e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.367240e-04 | ‖ω‖₁=4.499523e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.368961e-04 | ‖ω‖₁=4.500874e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.316007e-04 | ‖ω‖₁=4.505174e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.248720e-04 | ‖ω‖₁=4.514226e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.320374e-04 | ‖ω‖₁=4.544040e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.153558e-04 | ‖ω‖₁=4.543509e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.667367e-04 | ‖ω‖₁=4.529836e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 46 consecutive iterations.
+  → at λ=5.214e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 86, λ = 5.217e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.124897e-04 | ‖ω‖₁=4.578213e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.257641e-04 | ‖ω‖₁=4.530953e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.064619e-04 | ‖ω‖₁=4.504582e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.437483e-04 | ‖ω‖₁=4.509602e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=8.827255e-04 | ‖ω‖₁=4.513926e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.628815e-04 | ‖ω‖₁=4.518047e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.440862e-04 | ‖ω‖₁=4.508796e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.572412e-04 | ‖ω‖₁=4.529222e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.033594e-04 | ‖ω‖₁=4.536147e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.764384e-04 | ‖ω‖₁=4.557128e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.313823e-04 | ‖ω‖₁=4.570728e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 47 consecutive iterations.
+  → at λ=5.217e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 87, λ = 5.220e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.264879e-04 | ‖ω‖₁=4.612118e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.270909e-04 | ‖ω‖₁=4.590393e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.083432e-04 | ‖ω‖₁=4.581148e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.327239e-04 | ‖ω‖₁=4.577387e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.033590e-04 | ‖ω‖₁=4.598498e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.172744e-04 | ‖ω‖₁=4.589823e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.245755e-04 | ‖ω‖₁=4.592267e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.070512e-04 | ‖ω‖₁=4.590103e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.740469e-04 | ‖ω‖₁=4.536729e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.223471e-04 | ‖ω‖₁=4.530084e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.979042e-04 | ‖ω‖₁=4.541501e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 48 consecutive iterations.
+  → at λ=5.220e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 88, λ = 5.222e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.581440e-04 | ‖ω‖₁=4.583864e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.910407e-04 | ‖ω‖₁=4.559040e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.692278e-04 | ‖ω‖₁=4.537917e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.458749e-04 | ‖ω‖₁=4.540979e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.109724e-04 | ‖ω‖₁=4.540048e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.967214e-04 | ‖ω‖₁=4.554432e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.155967e-04 | ‖ω‖₁=4.516733e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.098493e-04 | ‖ω‖₁=4.554612e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.368640e-04 | ‖ω‖₁=4.553251e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.208257e-04 | ‖ω‖₁=4.566045e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.338910e-04 | ‖ω‖₁=4.566048e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 49 consecutive iterations.
+  → at λ=5.222e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 89, λ = 5.225e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.355992e-04 | ‖ω‖₁=4.608425e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.036332e-04 | ‖ω‖₁=4.593648e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.554361e-04 | ‖ω‖₁=4.564045e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.788319e-04 | ‖ω‖₁=4.557767e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.307755e-04 | ‖ω‖₁=4.580164e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.197943e-04 | ‖ω‖₁=4.553315e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.001997e-04 | ‖ω‖₁=4.561231e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.944337e-04 | ‖ω‖₁=4.569862e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.825284e-04 | ‖ω‖₁=4.578475e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.378118e-04 | ‖ω‖₁=4.575271e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.806308e-04 | ‖ω‖₁=4.551413e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 50 consecutive iterations.
+  → at λ=5.225e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 90, λ = 5.227e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.380249e-04 | ‖ω‖₁=4.602138e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.628245e-04 | ‖ω‖₁=4.566623e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.345330e-04 | ‖ω‖₁=4.565060e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.860003e-04 | ‖ω‖₁=4.544655e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.406419e-04 | ‖ω‖₁=4.552297e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.050311e-04 | ‖ω‖₁=4.550457e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.959473e-04 | ‖ω‖₁=4.543129e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.460668e-04 | ‖ω‖₁=4.547155e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.058517e-04 | ‖ω‖₁=4.554093e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.447761e-04 | ‖ω‖₁=4.543409e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.927869e-04 | ‖ω‖₁=4.551486e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 51 consecutive iterations.
+  → at λ=5.227e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 91, λ = 5.230e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.917742e-04 | ‖ω‖₁=4.600235e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.123186e-04 | ‖ω‖₁=4.565288e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.542934e-04 | ‖ω‖₁=4.555737e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.114936e-04 | ‖ω‖₁=4.555829e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.084924e-04 | ‖ω‖₁=4.533794e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.876395e-04 | ‖ω‖₁=4.519362e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.326168e-04 | ‖ω‖₁=4.513024e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.378965e-04 | ‖ω‖₁=4.521271e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.043151e-04 | ‖ω‖₁=4.537362e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.401187e-04 | ‖ω‖₁=4.543135e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.116866e-04 | ‖ω‖₁=4.545343e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 52 consecutive iterations.
+  → at λ=5.230e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 92, λ = 5.233e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.048237e-04 | ‖ω‖₁=4.585131e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.196922e-04 | ‖ω‖₁=4.570012e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.206591e-04 | ‖ω‖₁=4.560785e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.401692e-04 | ‖ω‖₁=4.571487e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.073491e-04 | ‖ω‖₁=4.560173e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.732832e-04 | ‖ω‖₁=4.564822e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.090906e-04 | ‖ω‖₁=4.546593e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=8.604242e-04 | ‖ω‖₁=4.561471e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.955689e-04 | ‖ω‖₁=4.570615e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.701949e-04 | ‖ω‖₁=4.558783e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.518710e-04 | ‖ω‖₁=4.560119e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 53 consecutive iterations.
+  → at λ=5.233e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 93, λ = 5.235e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.398089e-04 | ‖ω‖₁=4.610134e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.227169e-04 | ‖ω‖₁=4.563632e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.057917e-04 | ‖ω‖₁=4.553246e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.794111e-04 | ‖ω‖₁=4.558654e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.013023e-04 | ‖ω‖₁=4.562573e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.130322e-04 | ‖ω‖₁=4.542088e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.046472e-04 | ‖ω‖₁=4.544768e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.270931e-04 | ‖ω‖₁=4.550104e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.115637e-04 | ‖ω‖₁=4.530574e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.467227e-04 | ‖ω‖₁=4.528702e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.207459e-04 | ‖ω‖₁=4.525511e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 54 consecutive iterations.
+  → at λ=5.235e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 94, λ = 5.238e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.334839e-04 | ‖ω‖₁=4.551198e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.515808e-04 | ‖ω‖₁=4.544706e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.947754e-04 | ‖ω‖₁=4.538034e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.801930e-04 | ‖ω‖₁=4.533540e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.301263e-04 | ‖ω‖₁=4.531131e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.096230e-04 | ‖ω‖₁=4.526810e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.387270e-04 | ‖ω‖₁=4.510671e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.379273e-04 | ‖ω‖₁=4.497403e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.252157e-04 | ‖ω‖₁=4.508108e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.753344e-04 | ‖ω‖₁=4.523564e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.537214e-04 | ‖ω‖₁=4.521214e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 55 consecutive iterations.
+  → at λ=5.238e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 95, λ = 5.241e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.315322e-04 | ‖ω‖₁=4.560256e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.092182e-04 | ‖ω‖₁=4.528334e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.577024e-04 | ‖ω‖₁=4.540181e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.388898e-04 | ‖ω‖₁=4.540942e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.287929e-04 | ‖ω‖₁=4.532437e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.579008e-04 | ‖ω‖₁=4.542341e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.108533e-04 | ‖ω‖₁=4.543615e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.701535e-04 | ‖ω‖₁=4.541836e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=8.990781e-04 | ‖ω‖₁=4.550275e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.011029e-04 | ‖ω‖₁=4.541409e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.004432e-04 | ‖ω‖₁=4.527304e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 56 consecutive iterations.
+  → at λ=5.241e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 96, λ = 5.243e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=8.916760e-04 | ‖ω‖₁=4.569481e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.364435e-04 | ‖ω‖₁=4.561166e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.864907e-04 | ‖ω‖₁=4.560015e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.863707e-04 | ‖ω‖₁=4.579384e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.625957e-04 | ‖ω‖₁=4.566122e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.792675e-04 | ‖ω‖₁=4.559791e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.148576e-04 | ‖ω‖₁=4.541062e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.073182e-04 | ‖ω‖₁=4.545246e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.059394e-04 | ‖ω‖₁=4.539076e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=8.568681e-04 | ‖ω‖₁=4.520267e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.797093e-04 | ‖ω‖₁=4.502238e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 57 consecutive iterations.
+  → at λ=5.243e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 97, λ = 5.246e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.380773e-04 | ‖ω‖₁=4.554954e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.086710e-04 | ‖ω‖₁=4.536545e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=8.934669e-04 | ‖ω‖₁=4.536106e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=8.912076e-04 | ‖ω‖₁=4.513149e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.562541e-04 | ‖ω‖₁=4.522156e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.300171e-04 | ‖ω‖₁=4.534466e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.261542e-04 | ‖ω‖₁=4.518531e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.284940e-04 | ‖ω‖₁=4.520678e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.414357e-04 | ‖ω‖₁=4.508026e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.368752e-04 | ‖ω‖₁=4.516954e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.448978e-04 | ‖ω‖₁=4.521181e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 58 consecutive iterations.
+  → at λ=5.246e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 98, λ = 5.248e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.098744e-04 | ‖ω‖₁=4.560921e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=9.115391e-04 | ‖ω‖₁=4.523746e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.219738e-04 | ‖ω‖₁=4.514560e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.836125e-04 | ‖ω‖₁=4.538530e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.347310e-04 | ‖ω‖₁=4.544020e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=8.754854e-04 | ‖ω‖₁=4.518427e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=8.678842e-04 | ‖ω‖₁=4.498106e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.640193e-04 | ‖ω‖₁=4.480836e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.442737e-04 | ‖ω‖₁=4.484990e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.752451e-04 | ‖ω‖₁=4.470574e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=8.742191e-04 | ‖ω‖₁=4.505773e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 59 consecutive iterations.
+  → at λ=5.248e+00: r(λ)=71
+  → selected modes: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 71]
+
+-- Path iteration 99, λ = 5.251e+00
+  λ=5.000e+00 | Epoch   1 | lr=1.0000e-03 | Recon MSE=9.217474e-04 | ‖ω‖₁=4.549061e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  10 | lr=1.0000e-03 | Recon MSE=8.978954e-04 | ‖ω‖₁=4.540501e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  20 | lr=1.0000e-03 | Recon MSE=9.204672e-04 | ‖ω‖₁=4.513002e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  30 | lr=1.0000e-03 | Recon MSE=9.336973e-04 | ‖ω‖₁=4.486169e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  40 | lr=1.0000e-03 | Recon MSE=9.340098e-04 | ‖ω‖₁=4.480141e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  50 | lr=1.0000e-03 | Recon MSE=9.280168e-04 | ‖ω‖₁=4.493657e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  60 | lr=1.0000e-03 | Recon MSE=9.217679e-04 | ‖ω‖₁=4.498497e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  70 | lr=1.0000e-03 | Recon MSE=9.184627e-04 | ‖ω‖₁=4.493029e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  80 | lr=1.0000e-03 | Recon MSE=9.085817e-04 | ‖ω‖₁=4.485991e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch  90 | lr=1.0000e-03 | Recon MSE=9.216877e-04 | ‖ω‖₁=4.486947e-01 | Non-zero modes: 71
+  λ=5.000e+00 | Epoch 100 | lr=1.0000e-03 | Recon MSE=9.239240e-04 | ‖ω‖₁=4.498746e-01 | Non-zero modes: 71
+Number of selected modes unchanged for 60 consecutive iterations.
+Number of selected modes unchanged for 60 consecutive iterations. Assuming convergence.
+
+Final selected modes (indices): [68, 66, 67, 69, 71, 64, 65, 63, 62, 61, 60, 57, 58, 56, 59]
+
+→ Training decoder model with 15 selected modes ...

@@ -1,0 +1,62 @@
+2025-07-30 10:27:37,336 - sparsemodesnet.advecting_pulse - INFO - Starting advecting_pulse experiment
+2025-07-30 10:27:37,336 - sparsemodesnet.advecting_pulse - INFO - Log file: logs/advecting_pulse_20250730_102737.log
+2025-07-30 10:27:37,337 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+2025-07-30 10:27:37,337 - sparsemodesnet.advecting_pulse - INFO - EXPERIMENT CONFIGURATION
+2025-07-30 10:27:37,337 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+2025-07-30 10:27:37,338 - sparsemodesnet.advecting_pulse - INFO - Data shape: (1024, 1000)
+2025-07-30 10:27:37,338 - sparsemodesnet.advecting_pulse - INFO - Data type: float64
+2025-07-30 10:27:37,338 - sparsemodesnet.advecting_pulse - INFO - Data range: [0.000000, 25.231325]
+2025-07-30 10:27:37,339 - sparsemodesnet.advecting_pulse - INFO - Data mean: 0.999023
+2025-07-30 10:27:37,340 - sparsemodesnet.advecting_pulse - INFO - Data std: 4.101923
+2025-07-30 10:27:37,340 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,341 - sparsemodesnet.advecting_pulse - INFO - CORE PARAMETERS
+2025-07-30 10:27:37,341 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,341 - sparsemodesnet.advecting_pulse - INFO - s (latent dimension): 100
+2025-07-30 10:27:37,341 - sparsemodesnet.advecting_pulse - INFO - I_nn provided: False
+2025-07-30 10:27:37,342 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,342 - sparsemodesnet.advecting_pulse - INFO - NETWORK CONFIGURATION
+2025-07-30 10:27:37,342 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,342 - sparsemodesnet.advecting_pulse - INFO - Network type: FF
+2025-07-30 10:27:37,343 - sparsemodesnet.advecting_pulse - INFO - Hidden units: [100, 2000, 100]
+2025-07-30 10:27:37,343 - sparsemodesnet.advecting_pulse - INFO - Polynomial order: 2
+2025-07-30 10:27:37,343 - sparsemodesnet.advecting_pulse - INFO - Number of polynomials: 2
+2025-07-30 10:27:37,343 - sparsemodesnet.advecting_pulse - INFO - Drop linear: False
+2025-07-30 10:27:37,343 - sparsemodesnet.advecting_pulse - INFO - Drop constant: False
+2025-07-30 10:27:37,344 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,344 - sparsemodesnet.advecting_pulse - INFO - TRAINING CONFIGURATION
+2025-07-30 10:27:37,344 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,344 - sparsemodesnet.advecting_pulse - INFO - Learning rate: 0.001
+2025-07-30 10:27:37,345 - sparsemodesnet.advecting_pulse - INFO - Number of epochs: 100
+2025-07-30 10:27:37,345 - sparsemodesnet.advecting_pulse - INFO - Batch size: 200
+2025-07-30 10:27:37,345 - sparsemodesnet.advecting_pulse - INFO - Optimizer: Adam
+2025-07-30 10:27:37,345 - sparsemodesnet.advecting_pulse - INFO - Device: mps
+2025-07-30 10:27:37,345 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,345 - sparsemodesnet.advecting_pulse - INFO - PREPROCESSING CONFIGURATION
+2025-07-30 10:27:37,346 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,346 - sparsemodesnet.advecting_pulse - INFO - Normalize: True
+2025-07-30 10:27:37,346 - sparsemodesnet.advecting_pulse - INFO - Center: True
+2025-07-30 10:27:37,346 - sparsemodesnet.advecting_pulse - INFO - Whiten: False
+2025-07-30 10:27:37,347 - sparsemodesnet.advecting_pulse - INFO - Whitening epsilon: 1e-05
+2025-07-30 10:27:37,347 - sparsemodesnet.advecting_pulse - INFO - Lift function provided: False
+2025-07-30 10:27:37,347 - sparsemodesnet.advecting_pulse - INFO - Unlift function provided: False
+2025-07-30 10:27:37,348 - sparsemodesnet.advecting_pulse - INFO - Mean (mu) provided: False
+2025-07-30 10:27:37,348 - sparsemodesnet.advecting_pulse - INFO - Shift provided: False
+2025-07-30 10:27:37,348 - sparsemodesnet.advecting_pulse - INFO - Scale provided: False
+2025-07-30 10:27:37,348 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,349 - sparsemodesnet.advecting_pulse - INFO - SPARSITY CONFIGURATION
+2025-07-30 10:27:37,349 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,349 - sparsemodesnet.advecting_pulse - INFO - M (penalty parameter): 12.0
+2025-07-30 10:27:37,349 - sparsemodesnet.advecting_pulse - INFO - Nonzero threshold: 1e-06
+2025-07-30 10:27:37,349 - sparsemodesnet.advecting_pulse - INFO - Lambda 0: 5.0
+2025-07-30 10:27:37,350 - sparsemodesnet.advecting_pulse - INFO - Epsilon: 0.0005
+2025-07-30 10:27:37,350 - sparsemodesnet.advecting_pulse - INFO - Max iterations: 1000
+2025-07-30 10:27:37,350 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,350 - sparsemodesnet.advecting_pulse - INFO - EXPERIMENT CONFIGURATION
+2025-07-30 10:27:37,350 - sparsemodesnet.advecting_pulse - INFO - ------------------------------
+2025-07-30 10:27:37,351 - sparsemodesnet.advecting_pulse - INFO - Label: Advecting Pulse
+2025-07-30 10:27:37,351 - sparsemodesnet.advecting_pulse - INFO - Logs directory: ./logs
+2025-07-30 10:27:37,351 - sparsemodesnet.advecting_pulse - INFO - ==================================================
+
+=== SparseModesNet (Mode Selection) on Advecting Pulse: d=1024, n=1000, s=100 ===
+
+=== Dense-To-Sparse (default) λ-Path ===
