@@ -107,9 +107,9 @@ def _log_experiment_info(logger: logging.Logger,
     logger.info("CORE PARAMETERS")
     logger.info("-" * 30)
     logger.info(f"s (latent dimension): {config.s}")
-    logger.info(f"I_NN provided: {config.training.I_NN is not None}")
-    if config.training.I_NN is not None:
-        logger.info(f"I_NN shape: {config.training.I_NN.shape}")
+    logger.info(f"I_nn provided: {config.training.I_nn is not None}")
+    if config.training.I_nn is not None:
+        logger.info(f"I_nn shape: {config.training.I_nn.shape}")
     
     # Network configuration
     logger.info("-" * 30)
@@ -131,6 +131,26 @@ def _log_experiment_info(logger: logging.Logger,
     logger.info(f"Batch size: {config.training.batch_size}")
     logger.info(f"Optimizer: {config.training.optimizer}")
     logger.info(f"Device: {config.training.device}")
+
+    # Preprocessing configuration
+    logger.info("-" * 30)
+    logger.info("PREPROCESSING CONFIGURATION")
+    logger.info("-" * 30)
+    logger.info(f"Normalize: {config.preprocessing.normalize}")
+    logger.info(f"Center: {config.preprocessing.center}")
+    logger.info(f"Whiten: {config.preprocessing.whiten}")
+    logger.info(f"Whitening epsilon: {config.preprocessing.whitening_epsilon}")
+    logger.info(f"Forward function provided: {config.preprocessing.forward is not None}")
+    logger.info(f"Backward function provided: {config.preprocessing.backward is not None}")
+    logger.info(f"Mean (mu) provided: {config.preprocessing.mu is not None}")
+    logger.info(f"Shift provided: {config.preprocessing.shift is not None}")
+    logger.info(f"Scale provided: {config.preprocessing.scale is not None}")
+    if config.preprocessing.mu is not None:
+        logger.info(f"Mean shape: {config.preprocessing.mu.shape}")
+    if config.preprocessing.shift is not None:
+        logger.info(f"Shift shape: {config.preprocessing.shift.shape}")
+    if config.preprocessing.scale is not None:
+        logger.info(f"Scale shape: {config.preprocessing.scale.shape}")
     
     # Sparsity configuration
     logger.info("-" * 30)
@@ -141,25 +161,6 @@ def _log_experiment_info(logger: logging.Logger,
     logger.info(f"Lambda 0: {config.sparsity.lam0}")
     logger.info(f"Epsilon: {config.sparsity.epsilon}")
     logger.info(f"Max iterations: {config.sparsity.max_iters}")
-    
-    # Selection configuration
-    logger.info("-" * 30)
-    logger.info("SELECTION CONFIGURATION")
-    logger.info("-" * 30)
-    logger.info(f"Mode selection: {config.selection.mode_selection}")
-    logger.info(f"Knee method: {config.selection.knee_method}")
-    logger.info(f"R max: {config.selection.r_max}")
-    
-    if config.selection.mode_selection == 'cv':
-        logger.info(f"K-folds: {config.selection.k_folds}")
-        logger.info(f"Lambdas: {config.selection.lambdas}")
-    elif config.selection.mode_selection == 'ss':
-        logger.info(f"Number of subsamples: {config.selection.num_subsamples}")
-        logger.info(f"Pi threshold: {config.selection.pi_thresh}")
-    elif config.selection.mode_selection == 'knockoffs':
-        logger.info(f"FDR: {config.selection.fdr}")
-        logger.info(f"Knockoff method: {config.selection.knockoff_method}")
-        logger.info(f"Feature statistic: {config.selection.feature_stat}")
     
     # Experiment configuration
     logger.info("-" * 30)
@@ -172,7 +173,7 @@ def _log_experiment_info(logger: logging.Logger,
     
 
 def _log_results(logger: logging.Logger, model, 
-                 I_NN: np.ndarray, history: dict):
+                 I_nn: np.ndarray, history: dict):
     """
     Log experiment results.
     
@@ -182,7 +183,7 @@ def _log_results(logger: logging.Logger, model,
         Logger instance
     model : trained model
         The trained model
-    I_NN : np.ndarray
+    I_nn : np.ndarray
         Selected mode indices
     history : dict
         Training/selection history
@@ -192,12 +193,12 @@ def _log_results(logger: logging.Logger, model,
     logger.info("="*50)
     
     # Selection results
-    if I_NN is not None:
-        logger.info(f"Number of selected modes: {len(I_NN)}")
-        logger.info(f"Selected mode indices: {I_NN.tolist()}")
-        total_modes = len(I_NN) + (history.get('path_history', {}).get(
-            'total_modes', 0) - len(I_NN))
-        logger.info(f"Selection sparsity: {len(I_NN)} / {total_modes}")
+    if I_nn is not None:
+        logger.info(f"Number of selected modes: {len(I_nn)}")
+        logger.info(f"Selected mode indices: {I_nn.tolist()}")
+        total_modes = len(I_nn) + (history.get('path_history', {}).get(
+            'total_modes', 0) - len(I_nn))
+        logger.info(f"Selection sparsity: {len(I_nn)} / {total_modes}")
     
     # Training results
     if 'training_history' in history:

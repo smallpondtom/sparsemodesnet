@@ -7,7 +7,7 @@ def preprocess(X: np.ndarray, config: SparseModesNetConfig):
     """
     Preprocess the input data according to the configuration.
     """
-    
+
     if config.preprocessing.center:
         # Compute the row-wise mean
         mu = X.mean(axis=1, keepdims=True)
@@ -17,7 +17,7 @@ def preprocess(X: np.ndarray, config: SparseModesNetConfig):
         X_center = np.copy(X)
         mu = 0.0
 
-    if config.preprocessing.normalize and config.preprocessing.whiten:
+    if config.preprocessing.normalize_data and config.preprocessing.whiten:
         # Compute the row-wise max/min
         _min, _max = X_center.min(axis=1), X_center.max(axis=1)
 
@@ -43,12 +43,7 @@ def preprocess(X: np.ndarray, config: SparseModesNetConfig):
         config.preprocessing.forward = lambda x: ((x - mu) - _shift) / _scale
         config.preprocessing.backward = lambda x: (x * _scale) + _shift + mu
 
-        # # Compute the 
-
-        # V_white, _, _ = np.linalg.svd(X_proc, full_matrices=False)
-        # V_white = V_white[:, :s_p]  
-        # V_white_tensor = torch.from_numpy(V_white.astype(np.float32)).to(device)
-    elif config.preprocessing.normalize:
+    elif config.preprocessing.normalize_data:
         # Compute the row-wise max/min
         _min, _max = X_center.min(axis=1), X_center.max(axis=1)
 
@@ -65,8 +60,6 @@ def preprocess(X: np.ndarray, config: SparseModesNetConfig):
         config.preprocessing.forward = lambda x: ((x - mu) - _shift) / _scale
         config.preprocessing.backward = lambda x: (x * _scale) + _shift + mu
 
-        # V_white = np.linalg.svd(X_proc, full_matrices=False)[0][:, :s_p] 
-        # V_white_tensor = torch.from_numpy(V_white.astype(np.float32)).to(device)
     elif config.preprocessing.whiten:
         zcaMat = zca_whitening_matrix(
             X_center, 
@@ -77,10 +70,6 @@ def preprocess(X: np.ndarray, config: SparseModesNetConfig):
         config.preprocessing.forward = lambda x: x - mu
         config.preprocessing.backward = lambda x: x + mu
 
-        # # Compute the pod basis
-        # V_white, _, _ = np.linalg.svd(X_white, full_matrices=False)
-        # V_white = V_white[:, :s_p]  
-        # V_white_tensor = torch.from_numpy(V_white.astype(np.float32)).to(device)
     else:
         X_proc = X_center
         config.preprocessing.forward = lambda x: x - mu

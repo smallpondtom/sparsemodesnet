@@ -6,12 +6,10 @@ class MaskedLayer(torch.nn.Linear):
         in_features: int,    # e.g., 6
         out_features: int,   # e.g., 2
         mask: torch.Tensor,  # e.g., shape(2,6)
-        dtype: torch.dtype,
     ):
         super().__init__(
             in_features=in_features,
             out_features=out_features,
-            dtype=dtype,  # Ensure double precision
             bias=False,   # no need to use a bias in our case
         )
         self.register_buffer('mask', mask)

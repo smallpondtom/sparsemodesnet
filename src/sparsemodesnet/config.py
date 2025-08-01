@@ -11,31 +11,45 @@ class NetworkConfig:
     num_polys: int = 1
     drop_linear: bool = False
     drop_constant: bool = False
-    normalize: str | None = None
+    normalize_layer: str | None = None
 
 @dataclass
 class TrainingConfig:
     """Configuration for training parameters"""
-    lr: float = 1e-3
-    num_epochs: int = 100
-    final_epochs: int = 100
-    batch_size: int = 32
-    optimizer: str = 'Adam'
-    device: str = 'cpu'
-    I_nn: Optional[np.ndarray] = None
-    momentum: float = 0.9
+    # Lasso part
+    lasso_lr: float = 1e-3
+    lasso_lr_patience: int = 100
+    lasso_lr_factor: float = 0.8
+    lasso_epochs: int = 100
+    lasso_batch_size: int = 32
+    lasso_optimizer: str = 'AdamW'
+    lasso_momentum: float = 0.9
+    gamma: float = 1e-6
     max_no_change: int = 50
     extra_modes: int = 0
+    # Decoder part
+    decoder_lr: float = 1e-3
+    decoder_lr_patience: int = 100
+    decoder_lr_factor: float = 0.8
+    decoder_epochs: int = 100
+    decoder_batch_size: int = 32
+    decoder_optimizer: str = 'AdamW'
+    decoder_momentum: float = 0.9
+    # General
+    device: str = 'cpu'
+    I_nn: Optional[np.ndarray] = None
+    reg_param: float = 1e-15
+    analytical: bool = False
 
 @dataclass
 class PreprocessingConfig:
     """Configuration for preprocessing steps"""
-    normalize: bool = True
+    normalize_data: bool = True
     center: bool = True
     whiten: bool = False
     whitening_epsilon: float = 1e-5
-    lift: Callable | None = None
-    unlift: Callable | None = None
+    forward: Callable | None = None
+    backward: Callable | None = None
     mu: np.ndarray | None = None
     shift: np.ndarray | None = None
     scale: np.ndarray | None = None
@@ -48,9 +62,9 @@ class SparsityConfig:
     lam0: float = 1e-6
     epsilon: float = 0.1
     max_iters: int = 1000
-    max_num_modes: int = 20
     skip_sparse: bool = False
     selection_method: str = 'weight'
+    alpha: float = 1.0
 
 @dataclass
 class ExperimentConfig:
@@ -63,14 +77,14 @@ class ExperimentConfig:
 class SparseModesNetConfig:
     """Complete configuration for SparseModesNet experiments"""
     # Core parameters
-    s: int
+    s: int # total number of modes used
+    r: int # number of modes selected for decoder r <= s
     
     # Configuration groups
     network: NetworkConfig
     training: TrainingConfig
     preprocessing: PreprocessingConfig
     sparsity: SparsityConfig
-    # selection: SelectionConfig
     experiment: ExperimentConfig
     
     @classmethod

@@ -10,6 +10,8 @@ def train_sparsemodesnet(model: SparseModesNet,
                          dataloader: DataLoader,
                          num_epochs: int,
                          lr: float,
+                         lr_patience: int,
+                         lr_factor: float,
                          optimizer: str,
                          momentum: float,
                          max_num_modes: int,
@@ -23,11 +25,15 @@ def train_sparsemodesnet(model: SparseModesNet,
     model.to(device)
 
     # Select optimizer: Adam or SGD
-    if optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), lr=lr)
+    if optimizer == 'AdamW':
+        optimizer = optim.AdamW(model.parameters(), lr=lr, 
+                                weight_decay=model.gamma)
+    elif optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr, 
+                               weight_decay=model.gamma)
     elif optimizer == 'SGD':
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, 
-                              nesterov=True)
+                              nesterov=True, weight_decay=model.gamma)
     else:
         raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
     
@@ -36,7 +42,7 @@ def train_sparsemodesnet(model: SparseModesNet,
 
     # Learning rate scheduler 
     lr_schedule = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.8, patience=100,
+        optimizer, mode='min', factor=lr_factor, patience=lr_patience,
     )
     lr_new = optimizer.param_groups[0]['lr']
 
@@ -60,6 +66,8 @@ def train_sparsemodesnet(model: SparseModesNet,
             optimizer.zero_grad()
             _, x_hat_batch = model(z_batch)  # (batch, d)
             loss = mse_loss(x_hat_batch, x_batch)
+            if model.network_type == 'QM':
+                loss += model.gamma * torch.norm(model.projection)**2
             
             loss.backward()
             optimizer.step()
@@ -110,6 +118,8 @@ def train_statedecoder(model: StateDecoder,
                        dataloader: DataLoader,
                        num_epochs: int,
                        lr: float,
+                       lr_patience: int,
+                       lr_factor: float,
                        momentum: float,
                        optimizer: str,
                        device: str):
@@ -121,13 +131,16 @@ def train_statedecoder(model: StateDecoder,
     model.to(device)
 
     # Select optimizer: Adam or SGD
-    if optimizer == 'Adam':
-        optimizer = optim.Adam(model.parameters(), lr=lr,
+    if optimizer == 'AdamW':
+        optimizer = optim.AdamW(model.parameters(), lr=lr, 
+                                weight_decay=model.gamma)
+    elif optimizer == 'Adam':
+        optimizer = optim.Adam(model.parameters(), lr=lr, 
                                weight_decay=model.gamma)
     elif optimizer == 'SGD':
         optimizer = optim.SGD(
-            model.parameters(), lr=lr, momentum=momentum, nesterov=True,
-            weight_decay=model.gamma)
+            model.parameters(), lr=lr, momentum=momentum, 
+            weight_decay=model.gamma, nesterov=True)
     else:
         raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
     
@@ -136,7 +149,7 @@ def train_statedecoder(model: StateDecoder,
     
     # Learning rate scheduler 
     lr_schedule = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode='min', factor=0.8, patience=100,
+        optimizer, mode='min', factor=lr_factor, patience=lr_patience,
     )
 
     # Initialize history for loss
