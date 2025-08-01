@@ -250,9 +250,11 @@ def train_quadraticmanifold(model: QuadraticManifold,
     """
     model.to(device)
     if optimizer == 'Adam':
+        print("Using AdamW optimizer with weight decay.")
         optimizer = optim.AdamW(model.parameters(), 
                                lr=lr, weight_decay=model.gamma)
     elif optimizer == 'SGD':
+        print("Using SGD optimizer with Nesterov momentum.")
         optimizer = optim.SGD(
             model.parameters(), lr=lr, momentum=momentum, 
             nesterov=True, weight_decay=model.gamma)
@@ -485,6 +487,10 @@ if __name__ == "__main__":
     # Prep the data
     ds_sub = PODReconDataset(Z_np=Z_np, X_np=X_proc, type="float32")
     dl_sub = DataLoader(ds_sub, batch_size=200, shuffle=True)
+
+    print(X_proc)
+    print(Z_np)
+    print(V_white_tensor)
     
     # Initialize the regularization parameter and increase factor
     lam = 5.0
@@ -559,15 +565,15 @@ if __name__ == "__main__":
     I_nn = np.argsort(omegas[:, -1])[::-1][:r_max]
 
 #%% #======================= Greedy Quadratic Manifold ========================#
-    print("\n" + "="*60)
-    print("GREEDY QUADRATIC MANIFOLD")
+    # print("\n" + "="*60)
+    # print("GREEDY QUADRATIC MANIFOLD")
     
-    V, W, shift_tmp, I_qm = quadmani_greedy(
-        X_proc, r_max, s_p, 1e-15, np.array([], dtype=int))
-    shift_tmp = shift_tmp.reshape(-1, 1)
+    # V, W, shift_tmp, I_qm = quadmani_greedy(
+    #     X_proc, r_max, s_p, 1e-15, np.array([], dtype=int))
+    # shift_tmp = shift_tmp.reshape(-1, 1)
 
-    # Print the selected modes
-    print("Selected modes (I_qm):", I_qm.sort())
+    # # Print the selected modes
+    # print("Selected modes (I_qm):", I_qm.sort())
 
 
 # %% #==================== Compute Reconstruction Errors ======================#
