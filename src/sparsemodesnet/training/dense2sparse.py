@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 from sparsemodesnet.linalg.pod import compute_pod_basis
-from sparsemodesnet.models.model import SparseModesNet
+from sparsemodesnet.decoder_models.model import SparseModesNet
 from sparsemodesnet.dataset import PODReconDataset
 from sparsemodesnet.config import SparseModesNetConfig
 from sparsemodesnet.training.train import train_sparsemodesnet 
@@ -13,7 +13,10 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
     print("\n=== Dense-To-Sparse (default) λ-Path ===")
 
     # Create the dataset and dataloader
-    dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np, type='float32')
+    dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np, 
+                                   type='float64' 
+                                        if config.training.device == 'cpu' 
+                                        else 'float32')
     dataloader_full = DataLoader(
         dataset_full, batch_size=config.training.lasso_batch_size, shuffle=True, 
     )
@@ -38,6 +41,8 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
         drop_linear     = config.network.drop_linear,
         drop_constant   = config.network.drop_constant,
         normalize       = config.network.normalize_layer,
+        dtype           = torch.float64 if config.training.device == 'cpu' 
+                         else torch.float32,
     )
 
     # Define the storage for omegas

@@ -6,7 +6,7 @@ from sparsemodesnet.config import SparseModesNetConfig
 from sparsemodesnet.linalg.pod import compute_pod_basis
 from sparsemodesnet.linalg.lstsq import lstsq_l2
 from sparsemodesnet.preprocess import preprocess
-from sparsemodesnet.models.model import StateDecoder
+from sparsemodesnet.decoder_models.model import StateDecoder
 from sparsemodesnet.dataset import PODReconDataset
 from sparsemodesnet.training.train import train_statedecoder
 from sparsemodesnet.training.dense2sparse import dense2sparse
@@ -44,13 +44,10 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
     
     try:
         # Preprocess data if needed
-        X_proc = preprocess(X_np, config)
+        X_proc = preprocess(X_np.astype(np.float64), config)
 
         # Compute POD basis and coefficients
         U_np, _, _ = compute_pod_basis(X_proc, s=config.s)
-        Z_np = U_np.T.dot(X_proc)
-        U_tensor = torch.from_numpy(
-            U_np.astype(np.float32)).to(config.training.device)
         
         # Mode selection
         if config.sparsity.skip_sparse:
@@ -75,6 +72,14 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                   f"{config.experiment.label}: d={X_proc.shape[0]}," 
                   f" n={X_np.shape[1]}, s={config.s} ===")
 
+            # Compute the input (reduced) data 
+            Z_np = U_np.T.dot(X_proc)
+            U_tensor = torch.from_numpy(U_np).to(
+                    config.training.device,
+                    dtype=torch.float64 if config.training.device == 'cpu'
+                          else torch.float32
+                )
+
             # Run dense-to-sparse mode selection
             I_nn, omegas, path_history = dense2sparse(X_proc, Z_np, 
                                                       U_tensor, config)
@@ -93,17 +98,38 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
         U_np = U_np[:, I_nn]
         X_pp = config.preprocessing.forward(X_np)
         Z_pp = U_np.T.dot(X_pp)
-        U_tensor = torch.from_numpy(
-            U_np.astype(np.float32)).to(config.training.device)
+        
+        # Ensure consistent data types based on device
+        target_dtype = np.float64 if config.training.device == 'cpu' else np.float32
+        if U_np.dtype != target_dtype:
+            U_np = U_np.astype(target_dtype)
+        if X_pp.dtype != target_dtype:
+            X_pp = X_pp.astype(target_dtype)
+        if Z_pp.dtype != target_dtype:
+            Z_pp = Z_pp.astype(target_dtype)
+        
+        U_tensor = torch.from_numpy(U_np).to(
+                config.training.device,
+                dtype=torch.float64 if config.training.device == 'cpu'
+                      else torch.float32
+            )
 
         if config.network.network_type == 'QM' and config.training.analytical:
             residual = X_pp - U_np @ Z_pp
-            Z_quad_pp = quadratic_mapping_numpy(Z_pp.T).T 
+            Z_quad_pp = _quadratic_mapping_numpy(Z_pp.T).T 
             W_nn_T, _ = lstsq_l2(Z_quad_pp.T, residual.T, 
                                  reg_magnitude=config.training.reg_param)
             W_nn = W_nn_T.T
             X_hat_np = U_np @ Z_pp + W_nn @ Z_quad_pp
-            decoder = lambda z: U_np @ z + W_nn @ quadratic_mapping_numpy(z.T).T
+            decoder = lambda z: U_np @ z + W_nn @ _quadratic_mapping_numpy(z.T).T
+        elif config.network.network_type == 'CM' and config.training.analytical:
+            residual = X_pp - U_np @ Z_pp
+            Z_cubic_pp = _cubic_mapping__numpy(Z_pp.T).T
+            W_nn_T, _ = lstsq_l2(Z_cubic_pp.T, residual.T,
+                                 reg_magnitude=config.training.reg_param)
+            W_nn = W_nn_T.T
+            X_hat_np = U_np @ Z_pp + W_nn @ Z_cubic_pp
+            decoder = lambda z: U_np @ z + W_nn @ _cubic_mapping__numpy(z.T).T
         else:
             print(f"\n→ Training decoder model with {r} selected modes ...") 
             decoder = StateDecoder(
@@ -116,26 +142,38 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                 num_polys      = config.network.num_polys, 
                 drop_linear    = config.network.drop_linear,
                 drop_constant  = config.network.drop_constant,
-                normalize      = config.network.normalize_layer
+                normalize      = config.network.normalize_layer,
+                dtype          = torch.float64 if config.training.device == 'cpu' 
+                                 else torch.float32,
             )
             
-            dataset_full = PODReconDataset(Z_np=Z_pp, X_np=X_pp)
+            dataset_full = PODReconDataset(Z_np=Z_pp, X_np=X_pp, 
+                                           type='float64' 
+                                                if config.training.device == 'cpu' 
+                                                else 'float32')
             dataloader_full = DataLoader(
                 dataset_full, batch_size=config.training.decoder_batch_size, 
                 shuffle=True, drop_last=False
             )
             
             train_statedecoder(
-                decoder, dataloader_full, 
-                config.training.decoder_epochs, 
-                config.training.decoder_lr, config.training.decoder_lr_patience,
-                config.training.decoder_lr_factor, config.training.decoder_momentum, 
-                config.training.decoder_optimizer, config.training.device
+                model       = decoder, 
+                dataloader  = dataloader_full, 
+                num_epochs  = config.training.decoder_epochs, 
+                lr          = config.training.decoder_lr, 
+                lr_patience = config.training.decoder_lr_patience,
+                lr_factor   = config.training.decoder_lr_factor, 
+                momentum    = config.training.decoder_momentum, 
+                optimizer   = config.training.decoder_optimizer, 
+                device      = config.training.device,
             )
             
             # Evaluate final model
-            Z_pp_tensor = torch.from_numpy(
-                Z_pp.T.astype(np.float32)).to(config.training.device)
+            Z_pp_tensor = torch.from_numpy(Z_pp.T).to(
+                config.training.device,
+                dtype=torch.float64 if config.training.device == 'cpu' 
+                      else torch.float32
+            )
             decoder.eval()
             with torch.no_grad():
                 X_hat_tensor = decoder(Z_pp_tensor)
@@ -174,7 +212,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
         pass
 
 
-def quadratic_mapping_numpy(x):
+def _quadratic_mapping_numpy(x):
     """
     Numpy version - must match the torch version exactly!
     """
@@ -187,4 +225,47 @@ def quadratic_mapping_numpy(x):
         _, n = x.shape
         i_indices, j_indices = np.tril_indices(n)
         result = x[:, i_indices] * x[:, j_indices]
+        return result
+    
+
+def _cubic_mapping__numpy(x):
+    """
+    Fast vectorized computation of unique cubic terms x ⊗ x ⊗ x (NumPy version).
+    Uses meshgrid for efficient index generation.
+    
+    Args:
+        x: np.ndarray of shape (batch_size, n) or (n,)
+        
+    Returns:
+        np.ndarray of shape (batch_size, n*(n+1)*(n+2)//6) or (n*(n+1)*(n+2)//6,)
+    """
+    if x.ndim == 1:
+        n = x.shape[0]
+        # Create meshgrid for all combinations
+        i_range = np.arange(n)
+        i_grid, j_grid, k_grid = np.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products
+        result = x[i_indices] * x[j_indices] * x[k_indices]
+        return result
+    else:
+        batch_size, n = x.shape
+        # Create meshgrid for all combinations
+        i_range = np.arange(n)
+        i_grid, j_grid, k_grid = np.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products for all batches
+        result = x[:, i_indices] * x[:, j_indices] * x[:, k_indices]
         return result

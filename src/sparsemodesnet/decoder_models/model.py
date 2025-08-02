@@ -2,9 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from sparsemodesnet.models.pinet import PiNetCCP, PiNetNCP, PiNetNCPSkip, ProdPoly
-from sparsemodesnet.models.mask import MaskedLayer
-from sparsemodesnet.models.cnn import SpatialCNN
+from sparsemodesnet.decoder_models.pinet import (PiNetCCP, 
+                                                 PiNetNCP, 
+                                                 PiNetNCPSkip, ProdPoly)
+from sparsemodesnet.decoder_models.mlp import MLP
+from sparsemodesnet.decoder_models.mask import MaskedLayer
+from sparsemodesnet.decoder_models.cnn import SpatialCNN
+from sparsemodesnet.decoder_models.unet import UNET
 
 
 class SparseModesNet(nn.Module):
@@ -31,7 +35,8 @@ class SparseModesNet(nn.Module):
                  network_type: str = 'FF', 
                  poly_order: int = 2, num_polys: int = 1, 
                  drop_linear: bool = False, drop_constant: bool = False, 
-                 normalize: str | None = None):
+                 normalize: str | None = None, 
+                 dtype: torch.dtype = torch.float32):
         """
         Initialize SparseModesNet.
         
@@ -47,20 +52,21 @@ class SparseModesNet(nn.Module):
 
         self.register_buffer('U_s', pod_basis)  # (d, s): store as buffer
         self.d, self.s = pod_basis.shape
-        self.M = float(M)
-        self.lam = float(lam)
-        self.gamma = float(gamma)
-        self.alpha = float(alpha)
+        self.M = M
+        self.lam = lam
+        self.gamma = gamma
+        self.alpha = alpha
+        torch.set_default_dtype(dtype)
 
         # Skip‐weights ω ∈ R^s
         self.omega = nn.Parameter(torch.ones(self.s) * 0.01)
         
         # Assertion for network type
-        assert network_type in ['FF', 'CNN', 'PiNetCCP', 'PiNetNCP', 
-                       'PiNetNCPSkip', 'QM'], \
+        assert network_type in ['MLP', 'CNN', 'UNET', 'PiNetCCP', 'PiNetNCP', 
+                       'PiNetNCPSkip', 'QM', 'CM'], \
             f"Unsupported network type: {network_type}. " \
-            "Use 'FF', 'CNN', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', " \
-            "or 'QM'."
+            "Use 'MLP', 'CNN', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', " \
+            "'QM', or 'CM'."
         self.network_type = network_type
         
         # Pi-Net dictionary
@@ -70,18 +76,12 @@ class SparseModesNet(nn.Module):
             'PiNetNCPSkip': PiNetNCPSkip
         }
         
-        if network_type == 'FF': 
+        if network_type == 'MLP': 
             # Build the feedforward network mapping from R^s to R^d
-            self.first_layer = nn.Linear(self.s, hidden_units[0], bias=False)
-            self.first_layer.weight.data.fill_(0.1)  # Initialize weights
-            layers = [self.first_layer, nn.SELU(inplace=True)]
-            for i in range(1, len(hidden_units)):
-                layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], 
-                                        bias=False))
-                layers.append(nn.SELU(inplace=True))
-                layers.append(nn.Dropout(p=0.1)) 
-            layers.append(nn.Linear(hidden_units[-1], self.d, bias=False))
-            self.net = nn.Sequential(*layers)
+            self.mlp = MLP(hidden_units=hidden_units)
+            self.mlp.initialize(input_dim=self.s, output_dim=self.d)
+            self.first_layer = self.mlp.first_layer
+
         elif network_type == 'CNN':
             # Build the convolutional network mapping from R^s to R^d
             # Reshape input to 1D signal for 1D convolutions
@@ -89,15 +89,20 @@ class SparseModesNet(nn.Module):
                "CNN requires at least 2 values: [num_filters, kernel_size, ...]"
             
             # First layer for proximal operations
-            self.first_layer = nn.Linear(self.s, self.s, bias=False)
+            self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
             self.first_layer.weight.data.fill_(0.1)  # Initialize weights
-            
+
             # Spatial CNN decoder
-            self.cnn = SpatialCNN(
-                input_dim=self.s,
-                output_dim=self.d,
-                hidden_units=hidden_units
-            )
+            self.cnn = SpatialCNN(hidden_units=hidden_units)
+            self.cnn.initialize(input_dim=self.s, output_dim=self.d)
+
+        elif network_type == 'UNET':
+            # First layer for proximal operations
+            self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
+            self.first_layer.weight.data.fill_(0.1)  # Initialize weights
+
+            self.unet = UNET(conv1=hidden_units[0], conv2=hidden_units[1])
+            self.unet.initialize(input_dim=self.s, output_dim=self.d)
 
         elif 'PiNet' in network_type:
             # PiNetCCP, PiNetNCP, or PiNetNCPSkip (with/without ProdPoly)
@@ -105,12 +110,18 @@ class SparseModesNet(nn.Module):
                 "PiNetCCP requires exactly 3 hidden units: \
                 [in_dim, inter_dim, out_dim]."
             in_dim, inter_dim, out_dim = hidden_units
+
+            # assert in_dim == self.s, \
+            #     f"Input dimension {in_dim} must match the original \
+            #         state dimension {self.s}."
             
             assert out_dim == self.d, \
                 f"Output dimension {out_dim} must match the original \
                     state dimension {self.d}."
             
             # First layer (used in proximal step)
+            # self.first_layer = MaskedLayer(self.s, in_dim, torch.eye(self.s))
+            # self.first_layer.weight.data.fill_(0.1)  # Initialize weights
             self.first_layer = nn.Linear(self.s, in_dim, bias=False)
             self.first_layer.weight.data.fill_(0.1)  # Initialize weights
             
@@ -135,12 +146,18 @@ class SparseModesNet(nn.Module):
                     poly_order=poly_order, drop_linear=drop_linear,
                     drop_constant=drop_constant, normalize=normalize
                 )
-        else:
+        elif network_type == 'QM':
             self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
             self.first_layer.weight.data.fill_(0.1)  
-            self.quadmap = _quadratic_mapping_vectorized
+            self.nonlin_map = _quadratic_mapping_vectorized
             self.projection = nn.Parameter(
                 torch.ones(self.s * (self.s + 1) // 2, self.d))
+        elif network_type == 'CM':
+            self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
+            self.first_layer.weight.data.fill_(0.1)  
+            self.nonlin_map = _cubic_mapping_vectorized
+            self.projection = nn.Parameter(
+                torch.ones(self.s * (self.s + 1) * (self.s + 2) // 6, self.d))
     
     def forward(self, z_batch):
         """
@@ -160,19 +177,22 @@ class SparseModesNet(nn.Module):
         x_hat_lin = z_hat @ self.U_s.T                  # (batch, d)
         
         # --- MLP or MLP + Π-net hybrid ---
-        if self.network_type == 'FF': 
+        if self.network_type == 'MLP': 
             # Apply the NN to the reduced states 
-            x_hat_nn = self.net(z_hat)                  # (batch, d)
+            x_hat_nn = self.mlp(z_hat)                  # (batch, d)
         elif self.network_type == 'CNN':
             h        = self.first_layer(z_hat)          # (batch, s)
             x_hat_nn = self.cnn(h)                      # (batch, d)
+        elif self.network_type == 'UNET':
+            h        = self.first_layer(z_hat)          # (batch, s)
+            x_hat_nn = self.unet(h)                     # (batch, d)
         elif 'PiNet' in self.network_type:
             h        = self.first_layer(z_hat)          # (batch, inter_dim)
             x_hat_nn = self.pinet(h)                    # (batch, out_dim)
         else:
             # Apply the quadratic mapping
             h        = self.first_layer(z_hat)          
-            z_quad   = self.quadmap(h)                  # (batch, r*(r+1)//2)
+            z_quad   = self.nonlin_map(h)               # (batch, g(r))
             x_hat_nn = z_quad @ self.projection         # (batch, d)
 
         # --- Reconstruct x_hat ---
@@ -268,19 +288,21 @@ class StateDecoder(nn.Module):
                  hidden_units: list, gamma: float,
                  network_type: str, poly_order: int, 
                  num_polys: int, drop_linear: bool, 
-                 drop_constant: bool, normalize: str | None = None):
+                 drop_constant: bool, normalize: str | None = None,
+                 dtype: torch.dtype = torch.float32):
         super(StateDecoder, self).__init__()
         
         self.register_buffer('U_r', pod_basis)  # (d, r): store as buffer
         self.d, self.r = pod_basis.shape
         self.gamma = gamma
+        torch.set_default_dtype(dtype)
         
         # Assertion for network type
-        assert network_type in ['FF', 'CNN', 'PiNetCCP', 'PiNetNCP', 
-                       'PiNetNCPSkip', 'QM'], \
+        assert network_type in ['MLP', 'CNN', 'UNET', 'PiNetCCP', 'PiNetNCP', 
+                       'PiNetNCPSkip', 'QM', 'CM'], \
             f"Unsupported network type: {network_type}. " \
-            "Use 'FF', 'CNN', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', " \
-            "or 'QM'."
+            "Use 'MLP', 'CNN', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', " \
+            "'QM', or 'CM'."
         self.network_type = network_type
         
         # Pi-Net dictionary
@@ -290,31 +312,25 @@ class StateDecoder(nn.Module):
             'PiNetNCPSkip': PiNetNCPSkip
         }
         
-        if network_type == 'FF': 
-            # Build the feedforward network mapping from R^s to R^d
-            self.first_layer = nn.Linear(self.r, hidden_units[0], bias=True)
-            layers = [self.first_layer, nn.SELU(inplace=True)]
-            for i in range(1, len(hidden_units)):
-                layers.append(nn.Linear(hidden_units[i-1], hidden_units[i], bias=True))
-                layers.append(nn.SELU(inplace=True))
-                layers.append(nn.Dropout(p=0.1)) 
-            layers.append(nn.Linear(hidden_units[-1], self.d, bias=True))
-            self.net = nn.Sequential(*layers)
+        if network_type == 'MLP': 
+            # Build the feedforward network mapping from R^r to R^d
+            self.mlp = MLP(hidden_units=hidden_units, bias=True)
+            self.mlp.initialize(input_dim=self.r, output_dim=self.d)
+
         elif network_type == 'CNN':
             # Build the convolutional network mapping from R^s to R^d
             # Reshape input to 1D signal for 1D convolutions
             assert len(hidden_units) >= 2, \
                "CNN requires at least 2 values: [num_filters, kernel_size, ...]"
             
-            # First layer for proximal operations
-            self.first_layer = nn.Linear(self.r, self.r, bias=True)
-
             # Spatial CNN decoder
-            self.cnn = SpatialCNN(
-                input_dim=self.r,
-                output_dim=self.d,
-                hidden_units=hidden_units
-            )
+            self.cnn = SpatialCNN(hidden_units=hidden_units, bias=True)
+            self.cnn.initialize(input_dim=self.r, output_dim=self.d)
+
+        elif network_type == 'UNET':
+            # Spatial UNET decoder
+            self.unet = UNET(conv1=hidden_units[0], conv2=hidden_units[1], bias=True)
+            self.unet.initialize(input_dim=self.r, output_dim=self.d)
             
         elif 'PiNet' in network_type:
             # PiNetCCP, PiNetNCP, or PiNetNCPSkip (with/without ProdPoly)
@@ -322,7 +338,11 @@ class StateDecoder(nn.Module):
                 "PiNetCCP requires exactly 3 hidden units: \
                 [in_dim, inter_dim, out_dim]."
             in_dim, inter_dim, out_dim = hidden_units
-                    
+
+            # assert in_dim == self.r, \
+            #     f"Input dimension {in_dim} must match the original \
+            #         state dimension {self.r}."
+
             assert out_dim == self.d, \
                 f"Output dimension {out_dim} must match the original \
                     state dimension {self.d}."
@@ -351,28 +371,33 @@ class StateDecoder(nn.Module):
                     poly_order=poly_order, drop_linear=drop_linear,
                     drop_constant=drop_constant, normalize=normalize
                 )
-        else:
-            self.quadmap = _quadratic_mapping_vectorized
+        elif network_type == 'QM':
+            self.nonlin_map = _quadratic_mapping_vectorized
             self.projection = nn.Parameter(
                 torch.ones(self.r * (self.r + 1) // 2, self.d))
+        elif network_type == 'CM':
+            self.nonlin_map = _cubic_mapping_vectorized
+            self.projection = nn.Parameter(
+                torch.ones(self.r * (self.r + 1) * (self.r + 2) // 6, self.d))
         
     def forward(self, z_batch):
         # Reconstruct the linear part via projection
         x_hat_lin = z_batch @ self.U_r.T                # (batch, d)
         
         # --- MLP or MLP + Π-net hybrid ---
-        if self.network_type == 'FF': 
+        if self.network_type == 'MLP': 
             # Apply the NN to the reduced states 
-            x_hat_nn = self.net(z_batch)                # (batch, d)
+            x_hat_nn = self.mlp(z_batch)                # (batch, d)
         elif self.network_type == 'CNN':
-            h        = self.first_layer(z_batch)        # (batch, r)
-            x_hat_nn = self.cnn(h)                      # (batch, d)
+            x_hat_nn = self.cnn(z_batch)                # (batch, d)
+        elif self.network_type == 'UNET':
+            x_hat_nn = self.unet(z_batch)               # (batch, d)
         elif 'PiNet' in self.network_type:
             h        = self.first_layer(z_batch)        # (batch, inter_dim)
             x_hat_nn = self.pinet(h)                    # (batch, out_dim)
         else:
             # Apply the quadratic mapping
-            z_quad = self.quadmap(z_batch)              # (batch, r*(r+1)//2)
+            z_quad = self.nonlin_map(z_batch)           # (batch, g(r))
             x_hat_nn = z_quad @ self.projection         # (batch, d)
 
         # --- Reconstruct x_hat ---
@@ -405,4 +430,46 @@ def _quadratic_mapping_vectorized(x):
         # Compute products for all batches
         result = x[:, i_indices] * x[:, j_indices]
         return result   
+
+
+def _cubic_mapping_vectorized(x):
+    """
+    Fast vectorized computation of unique cubic terms x ⊗ x ⊗ x.
+    Uses meshgrid for efficient index generation.
+    
+    Args:
+        x: torch.Tensor of shape (batch_size, n) or (n,)
         
+    Returns:
+        torch.Tensor of shape (batch_size, n*(n+1)*(n+2)//6) or (n*(n+1)*(n+2)//6,)
+    """
+    if x.dim() == 1:
+        n = x.size(0)
+        # Create meshgrid for all combinations
+        i_range = torch.arange(n, device=x.device)
+        i_grid, j_grid, k_grid = torch.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products
+        result = x[i_indices] * x[j_indices] * x[k_indices]
+        return result
+    else:
+        batch_size, n = x.shape
+        # Create meshgrid for all combinations
+        i_range = torch.arange(n, device=x.device)
+        i_grid, j_grid, k_grid = torch.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products for all batches
+        result = x[:, i_indices] * x[:, j_indices] * x[:, k_indices]
+        return result

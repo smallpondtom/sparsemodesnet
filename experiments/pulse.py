@@ -1,4 +1,8 @@
-#%%
+"""
+Advecting Gaussian Wave experiment using SparseModesNet.
+"""
+
+#%% Load modules
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
@@ -9,10 +13,25 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.pulse import generate_advecting_pulse
-from sparsemodesnet import run_sparsemodesnet
-from sparsemodesnet.linalg.pod import compute_pod_basis
+from QM.quadmani import quadmani_greedy
+import sparsemodesnet as smn
 
-#%%
+def quadratic_mapping_numpy(x):
+    """
+    Numpy version - must match the torch version exactly!
+    """
+    if x.ndim == 1:
+        n = x.shape[0]
+        i_indices, j_indices = np.tril_indices(n)
+        result = x[i_indices] * x[j_indices]
+        return result
+    else:
+        _, n = x.shape
+        i_indices, j_indices = np.tril_indices(n)
+        result = x[:, i_indices] * x[:, j_indices]
+        return result
+
+#%% %============================= Main Script ================================%
 if __name__ == "__main__":
     # Device selection: CUDA > MPS (Apple Silicon) > CPU
     if torch.cuda.is_available():
@@ -21,17 +40,11 @@ if __name__ == "__main__":
         device = 'mps'
     else:
         device = 'cpu'
+    device = 'cpu'
     print("Using device:", device)
-    
-    # Regularization parameter selection method
-    reg_path = 'dense2sparse'  # 'dense2sparse' or 'cv'
-    
-    # Common hyperparameters
-    # hidden_units_pulse = [200, 5000, 200]  # working well for PiNetCCP
-    hidden_units_pulse = [1000, 2000, 1000]
-    
-    # Parameter‐grid for CV
-    lambdas_cv = np.logspace(-2.1, -0.8, 12)  
+
+    # For reproducibility
+    torch.manual_seed(42)
     
     # number of grids
     n_grids = 2**10
@@ -40,24 +53,26 @@ if __name__ == "__main__":
     sanity_check = True
 
     # ---------- Advecting Pulse ----------
-    X_pulse, xspan_p, tspan_p = generate_advecting_pulse(
-        pulse_width=2.0e-4,
+    X, xspan, tspan = generate_advecting_pulse(
+        pulse_width=5.0e-4,
         pulse_shift=0.1,
         speed=5.0,
         final_time=0.15,
         n_time_samples=1000,
         n_space_samples=n_grids
     )
-    d_p, n_p = X_pulse.shape
-    s_p = min(d_p, n_p)
-    s_p = 200
+    X = X.astype(np.float64) 
+    d, n = X.shape
+    s = min(d, n)
+    s = 100
+    r = 15
     
-    ## Create 3D surface plot for Advecting Pulse (sanity check)
+    # Create 3D surface plot for Advecting Pulse (sanity check)
     if sanity_check:
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
-        X_mesh, T_mesh = np.meshgrid(xspan_p, tspan_p)
-        Z_mesh = X_pulse.T  # Transpose to match meshgrid dimensions
+        X_mesh, T_mesh = np.meshgrid(xspan, tspan)
+        Z_mesh = X.T  # Transpose to match meshgrid dimensions
         surf = ax.plot_surface(
             X_mesh, T_mesh, Z_mesh, cmap='viridis', alpha=0.8)
         ax.set_xlabel('x')
@@ -65,559 +80,391 @@ if __name__ == "__main__":
         ax.set_zlabel('u(x,t)')
         ax.set_title('Advecting Gaussian Pulse')
         plt.colorbar(surf, shrink=0.5, aspect=5)
-        plt.savefig('../figures/pulse_data.png', dpi=300)
+        plt.savefig('figures/pulse/pulse_data.png', dpi=200)
         plt.show()
         plt.close(fig)
 
-    #%% Train
-    model_pulse, info_pulse, selected_p, freq_tab = run_sparsemodesnet(
-        X_np            = X_pulse,
-        s               = s_p,
-        hidden_units    = hidden_units_pulse,
-        M               = 2.0,
-        reg_path        = reg_path,
-        lr              = 1e-3,
-        batch_size      = 64,
-        knee_method     = 'dfdt',
-        optimizer       = 'Adam',
-        nonzero_thresh  = 1e-14,
-        r_max           = 20,          # max modes for constraint stopping
-        lam0            = 1e-2,         # only used if path
-        epsilon         = 0.2,         # only used if path
-        network_type    = 'PiNetNCP',   # 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip'
-        poly_order      = 2,            # order of polynomial
-        num_polys       = 2,            # number of polynomials
-        drop_linear     = False,          # whether to drop linear term
-        B_path          = 100,           # epochs per λ for path or final fit
-        max_iters       = 100,          # max iterations for path
-        lambdas_cv      = lambdas_cv,   # only used if cv
-        k_folds         = 5,            # for cv
-        num_epochs_cv   = 80,           # for cv
-        device          = device,
-        label           = "Advecting Pulse"
-    )
-    
-    #%% Plot the first 20 modes of the POD basis
-    U_s20, _, _ = compute_pod_basis(X_pulse, s=20)
+
+#%% %===================== Additional Plotting and Analysis ===================%
+    # Plot the first 20 modes of the POD basis
+    U, S, _ = np.linalg.svd(X, full_matrices=False)
+    U_20 = U[:, :20] # First 20 POD modes
     fig, axes = plt.subplots(4, 5, figsize=(15, 8))
     for i, ax in enumerate(axes.flatten()):
-        ax.plot(xspan_p, U_s20[:, i])
+        ax.plot(xspan, U_20[:, i])
         ax.set_title(f"Mode {i+1}")
         ax.grid(True)
-
     plt.tight_layout()
-    plt.savefig('../figures/pulse_pod_modes.png', dpi=300)
+    plt.savefig('figures/pulse/pulse_pod_modes.png', dpi=200)
     plt.show()
     
-    #%% Plot the POD modes vs the reconstruction error 
-    U, S, _ = np.linalg.svd(X_pulse, full_matrices=False)
-    Us_20 = U[:, :s_p].astype(np.float64)  # First s_p POD modes
+    # Plot the POD modes vs the reconstruction error 
+    U_s = U[:, :s].astype(np.float64)  # First s POD modes
     fig, ax = plt.subplots(figsize=(8, 6))
     proj_err = []
-    X_pulse_f64 = X_pulse.astype(np.float64)
-    Us_20_f64 = Us_20.astype(np.float64)
-    for i in range(s_p):
+    for i in range(s):
         proj_err.append(
-            np.linalg.norm(
-                X_pulse_f64 - Us_20_f64[:, :i+1] 
-                @ (Us_20_f64[:, :i+1].T @ X_pulse_f64), 'fro') 
-            / np.linalg.norm(X_pulse_f64, 'fro')
+            np.linalg.norm(X - U_s[:, :i+1] @ (U_s[:, :i+1].T @ X), 'fro') 
+            / np.linalg.norm(X, 'fro')
         )
-    ax.semilogy(range(1, s_p+1), proj_err)
+    ax.semilogy(range(1, s+1), proj_err)
     ax.set_xlabel('Number of POD Modes')
     ax.set_ylabel('Projection Error (Relative)')
     ax.set_title('POD Modes vs Projection Errors')
     ax.grid(True)
     plt.tight_layout()
-    plt.savefig('../figures/pulse_pod_mode_vs_recon.png', dpi=300)
+    plt.savefig('figures/pulse/pulse_pod_mode_vs_recon.png', dpi=200)
     plt.show()
-    
-    #%% Plot the λ vs selected modes and λ vs relative error
-    if reg_path == 'dense2sparse':
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
-        # Extract data
-        lambdas    = [freq['lambda']        for freq in freq_tab]
-        num_modes  = [freq['nonzero_count'] for freq in freq_tab]
-        rel_errors = [freq['error']         for freq in freq_tab]
-        # Plot 1: λ vs relative error
-        ax1.loglog(
-            lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
-        ax1.set_xlabel('Regularization Parameter (λ)', fontsize=16)
-        ax1.set_ylabel('Relative Error', fontsize=16)
-        ax1.set_title('λ vs Relative Error', fontsize=18)
-        ax1.tick_params(axis='both', which='major', labelsize=14)
-        ax1.grid(True, alpha=0.3)
-        # Plot 2: λ vs selected modes
-        ax2.semilogx(
-            lambdas, num_modes, 'o-', markersize=8, linewidth=2, color='blue')
-        ax2.set_xlabel('Regularization Parameter (λ)', fontsize=16)
-        ax2.set_ylabel('Number of POD Modes', fontsize=16)
-        ax2.set_title('λ vs # Modes', fontsize=18)
-        ax2.tick_params(axis='both', which='major', labelsize=14)
-        ax2.grid(True, alpha=0.3)
-        # Plot 3: # Modes vs Relative Error
-        ax3.semilogy(
-            num_modes, rel_errors, 'o-', markersize=8, linewidth=2, color='green')
-        ax3.set_xlabel('Number of POD Modes', fontsize=16)
-        ax3.set_ylabel('Relative Error', fontsize=16)
-        ax3.set_title('# Modes vs Relative Error', fontsize=18)
-        ax3.tick_params(axis='both', which='major', labelsize=14)
-        ax3.grid(True, alpha=0.3)
 
-        plt.tight_layout()
-        plt.savefig('../figures/pulse_path_summary.png', dpi=300)
-        plt.show()
-        plt.close(fig)
-    
-    
-    #%% Plot L-curve
-    if reg_path == 'dense2sparse':
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.set_xlabel('L1 Regularization Term (||ω||₁)')
-        ax.set_ylabel('Relative Error')
-        ax.set_title('L-curve for Advecting Pulse')
-        ax.grid(True, alpha=0.3)
-        for freq in freq_tab:
-            ax.loglog(freq['l1_b'], freq['error'], 'o-', markersize=6, linewidth=2)
-        plt.tight_layout()
-        plt.savefig('../figures/pulse_lcurve.png', dpi=300)
-        plt.show()
-        plt.close(fig)
-    
-    #%% Plot the λ vs selected modes and λ vs relative error with dual axes
-    if reg_path == 'dense2sparse':
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(24, 6))
-        # Extract data
-        lambdas = [freq['lambda'] for freq in freq_tab]
-        num_modes = [freq['nonzero_count'] for freq in freq_tab]
-        rel_errors = [freq['error'] for freq in freq_tab]
-        # Plot 1: λ vs relative error
-        ax1.loglog(lambdas, rel_errors, 'o-', markersize=8, linewidth=2, color='red')
-        ax1.set_xlabel('Regularization Parameter (λ)', fontsize=16)
-        ax1.set_ylabel('Relative Error', fontsize=16)
-        ax1.set_title('λ vs Relative Error', fontsize=18)
-        ax1.tick_params(axis='both', which='major', labelsize=14)
-        ax1.grid(True, alpha=0.3)
-        # Plot 2: λ vs selected modes
-        ax2.semilogx(lambdas, num_modes, 'o-', markersize=8, linewidth=2, color='blue')
-        ax2.set_xlabel('Regularization Parameter (λ)', fontsize=16)
-        ax2.set_ylabel('Number of Selected Modes', fontsize=16)
-        ax2.set_title('λ vs Number of Selected Modes', fontsize=18)
-        ax2.tick_params(axis='both', which='major', labelsize=14)
-        ax2.grid(True, alpha=0.3)
-        # Plot 3: Superimposed plot with dual y-axes
-        color1 = 'blue'
-        color2 = 'red'
-        ax3.set_xlabel('Regularization Parameter (λ)', fontsize=16)
-        ax3.set_ylabel('Number of Selected Modes', color=color1, fontsize=16)
-        line1 = ax3.semilogx(lambdas, num_modes, 'o-', markersize=8, 
-                             linewidth=2, color=color1, label='Selected Modes')
-        ax3.tick_params(axis='both', which='major', 
-                        labelsize=14, labelcolor='black')
-        ax3.tick_params(axis='y', labelcolor=color1)
-        ax3.grid(True, alpha=0.3)
-        ax3_twin = ax3.twinx()
-        ax3_twin.set_ylabel('Relative Error', color=color2, fontsize=16)
-        line2 = ax3_twin.loglog(lambdas, rel_errors, 's-', markersize=8, 
-                                linewidth=2, color=color2, label='Relative Error')
-        ax3_twin.tick_params(axis='y', labelcolor=color2, labelsize=14)
-        ax3.set_title('λ vs Selected Modes & Relative Error', fontsize=18)
-        # Add legend
-        lines = line1 + line2
-        labels = [l.get_label() for l in lines]
-        ax3.legend(lines, labels, loc='center left', fontsize=16)
-        plt.tight_layout()
-        plt.savefig('../figures/pulse_lambda_analysis.png', dpi=300)
-        plt.show()
-        plt.close(fig)
 
-    #%% Plot the reconstructed flow fields (heatmap)
-    V, _, _ = np.linalg.svd(X_pulse, full_matrices=False)
-    V_selected = V[:, 1:len(selected_p)]
-    fig, ax = plt.subplots(figsize=(12, 6))
-    X_pod_recon = V_selected @ V_selected.T @ X_pulse
+#%% #======================= Greedy Quadratic Manifold ========================#
+    print("\n" + "="*60)
+    print("GREEDY QUADRATIC MANIFOLD")
     
-    # Fix: Convert numpy array to tensor and move to correct device
-    Z_input = torch.from_numpy(
-        (V[:, :s_p].T @ X_pulse).T.astype(np.float32)).to(device)
-    with torch.no_grad():
-        model_pulse.eval()
-        _, X_sparse_recon_tensor = model_pulse(Z_input)
-        X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
+    V_qm, W_qm, mu_qm, I_qm = quadmani_greedy(
+        X, r, s, 1e-15, np.array([], dtype=int))
+    mu_qm = mu_qm.reshape(-1, 1)  
+
+    # Print the selected modes
+    print("Selected modes (I_qm):", I_qm.sort())
+
+
+#%% %==================== Configuration of SparseModesNet =====================%
+
+    # Configure conveniently using dictionary
+    config_dict = {
+        # Number of modes
+        's': s,
+        'r': r,
+        # Preprocessing
+        'normalize_data': True,
+        'center': True,
+        'whiten': True,
+        # Architecture
+        # 'hidden_units': [2000, 2000],
+        # 'hidden_units': [32, 7, 64, 128, 256, 512],
+        # 'hidden_units': [32, 128],
+        'hidden_units': [100, 4000, 1024],
+        'network_type': 'PiNetNCP',
+        'poly_order': 3,
+        'num_polys': 1,
+        'drop_linear': False,
+        'drop_constant': False,
+        # Mode Selection Phase
+        'lam0': 5.0,
+        'lasso_lr': 1e-3,
+        'lasso_lr_patience': 100000,
+        'epsilon': 0.001,
+        'lasso_epochs': 100,
+        'M': 5.0,
+        'lasso_batch_size': 200,
+        'lasso_optimizer': 'Adam',
+        'device': device,
+        'max_no_change': 50,
+        'alpha': 1.0,
+        # Decoder Phase
+        'decoder_lr': 1.0,
+        'decoder_lr_patience': 100,
+        'decoder_epochs': 5000,
+        'decoder_batch_size': 200,
+        'decoder_optimizer': 'SGD',
+        'decoder_momentum': 0.99,
+        # General training
+        'skip_sparse': True,
+        'gamma': 0.0,
+        'I_nn': [0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67],
+        'device': device,
+        'analytical': True,
+        # Experiment Setup
+        'label': "Advecting Pulse",
+        'enable_logging': False
+    }
+    config = smn.SparseModesNetConfig.from_dict(config_dict)
+
+
+#%% %======================== Training SparseModesNet =========================%
+    model, I_nn, omegas, path_history = smn.fit(X, config)
+
+
+#%% %=======================Plot the omega evolutions =========================%
+    smn.omega_evolve(omegas, I_nn, config.s, save=False, 
+                     filename='figures/pulse/omega_evolution.png')
+
+#%% #===================== Plot Reconstruction Errors =========================#
+    # Collect reconstruction errors for different numbers of modes
+    mode_counts = []
+    qm_errors = []
+    pod_errors = []
+    sparse_errors = []
+
+    V_all = np.linalg.svd(
+        config.preprocessing.forward(X), full_matrices=False
+    )[0][:, :s]
     
-    # Calculate errors
-    pod_error = X_pulse - X_pod_recon
-    sparse_error = X_pulse - X_sparse_recon
+    # Test different numbers of modes
+    for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
+        # Quadratic Manifold with r_test modes
+        V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
+            X, r_test, s, 1e-15, np.array([], dtype=int))
+        shift_test = shift_test.reshape(-1, 1)
+        
+        Z_qm_test = V_test.T @ (X - shift_test)
+        Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
+        recon_error_qm_test = np.linalg.norm(
+            X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
+        rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
+        
+        # Leading-r POD reconstruction
+        X_proc_test = config.preprocessing.forward(X)
+        V_leading_test = np.linalg.svd(X_proc_test, full_matrices=False)[0][:, :r_test]
+        X_pod_recon_test = V_leading_test @ V_leading_test.T @ X_proc_test
+        X_pod_recon_test = config.preprocessing.backward(X_pod_recon_test)
+        recon_error_pod_test = np.linalg.norm(X - X_pod_recon_test, ord='fro')
+        rel_recon_error_pod_test = recon_error_pod_test / np.linalg.norm(X, ord='fro')
+        
+        # SparseModesNet with first r_test modes from selected modes
+        if len(I_nn) >= r_test:
+            V_tmp = np.zeros((d, r))
+            V_tmp[:, :r_test] = V_all[:, I_nn[:r_test]]
+            Z_input_test = torch.from_numpy(
+                (V_tmp.T @ X_proc_test).T.astype(np.float32)).to(device)
+            with torch.no_grad():
+                if  config.network.network_type == 'QM':
+                    # Use analytical decoder
+                    X_sparse_recon_test = model(V_all[:, I_nn[:r_test]].T @ X_proc_test)
+                else:
+                    model.eval()
+                    # Create a temporary model with fewer output features for this test
+                    X_sparse_recon_tensor_test = model(Z_input_test)
+                    X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T 
+                    X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
+            
+            recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
+            rel_recon_error_sparse_test = recon_error_sparse_test / np.linalg.norm(X, ord='fro')
+        else:
+            rel_recon_error_sparse_test = np.nan
+        
+        mode_counts.append(r_test)
+        qm_errors.append(rel_recon_error_qm_test)
+        pod_errors.append(rel_recon_error_pod_test)
+        sparse_errors.append(rel_recon_error_sparse_test)
     
-    # Calculate common error scale
-    error_max = max(np.abs(pod_error).max(), np.abs(sparse_error).max())
-    error_min = -error_max
+    # Plot reconstruction errors
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
     
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-    # (1,1) POD reconstruction
-    im1 = axes[0,0].imshow(
-        X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]])
-    axes[0,0].set_xlabel('Time')
-    axes[0,0].set_ylabel('Space (x)')
-    axes[0,0].set_title('POD Reconstruction')
-    plt.colorbar(im1, ax=axes[0,0], label='u(x,t)')
+    ax.semilogy(mode_counts, qm_errors, 'g-^', label='Quadratic Manifold', 
+                markersize=10, linewidth=4)
+    ax.semilogy(mode_counts, pod_errors, 'b-o', label='POD (leading-r)', 
+                markersize=10, linewidth=4)
     
-    # (1,2) POD error
-    im2 = axes[0,1].imshow(
-        pod_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]],
-        vmin=error_min, vmax=error_max)
-    axes[0,1].set_xlabel('Time')
-    axes[0,1].set_ylabel('Space (x)')
-    axes[0,1].set_title('POD Error')
-    plt.colorbar(im2, ax=axes[0,1], label='Error')
+    # Only plot valid SparseModesNet errors
+    valid_sparse_errors = [err for err in sparse_errors if not np.isnan(err)]
+    valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_errors) if not np.isnan(err)]
+    ax.semilogy(valid_mode_counts, valid_sparse_errors, 'r-s', label='SparseModesNet', 
+                markersize=10, linewidth=4)
     
-    # (2,1) Sparse reconstruction
-    im3 = axes[1,0].imshow(
-        X_sparse_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]])
-    axes[1,0].set_xlabel('Time')
-    axes[1,0].set_ylabel('Space (x)')
-    axes[1,0].set_title('Sparse Reconstruction')
-    plt.colorbar(im3, ax=axes[1,0], label='u(x,t)')
-    
-    # (2,2) Sparse error
-    im4 = axes[1,1].imshow(
-        sparse_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]],
-        vmin=error_min, vmax=error_max)
-    axes[1,1].set_xlabel('Time')
-    axes[1,1].set_ylabel('Space (x)')
-    axes[1,1].set_title('Sparse Error')
-    plt.colorbar(im4, ax=axes[1,1], label='Error')
-    
+    ax.set_xlabel('Number of Modes', fontsize=16)
+    ax.set_ylabel('Relative Reconstruction Error', fontsize=16)
+    ax.set_title('Reconstruction Error vs Number of Modes', fontsize=18)
+    ax.tick_params(axis='both', which='major', labelsize=14)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=14)
+    ax.set_xlim(left=0)
     plt.tight_layout()
-    plt.savefig('../figures/pulse_comparison.png', dpi=300)
+    plt.savefig('figures/pulse/reconstruction_errors.png', dpi=300)
     plt.show()
     plt.close(fig)
     
-    #%% Plot waves at specific time points
+
+#%% %============ Plot the reconstructed flow fields (heatmap) ================%
+    X_proc = config.preprocessing.forward(X)
+    V, _, _ = np.linalg.svd(X_proc, full_matrices=False)
+    V_selected = V[:, 1:len(I_nn)]
+
+    # Quadratic Manifold reconstruction
+    # First get the linear coefficients
+    Z_qm = V_qm.T @ (X - mu_qm)
+    # Then compute quadratic terms from these coefficients
+    Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
+    # Reconstruct using both linear and quadratic terms
+    X_qm_recon = V_qm @ Z_qm + W_qm @ Z_quad_qm + mu_qm
+
+    # Leading-r POD reconstruction (using top r modes)
+    r = len(I_nn)  # or whatever r value you want to use
+    V_leading_r = V[:, :r]
+    X_pod_recon = V_leading_r @ V_leading_r.T @ X_proc
+    X_pod_recon = config.preprocessing.backward(X_pod_recon)
+    
+    # Fix: Convert numpy array to tensor and move to correct device
+    Z_input = torch.from_numpy(
+        (V[:, I_nn].T @ X_proc).T.astype(np.float32)).to(device)
+    with torch.no_grad():
+        if  config.network.network_type == 'QM':
+            # Use analytical decoder
+            X_sparse_recon_test = model(V[:, I_nn].T @ X_proc)
+        else:
+            model.eval()
+            X_sparse_recon_tensor = model(Z_input)
+            X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
+            X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
+    
+    # Calculate errors
+    pod_error = X - X_pod_recon
+    qm_error = X - X_qm_recon
+    sparse_error = X - X_sparse_recon
+    
+    # Set consistent color scales for reconstructions
+    recon_vmin = min(X.min(), X_pod_recon.min(), X_qm_recon.min(), X_sparse_recon.min())
+    recon_vmax = max(X.max(), X_pod_recon.max(), X_qm_recon.max(), X_sparse_recon.max())
+    
+    # Set consistent color scales for errors
+    error_vmax = max(np.abs(pod_error).max(), np.abs(qm_error).max(), np.abs(sparse_error).max())
+    error_vmin = -error_vmax
+    
+    fig, axes = plt.subplots(2, 4, figsize=(20, 10))
+    
+    # Row 1: Reconstructions
+    # (1,1) Original data
+    im1 = axes[0,0].imshow(
+        X, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=recon_vmin, vmax=recon_vmax)
+    axes[0,0].set_ylabel('Space (x)', fontsize=14)
+    axes[0,0].set_title('Original Data', fontsize=15)
+    
+    # (1,2) Leading-r POD reconstruction
+    im2 = axes[0,1].imshow(
+        X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=recon_vmin, vmax=recon_vmax)
+    axes[0,1].set_title(f'POD Reconstruction (r={r})', fontsize=15)
+    
+    # (1,3) Quadratic Manifold reconstruction
+    im3 = axes[0,2].imshow(
+        X_qm_recon, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=recon_vmin, vmax=recon_vmax)
+    axes[0,2].set_title('Quadratic Manifold Reconstruction', fontsize=15)
+    
+    # (1,4) SparseModesNet reconstruction
+    im4 = axes[0,3].imshow(
+        X_sparse_recon, aspect='auto', cmap='viridis', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=recon_vmin, vmax=recon_vmax)
+    axes[0,3].set_title('SparseModesNet Reconstruction', fontsize=15)
+    
+    # Row 2: Errors
+    # (2,1) Empty - no error for original data
+    axes[1,0].axis('off')
+    
+    # (2,2) POD error
+    im5 = axes[1,1].imshow(
+        pod_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=error_vmin, vmax=error_vmax)
+    axes[1,1].set_xlabel('Time', fontsize=14)
+    axes[1,1].set_ylabel('Space (x)', fontsize=14)
+    axes[1,1].set_title('POD Error', fontsize=15)
+    
+    # (2,3) Quadratic Manifold error
+    im6 = axes[1,2].imshow(
+        qm_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=error_vmin, vmax=error_vmax)
+    axes[1,2].set_xlabel('Time', fontsize=14)
+    axes[1,2].set_title('Quadratic Manifold Error', fontsize=15)
+    
+    # (2,4) SparseModesNet error
+    im7 = axes[1,3].imshow(
+        sparse_error, aspect='auto', cmap='RdBu', origin='lower',
+        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+        vmin=error_vmin, vmax=error_vmax)
+    axes[1,3].set_xlabel('Time', fontsize=14)
+    axes[1,3].set_title('SparseModesNet Error', fontsize=15)
+    
+    # Add unified colorbars
+    cax1 = fig.add_axes([0.92, 0.57, 0.02, 0.35])
+    cbar1 = plt.colorbar(im4, cax=cax1)
+    cbar1.set_label('u(x,t)', fontsize=14)
+    
+    cax2 = fig.add_axes([0.92, 0.11, 0.02, 0.35])
+    cbar2 = plt.colorbar(im7, cax=cax2)
+    cbar2.set_label('Error', fontsize=14)
+
+    plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, 
+                        wspace=0.3, hspace=0.3)
+    plt.suptitle('Reconstruction Comparison', fontsize=19, y=0.98)
+    # plt.savefig('figures/pulse/pulse_comparison.png', dpi=300)
+    plt.show()
+    plt.close(fig)
+
+
+    
+#%% %================= Plot waves at specific time points =====================%
     # Select 3 equally spaced time points
-    n_times = len(tspan_p)
+    n_times = len(tspan)
     time_indices = [n_times//4, n_times//2, 3*n_times//4]
-    time_points = [tspan_p[i] for i in time_indices]
+    time_points = [tspan[i] for i in time_indices]
 
     # Get reconstructions
-    V, _, _ = np.linalg.svd(X_pulse, full_matrices=False)
-    V_selected = V[:, selected_p]
-    X_pod_recon = V_selected @ V_selected.T @ X_pulse
-
-    Z_input = torch.from_numpy(
-        (V[:, :s_p].T @ X_pulse).T.astype(np.float32)).to(device)
-    with torch.no_grad():
-        model_pulse.eval()
-        _, X_sparse_recon_tensor = model_pulse(Z_input)
-        X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T
-
-    # Create subplots
-    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-
-    for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices, time_points)):
-        # Plot original data
-        ax.plot(xspan_p, X_pulse[:, t_idx], 'k-', linewidth=2, label='Original', alpha=0.8)
-        # Plot POD reconstruction
-        ax.plot(xspan_p, X_pod_recon[:, t_idx], 'b--', linewidth=2, label='POD', alpha=0.8)
-        # Plot sparse reconstruction
-        ax.plot(xspan_p, X_sparse_recon[:, t_idx], 'r:', linewidth=2, label='SparseModesNet', alpha=0.8)
-        
-        ax.set_xlabel('Space (x)', fontsize=12)
-        ax.set_ylabel('u(x,t)', fontsize=12)
-        ax.set_title(f't = {t_val:.3f}', fontsize=14)
-        ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=10)
-
-    plt.tight_layout()
-    plt.savefig('../figures/pulse_waves_timepoints.png', dpi=300)
-    plt.show()
-    plt.close(fig)
+    X_proc = config.preprocessing.forward(X)
+    V, _, _ = np.linalg.svd(X_proc, full_matrices=False)
     
-    #%% Detailed reconstruction comparison with linear and nonlinear components
-    V, _, _ = np.linalg.svd(X_pulse, full_matrices=False)
-    V_selected = V[:, selected_p]
-    fig, ax = plt.subplots(figsize=(12, 6))
-    X_pod_recon = V_selected @ V_selected.T @ X_pulse
-    
-    # Fix: Convert numpy array to tensor and move to correct device
+    # Leading-r POD reconstruction (using top r modes)
+    r = len(I_nn)  # or whatever r value you want to use
+    V_leading_r = V[:, :r]
+    X_pod_recon = V_leading_r @ V_leading_r.T @ X_proc
+    X_pod_recon = config.preprocessing.backward(X_pod_recon)
+
+    # Quadratic Manifold reconstruction
+    # First get the linear coefficients
+    Z_qm = V_qm.T @ (X - mu_qm)
+    # Then compute quadratic terms from these coefficients
+    Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
+    # Reconstruct using both linear and quadratic terms
+    X_qm_recon = V_qm @ Z_qm + W_qm @ Z_quad_qm + mu_qm
+
+    # SparseModesNet reconstruction
     Z_input = torch.from_numpy(
-        (V[:, :s_p].T @ X_pulse).T.astype(np.float32)).to(device)
+        (V[:, I_nn].T @ X_proc).T.astype(np.float32)).to(device)
     with torch.no_grad():
-        model_pulse.eval()
-        
-        # Linear part
-        omega = np.diag(model_pulse.omega.cpu().numpy())
-        X_sparse_lin = V[:, :s_p] @ omega @ V[:, :s_p].T @ X_pulse
-        omega_tensor = torch.from_numpy(omega).to(device)
-        
-        # Nonlinear part 
-        # nonlin_part = model_pulse.net(Z_input @ omega_tensor)
-        # X_sparse_nonlin = nonlin_part.cpu().numpy().T
-        if model_pulse.network_type == 'FF':
-            # For feedforward networks, use the full net
-            nonlin_part = model_pulse.net(Z_input @ omega_tensor)
+        if  config.network.network_type == 'QM':
+            # Use analytical decoder
+            X_sparse_recon_test = model(V[:, I_nn].T @ X_proc)
         else:
-            # For Pi-Net models (PiNetCCP, PiNetNCP, PiNetNCPSkip)
-            z_sparse = Z_input @ omega_tensor  # Apply sparsity
-            h = model_pulse.first_layer(z_sparse)  # First layer: (batch, in_dim)
-            h_poly = model_pulse.pinet(h)  # Pi-Net: (batch, out_dim)
-            nonlin_part = model_pulse.C(h_poly)  # Final layer: (batch, d)
-        X_sparse_nonlin = nonlin_part.cpu().numpy().T
-        
-        # Together 
-        _, X_sparse_recon_tensor = model_pulse(Z_input)
-        X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
-    
-    # Calculate errors
-    pod_error = X_pulse - X_pod_recon
-    sparse_error = X_pulse - X_sparse_recon
-    sparse_lin_error = X_pulse - X_sparse_lin
-    sparse_nonlin_error = X_pulse - X_sparse_nonlin
-    
-    # Calculate common error scale for all error plots
-    error_max = max(np.abs(pod_error).max(), np.abs(sparse_error).max(), 
-                    np.abs(sparse_lin_error).max(), np.abs(sparse_nonlin_error).max())
-    error_min = -error_max
-    
-    fig, axes = plt.subplots(4, 2, figsize=(16, 20))
-    # (1,1) POD reconstruction
-    im1 = axes[0,0].imshow(
-        X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]])
-    axes[0,0].set_xlabel('Time')
-    axes[0,0].set_ylabel('Space (x)')
-    axes[0,0].set_title('POD Reconstruction')
-    plt.colorbar(im1, ax=axes[0,0], label='u(x,t)')
-    
-    # (1,2) POD error
-    im2 = axes[0,1].imshow(
-        pod_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]],
-        vmin=error_min, vmax=error_max)
-    axes[0,1].set_xlabel('Time')
-    axes[0,1].set_ylabel('Space (x)')
-    axes[0,1].set_title('POD Error')
-    plt.colorbar(im2, ax=axes[0,1], label='Error')
-    
-    # (2,1) Sparse reconstruction
-    im3 = axes[1,0].imshow(
-        X_sparse_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]])
-    axes[1,0].set_xlabel('Time')
-    axes[1,0].set_ylabel('Space (x)')
-    axes[1,0].set_title('Sparse Reconstruction')
-    plt.colorbar(im3, ax=axes[1,0], label='u(x,t)')
-    
-    # (2,2) Sparse error
-    im4 = axes[1,1].imshow(
-        sparse_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]],
-        vmin=error_min, vmax=error_max)
-    axes[1,1].set_xlabel('Time')
-    axes[1,1].set_ylabel('Space (x)')
-    axes[1,1].set_title('Sparse Error')
-    plt.colorbar(im4, ax=axes[1,1], label='Error')
-    
-    # (3,1) Sparse linear reconstruction
-    im5 = axes[2,0].imshow(
-        X_sparse_lin, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]])
-    axes[2,0].set_xlabel('Time')
-    axes[2,0].set_ylabel('Space (x)')
-    axes[2,0].set_title('Sparse Linear Reconstruction')
-    plt.colorbar(im5, ax=axes[2,0], label='u(x,t)')
-    
-    # (3,2) Sparse linear error
-    im6 = axes[2,1].imshow(
-        sparse_lin_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]],
-        vmin=error_min, vmax=error_max)
-    axes[2,1].set_xlabel('Time')
-    axes[2,1].set_ylabel('Space (x)')
-    axes[2,1].set_title('Sparse Linear Error')
-    plt.colorbar(im6, ax=axes[2,1], label='Error')
-    
-    # (4,1) Sparse nonlinear reconstruction
-    im7 = axes[3,0].imshow(
-        X_sparse_nonlin, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]])
-    axes[3,0].set_xlabel('Time')
-    axes[3,0].set_ylabel('Space (x)')
-    axes[3,0].set_title('Sparse Nonlinear Reconstruction')
-    plt.colorbar(im7, ax=axes[3,0], label='u(x,t)')
-    
-    # (4,2) Sparse nonlinear error
-    im8 = axes[3,1].imshow(
-        sparse_nonlin_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_p[0], tspan_p[-1], xspan_p[0], xspan_p[-1]],
-        vmin=error_min, vmax=error_max)
-    axes[3,1].set_xlabel('Time')
-    axes[3,1].set_ylabel('Space (x)')
-    axes[3,1].set_title('Sparse Nonlinear Error')
-    plt.colorbar(im8, ax=axes[3,1], label='Error')
-    
-    plt.tight_layout()
-    plt.savefig('../figures/pulse_comparison_separated.png', dpi=300)
-    plt.show()
-    plt.close(fig)
-    
-    # Plot wave at specific time points with linear and nonlinear components
-    # Select 3 equally spaced time points
-    n_times = len(tspan_p)
-    time_indices = [n_times//4, n_times//2, 3*n_times//4]
-    time_points = [tspan_p[i] for i in time_indices]
+            model.eval()
+            X_sparse_recon_tensor = model(Z_input)
+            X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T
+            X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
 
     # Create subplots
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
     for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices, time_points)):
         # Plot original data
-        ax.plot(xspan_p, X_pulse[:, t_idx], 'k-', linewidth=2, label='Original', alpha=0.8)
-        # Plot POD reconstruction
-        ax.plot(xspan_p, X_pod_recon[:, t_idx], 'b--', linewidth=2, label='POD', alpha=0.8)
-        # Plot sparse linear reconstruction
-        ax.plot(xspan_p, X_sparse_lin[:, t_idx], 'g:', linewidth=2, label='Sparse Linear', alpha=0.8)
-        # Plot sparse nonlinear reconstruction
-        ax.plot(xspan_p, X_sparse_nonlin[:, t_idx], 'r:', linewidth=2, label='Sparse Nonlinear', alpha=0.8)
-        # Plot full sparse reconstruction
-        ax.plot(xspan_p, X_sparse_recon[:, t_idx], 'm-.', linewidth=2, label='Sparse Full', alpha=0.8)
+        ax.plot(xspan, X[:, t_idx], 'k-', linewidth=3, 
+                label='Original', alpha=0.9)
+        # Plot leading-r POD reconstruction
+        ax.plot(xspan, X_pod_recon[:, t_idx], 'b--', 
+                linewidth=2, label=f'POD (r={r})', alpha=0.8)
+        # Plot Quadratic Manifold reconstruction
+        ax.plot(xspan, X_qm_recon[:, t_idx], 'g-.', 
+                linewidth=2, label='Quadratic Manifold', alpha=0.8)
+        # Plot SparseModesNet reconstruction
+        ax.plot(xspan, X_sparse_recon[:, t_idx], 'r:', 
+                linewidth=2, label='SparseModesNet', alpha=0.8)
         
-        ax.set_xlabel('Space (x)', fontsize=12)
-        ax.set_ylabel('u(x,t)', fontsize=12)
-        ax.set_title(f't = {t_val:.3f}', fontsize=14)
+        ax.set_xlabel('Space (x)', fontsize=14)
+        ax.set_ylabel('u(x,t)', fontsize=14)
+        ax.set_title(f't = {t_val:.3f}', fontsize=16)
         ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=10)
+        if i == 0:
+            ax.legend(fontsize=16)
 
     plt.tight_layout()
-    plt.savefig('../figures/pulse_waves_timepoints_separated.png', dpi=300)
+    plt.suptitle('Wave Profiles at Different Time Points', fontsize=19, y=1.02)
+    # plt.savefig('figures/pulse/wave_profiles_comparison.png', dpi=300)
     plt.show()
     plt.close(fig)
-    
-    
-    #%% Test the model on a new sample
-    # Generate new test data with different parameters (different speed)
-    X_test, xspan_test, tspan_test = generate_advecting_pulse(
-        pulse_width=1.5e-4,
-        pulse_shift=0.15,
-        speed=7.0,
-        final_time=0.12,
-        n_time_samples=800,
-        n_space_samples=n_grids
-    )
 
-    # Project test data onto the learned POD basis
-    V_test, _, _ = np.linalg.svd(X_test, full_matrices=False)
-    Z_test = torch.from_numpy(
-        (V[:, :s_p].T @ X_test).T.astype(np.float32)).to(device)
-
-    # POD reconstruction using selected modes
-    X_test_pod_recon = V_selected @ V_selected.T @ X_test
-
-    # Test the model
-    with torch.no_grad():
-        model_pulse.eval()
-        _, X_test_recon_tensor = model_pulse(Z_test)
-        X_test_recon = X_test_recon_tensor.cpu().numpy().T
-
-    # Calculate reconstruction errors
-    test_error_sparse = X_test - X_test_recon
-    test_error_pod = X_test - X_test_pod_recon
-    relative_error_sparse = np.linalg.norm(test_error_sparse, 'fro') / np.linalg.norm(X_test, 'fro')
-    relative_error_pod = np.linalg.norm(test_error_pod, 'fro') / np.linalg.norm(X_test, 'fro')
-    print(f"Test reconstruction relative error (Sparse): {relative_error_sparse:.4f}")
-    print(f"Test reconstruction relative error (POD): {relative_error_pod:.4f}")
-
-    # Calculate common error scale for consistent color mapping
-    test_error_max = max(np.abs(test_error_pod).max(), np.abs(test_error_sparse).max())
-    test_error_min = -test_error_max
-
-    # Plot test results
-    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-
-    # Original test data
-    im1 = axes[0,0].imshow(
-        X_test, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_test[0], tspan_test[-1], xspan_test[0], xspan_test[-1]])
-    axes[0,0].set_xlabel('Time')
-    axes[0,0].set_ylabel('Space (x)')
-    axes[0,0].set_title('Test Data (Original)')
-    plt.colorbar(im1, ax=axes[0,0], label='u(x,t)')
-
-    # POD reconstruction
-    im2 = axes[0,1].imshow(
-        X_test_pod_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_test[0], tspan_test[-1], xspan_test[0], xspan_test[-1]])
-    axes[0,1].set_xlabel('Time')
-    axes[0,1].set_ylabel('Space (x)')
-    axes[0,1].set_title('Test Data (POD Reconstruction)')
-    plt.colorbar(im2, ax=axes[0,1], label='u(x,t)')
-
-    # POD error
-    im3 = axes[0,2].imshow(
-        test_error_pod, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_test[0], tspan_test[-1], xspan_test[0], xspan_test[-1]],
-        vmin=test_error_min, vmax=test_error_max)
-    axes[0,2].set_xlabel('Time')
-    axes[0,2].set_ylabel('Space (x)')
-    axes[0,2].set_title('POD Test Error')
-    plt.colorbar(im3, ax=axes[0,2], label='Error')
-
-    # Sparse reconstruction
-    im4 = axes[1,1].imshow(
-        X_test_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan_test[0], tspan_test[-1], xspan_test[0], xspan_test[-1]])
-    axes[1,1].set_xlabel('Time')
-    axes[1,1].set_ylabel('Space (x)')
-    axes[1,1].set_title('Test Data (Sparse Reconstruction)')
-    plt.colorbar(im4, ax=axes[1,1], label='u(x,t)')
-
-    # Sparse error
-    im5 = axes[1,2].imshow(
-        test_error_sparse, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan_test[0], tspan_test[-1], xspan_test[0], xspan_test[-1]],
-        vmin=test_error_min, vmax=test_error_max)
-    axes[1,2].set_xlabel('Time')
-    axes[1,2].set_ylabel('Space (x)')
-    axes[1,2].set_title('Sparse Test Error')
-    plt.colorbar(im5, ax=axes[1,2], label='Error')
-
-    # Hide empty subplot
-    axes[1,0].set_visible(False)
-
-    plt.tight_layout()
-    plt.savefig('../figures/pulse_test_results.png', dpi=300)
-    plt.show()
-    plt.close(fig)
-    
-#%% Plot wave at specific time points for test data
-# Select 3 equally spaced time points for test data
-n_times_test = len(tspan_test)
-time_indices_test = [n_times_test//4, n_times_test//2, 3*n_times_test//4]
-time_points_test = [tspan_test[i] for i in time_indices_test]
-
-# Create subplots for test data waves
-fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-
-for i, (ax, t_idx, t_val) in enumerate(zip(axes, time_indices_test, time_points_test)):
-    # Plot original test data
-    ax.plot(xspan_test, X_test[:, t_idx], 'k-', linewidth=2, label='Original', alpha=0.8)
-    # Plot POD reconstruction
-    ax.plot(xspan_test, X_test_pod_recon[:, t_idx], 'b--', linewidth=2, label='POD', alpha=0.8)
-    # Plot sparse reconstruction
-    ax.plot(xspan_test, X_test_recon[:, t_idx], 'r:', linewidth=2, label='SparseModesNet', alpha=0.8)
-    
-    ax.set_xlabel('Space (x)', fontsize=12)
-    ax.set_ylabel('u(x,t)', fontsize=12)
-    ax.set_title(f't = {t_val:.3f}', fontsize=14)
-    ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=10)
-
-plt.tight_layout()
-plt.savefig('../figures/pulse_test_waves_timepoints.png', dpi=300)
-plt.show()
-plt.close(fig)
 # %%

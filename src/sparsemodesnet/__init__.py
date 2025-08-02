@@ -10,7 +10,7 @@ from .config import (
     SparsityConfig,
     ExperimentConfig
 )
-from .models.model import SparseModesNet
+from .decoder_models.model import SparseModesNet, StateDecoder
 from .linalg.pod import compute_pod_basis
 from .linalg.zca import zca_whitening_matrix
 from .dataset import PODReconDataset
@@ -29,6 +29,7 @@ __all__ = [
 
     # Core components
     'SparseModesNet',
+    'StateDecoder',
     'PODReconDataset',
     'compute_pod_basis',
     'zca_whitening_matrix',

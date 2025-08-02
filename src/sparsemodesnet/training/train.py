@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as DataLoader
-from sparsemodesnet.models.model import SparseModesNet, StateDecoder
+from sparsemodesnet.decoder_models.model import SparseModesNet, StateDecoder
 
 
 def train_sparsemodesnet(model: SparseModesNet,
@@ -66,7 +66,7 @@ def train_sparsemodesnet(model: SparseModesNet,
             optimizer.zero_grad()
             _, x_hat_batch = model(z_batch)  # (batch, d)
             loss = mse_loss(x_hat_batch, x_batch)
-            if model.network_type == 'QM':
+            if model.network_type == 'QM' or model.network_type == 'CM':
                 loss += model.gamma * torch.norm(model.projection)**2
             
             loss.backward()
