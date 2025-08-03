@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.pulse import generate_advecting_pulse
-from QM.quadmani import quadmani_greedy
+from QM.quadmani import quadmani_greedy, _cubic_mapping_jax
 import sparsemodesnet as smn
 
 def quadratic_mapping_numpy(x):
@@ -31,6 +31,50 @@ def quadratic_mapping_numpy(x):
         result = x[:, i_indices] * x[:, j_indices]
         return result
 
+def _cubic_mapping_numpy(x):
+    """
+    Fast vectorized computation of unique cubic terms x ⊗ x ⊗ x (NumPy version).
+    Uses meshgrid for efficient index generation.
+    
+    Args:
+        x: np.ndarray of shape (batch_size, n) or (n,)
+        
+    Returns:
+        np.ndarray of shape (batch_size, n*(n+1)*(n+2)//6) or (n*(n+1)*(n+2)//6,)
+    """
+    if x.ndim == 1:
+        n = x.shape[0]
+        # Create meshgrid for all combinations
+        i_range = np.arange(n)
+        i_grid, j_grid, k_grid = np.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products
+        result = x[i_indices] * x[j_indices] * x[k_indices]
+        return result
+    else:
+        batch_size, n = x.shape
+        # Create meshgrid for all combinations
+        i_range = np.arange(n)
+        i_grid, j_grid, k_grid = np.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products for all batches
+        result = x[:, i_indices] * x[:, j_indices] * x[:, k_indices]
+        return result
+    
+
+
 #%% %============================= Main Script ================================%
 if __name__ == "__main__":
     # Device selection: CUDA > MPS (Apple Silicon) > CPU
@@ -40,7 +84,7 @@ if __name__ == "__main__":
         device = 'mps'
     else:
         device = 'cpu'
-    # device = 'cpu'
+    device = 'cpu'
     print("Using device:", device)
 
     # For reproducibility
@@ -145,7 +189,7 @@ if __name__ == "__main__":
         # 'hidden_units': [32, 7, 64, 128, 256, 512],
         # 'hidden_units': [32, 128],
         # 'hidden_units': [100, 4000, 1024],
-        'network_type': 'MLP',
+        'network_type': 'QM',
         'poly_order': 2,
         'num_polys': 1,
         'drop_linear': False,
@@ -172,10 +216,10 @@ if __name__ == "__main__":
         # General training
         'skip_sparse': True,
         'weight_scale': 1.0,
-        'gamma': 0.0,
+        'gamma': 1e-15,
         'I_nn': [0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67],
         'device': device,
-        'analytical': False,
+        'analytical': True,
         # Experiment Setup
         'label': "Advecting Pulse",
         'enable_logging': False
@@ -195,13 +239,21 @@ if __name__ == "__main__":
     # Collect reconstruction errors for different numbers of modes
     mode_counts = []
     qm_errors = []
+    cm_errors = []
     pod_errors = []
     sparse_errors = []
 
     V_all = np.linalg.svd(
         config.preprocessing.forward(X), full_matrices=False
     )[0][:, :s]
-    
+
+    regs = [
+        1e-2, 1e-2, 1e-1, 1e2, 1e2,
+        1e2, 1e4, 1e4, 1e4, 1e4,
+        1e4, 1e4, 1e2, 1e2, 1e-14
+    ]
+
+    ct = 0 
     # Test different numbers of modes
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
         # Quadratic Manifold with r_test modes
@@ -214,6 +266,18 @@ if __name__ == "__main__":
         recon_error_qm_test = np.linalg.norm(
             X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
         rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
+
+        # Cubic Manifold with r_test modes
+        V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
+            X, r_test, s, regs[ct], np.array([], dtype=int), 
+            feature_map=_cubic_mapping_jax)
+        ct += 1
+
+        Z_qm_test_3 = V_test_3.T @ (X - shift_test)
+        Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
+        recon_error_qm_test_3 = np.linalg.norm(
+            X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
+        rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
         
         # Leading-r POD reconstruction
         X_proc_test = config.preprocessing.forward(X)
@@ -247,6 +311,7 @@ if __name__ == "__main__":
         
         mode_counts.append(r_test)
         qm_errors.append(rel_recon_error_qm_test)
+        cm_errors.append(rel_recon_error_qm_test_3)
         pod_errors.append(rel_recon_error_pod_test)
         sparse_errors.append(rel_recon_error_sparse_test)
     
@@ -255,14 +320,16 @@ if __name__ == "__main__":
     
     ax.semilogy(mode_counts, qm_errors, 'g-^', label='Quadratic Manifold', 
                 markersize=10, linewidth=4)
+    ax.semilogy(mode_counts, cm_errors, 'y--', label='Cubic Manifold',
+                markersize=10, linewidth=4)
     ax.semilogy(mode_counts, pod_errors, 'b-o', label='POD (leading-r)', 
                 markersize=10, linewidth=4)
     
     # Only plot valid SparseModesNet errors
-    valid_sparse_errors = [err for err in sparse_errors if not np.isnan(err)]
-    valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_errors) if not np.isnan(err)]
-    ax.semilogy(valid_mode_counts, valid_sparse_errors, 'r-s', label='SparseModesNet', 
-                markersize=10, linewidth=4)
+    # valid_sparse_errors = [err for err in sparse_errors if not np.isnan(err)]
+    # valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_errors) if not np.isnan(err)]
+    # ax.semilogy(valid_mode_counts, valid_sparse_errors, 'r-s', label='SparseModesNet', 
+    #             markersize=10, linewidth=4)
     
     ax.set_xlabel('Number of Modes', fontsize=16)
     ax.set_ylabel('Relative Reconstruction Error', fontsize=16)
@@ -272,7 +339,7 @@ if __name__ == "__main__":
     ax.legend(fontsize=14)
     ax.set_xlim(left=0)
     plt.tight_layout()
-    plt.savefig('figures/pulse/reconstruction_errors.png', dpi=300)
+    plt.savefig('figures/pulse/reconstruction_errors_3.png', dpi=300)
     plt.show()
     plt.close(fig)
     

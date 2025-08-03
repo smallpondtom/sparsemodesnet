@@ -32,6 +32,53 @@ def default_feature_map(reduced_data_points):
         axis=0)
 
 
+def _make_cubic_mapping_jax_fixed(max_r=15):
+    """
+    Factory function to create a cubic mapping that completely avoids boolean indexing.
+    """
+    # Pre-compute ALL valid index combinations for the maximum dimension
+    indices = []
+    for i in range(max_r):
+        for j in range(i, max_r):
+            for k in range(j, max_r):
+                indices.append((i, j, k))
+    
+    i_indices = jnp.array([idx[0] for idx in indices])
+    j_indices = jnp.array([idx[1] for idx in indices])
+    k_indices = jnp.array([idx[2] for idx in indices])
+    
+    # Pre-compute number of valid indices for each possible r
+    num_valid_for_r = {}
+    for r in range(1, max_r + 1):
+        count = 0
+        for i, j, k in indices:
+            if i < r and j < r and k < r:
+                count += 1
+        num_valid_for_r[r] = count
+    
+    def cubic_mapping(x):
+        r, n = x.shape
+        
+        if r > max_r:
+            raise ValueError(f"Input dimension {r} exceeds max_r={max_r}")
+        
+        # Pad x to max_r
+        x_padded = jnp.zeros((max_r, n))
+        x_padded = x_padded.at[:r, :].set(x)
+        
+        # Compute all products (including invalid ones)
+        all_products = x_padded[i_indices, :] * x_padded[j_indices, :] * x_padded[k_indices, :]
+        
+        # Return only the first num_valid products (these correspond to valid indices)
+        num_valid = num_valid_for_r[r]
+        return all_products[:num_valid, :]
+    
+    return cubic_mapping
+
+# Cubic mapping function for JAX
+_cubic_mapping_jax = _make_cubic_mapping_jax_fixed(max_r=15)
+
+
 def quadmani_greedy(
     data_points,
     r=None,
