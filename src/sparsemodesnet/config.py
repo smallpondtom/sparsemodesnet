@@ -39,6 +39,7 @@ class TrainingConfig:
     device: str = 'cpu'
     I_nn: Optional[np.ndarray] = None
     reg_param: float = 1e-15
+    weight_scale: float = 1e-12
     analytical: bool = False
 
 @dataclass
@@ -53,6 +54,7 @@ class PreprocessingConfig:
     mu: np.ndarray | None = None
     shift: np.ndarray | None = None
     scale: np.ndarray | None = None
+    normalize_type: str = 'minmax'  # `minmax`, `minmaxsym`
 
 @dataclass
 class SparsityConfig:

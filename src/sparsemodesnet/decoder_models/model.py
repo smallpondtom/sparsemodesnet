@@ -9,7 +9,7 @@ from sparsemodesnet.decoder_models.mlp import MLP
 from sparsemodesnet.decoder_models.mask import MaskedLayer
 from sparsemodesnet.decoder_models.cnn import SpatialCNN
 from sparsemodesnet.decoder_models.unet import UNET
-
+from sparsemodesnet.decoder_models.rational import Rational
 
 class SparseModesNet(nn.Module):
     """
@@ -32,7 +32,7 @@ class SparseModesNet(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
                  hidden_units: list, M: float = 5.0, lam: float = 1e-3,
                  gamma: float = 1e-6, alpha: float = 1.0, 
-                 network_type: str = 'FF', 
+                 network_type: str = 'FF', weight_scale: float = 1e-12, 
                  poly_order: int = 2, num_polys: int = 1, 
                  drop_linear: bool = False, drop_constant: bool = False, 
                  normalize: str | None = None, 
@@ -78,7 +78,8 @@ class SparseModesNet(nn.Module):
         
         if network_type == 'MLP': 
             # Build the feedforward network mapping from R^s to R^d
-            self.mlp = MLP(hidden_units=hidden_units)
+            self.mlp = MLP(hidden_units=hidden_units, bias=False,
+                           weight_scale=weight_scale)
             self.mlp.initialize(input_dim=self.s, output_dim=self.d)
             self.first_layer = self.mlp.first_layer
 
@@ -120,8 +121,6 @@ class SparseModesNet(nn.Module):
                     state dimension {self.d}."
             
             # First layer (used in proximal step)
-            # self.first_layer = MaskedLayer(self.s, in_dim, torch.eye(self.s))
-            # self.first_layer.weight.data.fill_(0.1)  # Initialize weights
             self.first_layer = nn.Linear(self.s, in_dim, bias=False)
             self.first_layer.weight.data.fill_(0.1)  # Initialize weights
             
@@ -285,7 +284,7 @@ class SparseModesNet(nn.Module):
 
 class StateDecoder(nn.Module):
     def __init__(self, pod_basis: torch.Tensor, input_dim: int, 
-                 hidden_units: list, gamma: float,
+                 hidden_units: list, gamma: float, weight_scale: float,
                  network_type: str, poly_order: int, 
                  num_polys: int, drop_linear: bool, 
                  drop_constant: bool, normalize: str | None = None,
@@ -314,7 +313,8 @@ class StateDecoder(nn.Module):
         
         if network_type == 'MLP': 
             # Build the feedforward network mapping from R^r to R^d
-            self.mlp = MLP(hidden_units=hidden_units, bias=True)
+            self.mlp = MLP(hidden_units=hidden_units, bias=True,
+                           weight_scale=weight_scale)
             self.mlp.initialize(input_dim=self.r, output_dim=self.d)
 
         elif network_type == 'CNN':

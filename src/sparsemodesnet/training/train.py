@@ -33,7 +33,7 @@ def train_sparsemodesnet(model: SparseModesNet,
                                weight_decay=model.gamma)
     elif optimizer == 'SGD':
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, 
-                              nesterov=True, weight_decay=model.gamma)
+                              nesterov=False, weight_decay=model.gamma)
     else:
         raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
     

@@ -40,7 +40,7 @@ if __name__ == "__main__":
         device = 'mps'
     else:
         device = 'cpu'
-    device = 'cpu'
+    # device = 'cpu'
     print("Using device:", device)
 
     # For reproducibility
@@ -61,7 +61,6 @@ if __name__ == "__main__":
         n_time_samples=1000,
         n_space_samples=n_grids
     )
-    X = X.astype(np.float64) 
     d, n = X.shape
     s = min(d, n)
     s = 100
@@ -139,14 +138,15 @@ if __name__ == "__main__":
         # Preprocessing
         'normalize_data': True,
         'center': True,
-        'whiten': True,
+        'whiten': False,
+        'normalize_type': 'minmax',
         # Architecture
-        # 'hidden_units': [2000, 2000],
+        'hidden_units': [1200, 1200],
         # 'hidden_units': [32, 7, 64, 128, 256, 512],
         # 'hidden_units': [32, 128],
-        'hidden_units': [100, 4000, 1024],
-        'network_type': 'PiNetNCP',
-        'poly_order': 3,
+        # 'hidden_units': [100, 4000, 1024],
+        'network_type': 'MLP',
+        'poly_order': 2,
         'num_polys': 1,
         'drop_linear': False,
         'drop_constant': False,
@@ -158,23 +158,24 @@ if __name__ == "__main__":
         'lasso_epochs': 100,
         'M': 5.0,
         'lasso_batch_size': 200,
-        'lasso_optimizer': 'Adam',
+        'lasso_optimizer': 'AdamW',
         'device': device,
         'max_no_change': 50,
         'alpha': 1.0,
         # Decoder Phase
-        'decoder_lr': 1.0,
+        'decoder_lr': 2.0,
         'decoder_lr_patience': 100,
-        'decoder_epochs': 5000,
-        'decoder_batch_size': 200,
+        'decoder_epochs': 10000,
+        'decoder_batch_size': 500,
         'decoder_optimizer': 'SGD',
-        'decoder_momentum': 0.99,
+        'decoder_momentum': 0.9,
         # General training
         'skip_sparse': True,
+        'weight_scale': 1.0,
         'gamma': 0.0,
         'I_nn': [0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67],
         'device': device,
-        'analytical': True,
+        'analytical': False,
         # Experiment Setup
         'label': "Advecting Pulse",
         'enable_logging': False
@@ -229,15 +230,15 @@ if __name__ == "__main__":
             Z_input_test = torch.from_numpy(
                 (V_tmp.T @ X_proc_test).T.astype(np.float32)).to(device)
             with torch.no_grad():
-                if  config.network.network_type == 'QM':
+                if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
                     # Use analytical decoder
-                    X_sparse_recon_test = model(V_all[:, I_nn[:r_test]].T @ X_proc_test)
+                    X_sparse_recon_test = model(V_tmp.T @ X_proc_test)
                 else:
                     model.eval()
                     # Create a temporary model with fewer output features for this test
                     X_sparse_recon_tensor_test = model(Z_input_test)
                     X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T 
-                    X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
+                X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
             
             recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
             rel_recon_error_sparse_test = recon_error_sparse_test / np.linalg.norm(X, ord='fro')
@@ -299,14 +300,14 @@ if __name__ == "__main__":
     Z_input = torch.from_numpy(
         (V[:, I_nn].T @ X_proc).T.astype(np.float32)).to(device)
     with torch.no_grad():
-        if  config.network.network_type == 'QM':
+        if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
             # Use analytical decoder
-            X_sparse_recon_test = model(V[:, I_nn].T @ X_proc)
+            X_sparse_recon = model(V[:, I_nn].T @ X_proc)
         else:
             model.eval()
             X_sparse_recon_tensor = model(Z_input)
             X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
-            X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
+        X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
     
     # Calculate errors
     pod_error = X - X_pod_recon
@@ -428,14 +429,14 @@ if __name__ == "__main__":
     Z_input = torch.from_numpy(
         (V[:, I_nn].T @ X_proc).T.astype(np.float32)).to(device)
     with torch.no_grad():
-        if  config.network.network_type == 'QM':
+        if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
             # Use analytical decoder
-            X_sparse_recon_test = model(V[:, I_nn].T @ X_proc)
+            X_sparse_recon = model(V[:, I_nn].T @ X_proc)
         else:
             model.eval()
             X_sparse_recon_tensor = model(Z_input)
             X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T
-            X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
+        X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
 
     # Create subplots
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))

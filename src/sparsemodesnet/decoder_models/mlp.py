@@ -1,4 +1,6 @@
 from .abstract_decoder import AbstractDecoder
+from .rational import Rational
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -14,7 +16,8 @@ class MLP(AbstractDecoder):
     back to a high-dimensional state with user-defined hidden layers.
     """
 
-    def __init__(self, hidden_units=[350, 400], dropout=0.1, bias=False):
+    def __init__(self, hidden_units=[350, 400], dropout=0.1, bias=False,
+                 weight_scale=1e-12):
         """
         Parameters:
         -----------
@@ -27,6 +30,7 @@ class MLP(AbstractDecoder):
         self.hidden_units = hidden_units
         self.dropout_prob = dropout
         self.bias = bias
+        self.weight_scale = weight_scale
         self.layers = None
         self.first_layer = None  # Expose first layer for proximal operations
         self.dropout = nn.Dropout(self.dropout_prob)
@@ -55,6 +59,18 @@ class MLP(AbstractDecoder):
         # Expose the first layer for compatibility with SparseModesNet
         if len(self.layers) > 0:
             self.first_layer = self.layers[0]
+
+    def _initialize_small_weights(self):
+        """
+        Initialize all layer weights to be very small by scaling down
+        the default initialization.
+        """
+        for layer in self.layers:
+            # Scale down the weights by the weight_scale factor
+            with torch.no_grad():
+                layer.weight.data *= self.weight_scale
+                if layer.bias is not None:
+                    layer.bias.data *= self.weight_scale
 
     def forward(self, x):
         """

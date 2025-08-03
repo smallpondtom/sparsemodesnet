@@ -124,12 +124,12 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             decoder = lambda z: U_np @ z + W_nn @ _quadratic_mapping_numpy(z.T).T
         elif config.network.network_type == 'CM' and config.training.analytical:
             residual = X_pp - U_np @ Z_pp
-            Z_cubic_pp = _cubic_mapping__numpy(Z_pp.T).T
+            Z_cubic_pp = _cubic_mapping_numpy(Z_pp.T).T
             W_nn_T, _ = lstsq_l2(Z_cubic_pp.T, residual.T,
                                  reg_magnitude=config.training.reg_param)
             W_nn = W_nn_T.T
             X_hat_np = U_np @ Z_pp + W_nn @ Z_cubic_pp
-            decoder = lambda z: U_np @ z + W_nn @ _cubic_mapping__numpy(z.T).T
+            decoder = lambda z: U_np @ z + W_nn @ _cubic_mapping_numpy(z.T).T
         else:
             print(f"\n→ Training decoder model with {r} selected modes ...") 
             decoder = StateDecoder(
@@ -137,6 +137,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                 input_dim      = r, 
                 hidden_units   = config.network.hidden_units,
                 gamma          = config.training.gamma, 
+                weight_scale   = config.training.weight_scale,
                 network_type   = config.network.network_type, 
                 poly_order     = config.network.poly_order,
                 num_polys      = config.network.num_polys, 
@@ -153,7 +154,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                                                 else 'float32')
             dataloader_full = DataLoader(
                 dataset_full, batch_size=config.training.decoder_batch_size, 
-                shuffle=True, drop_last=False
+                shuffle=False, drop_last=False
             )
             
             train_statedecoder(
@@ -228,7 +229,7 @@ def _quadratic_mapping_numpy(x):
         return result
     
 
-def _cubic_mapping__numpy(x):
+def _cubic_mapping_numpy(x):
     """
     Fast vectorized computation of unique cubic terms x ⊗ x ⊗ x (NumPy version).
     Uses meshgrid for efficient index generation.
