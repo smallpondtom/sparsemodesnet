@@ -109,6 +109,7 @@ if __name__ == "__main__":
     s = min(d, n)
     s = 100
     r = 15
+    p = int(r**2)
     
     # Create 3D surface plot for Advecting Pulse (sanity check)
     if sanity_check:
@@ -179,47 +180,50 @@ if __name__ == "__main__":
         # Number of modes
         's': s,
         'r': r,
+        'p': p,
         # Preprocessing
         'normalize_data': True,
         'center': True,
-        'whiten': False,
+        'whiten': True,
         'normalize_type': 'minmax',
         # Architecture
-        'hidden_units': [1200, 1200],
+        'hidden_units': [200, 200],
         # 'hidden_units': [32, 7, 64, 128, 256, 512],
         # 'hidden_units': [32, 128],
-        # 'hidden_units': [100, 4000, 1024],
-        'network_type': 'QM',
-        'poly_order': 2,
+        # 'hidden_units': [r, 500, p],
+        'network_type': 'MLP',
+        'poly_order': 3,
         'num_polys': 1,
         'drop_linear': False,
         'drop_constant': False,
         # Mode Selection Phase
-        'lam0': 5.0,
+        'lam0': 3.0,
         'lasso_lr': 1e-3,
-        'lasso_lr_patience': 100000,
-        'epsilon': 0.001,
+        'lasso_lr_patience': 1000,
+        'epsilon': 0.0005,
         'lasso_epochs': 100,
-        'M': 5.0,
+        'M': 12.0,
         'lasso_batch_size': 200,
         'lasso_optimizer': 'AdamW',
         'device': device,
         'max_no_change': 50,
         'alpha': 1.0,
         # Decoder Phase
-        'decoder_lr': 2.0,
-        'decoder_lr_patience': 100,
-        'decoder_epochs': 10000,
-        'decoder_batch_size': 500,
-        'decoder_optimizer': 'SGD',
+        'decoder_lr': 1.0e-2,
+        'decoder_lr_patience': 30,
+        'decoder_epochs': 2000,
+        'decoder_batch_size': 200,
+        'decoder_optimizer': 'Adam',
         'decoder_momentum': 0.9,
+        'normalize_layer': 'last',
         # General training
-        'skip_sparse': True,
+        'skip_sparse': False,
         'weight_scale': 1.0,
-        'gamma': 1e-15,
-        'I_nn': [0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67],
+        'gamma': 1e-8,
+        'reg_param': 1e-15,
+        'I_nn': [29, 13,  1, 15,  3, 35,  2, 18, 34, 30, 24, 14, 33, 12, 31],
+        # 'I_nn': [0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67],
         'device': device,
-        'analytical': True,
         # Experiment Setup
         'label': "Advecting Pulse",
         'enable_logging': False
@@ -267,17 +271,17 @@ if __name__ == "__main__":
             X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
         rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
 
-        # Cubic Manifold with r_test modes
-        V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-            X, r_test, s, regs[ct], np.array([], dtype=int), 
-            feature_map=_cubic_mapping_jax)
-        ct += 1
+        # # Cubic Manifold with r_test modes
+        # V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
+        #     X, r_test, s, regs[ct], np.array([], dtype=int), 
+        #     feature_map=_cubic_mapping_jax)
+        # ct += 1
 
-        Z_qm_test_3 = V_test_3.T @ (X - shift_test)
-        Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
-        recon_error_qm_test_3 = np.linalg.norm(
-            X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
-        rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
+        # Z_qm_test_3 = V_test_3.T @ (X - shift_test)
+        # Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
+        # recon_error_qm_test_3 = np.linalg.norm(
+        #     X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
+        # rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
         
         # Leading-r POD reconstruction
         X_proc_test = config.preprocessing.forward(X)
@@ -291,16 +295,15 @@ if __name__ == "__main__":
         if len(I_nn) >= r_test:
             V_tmp = np.zeros((d, r))
             V_tmp[:, :r_test] = V_all[:, I_nn[:r_test]]
-            Z_input_test = torch.from_numpy(
-                (V_tmp.T @ X_proc_test).T.astype(np.float32)).to(device)
+            Z_input_test = torch.from_numpy((V_tmp.T @ X_proc_test).T).to(device)
             with torch.no_grad():
                 if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
                     # Use analytical decoder
-                    X_sparse_recon_test = model(V_tmp.T @ X_proc_test)
+                    X_sparse_recon_test, _, _ = model(V_tmp.T @ X_proc_test)
                 else:
                     model.eval()
                     # Create a temporary model with fewer output features for this test
-                    X_sparse_recon_tensor_test = model(Z_input_test)
+                    X_sparse_recon_tensor_test, _, _ = model(Z_input_test)
                     X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T 
                 X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
             
@@ -311,7 +314,7 @@ if __name__ == "__main__":
         
         mode_counts.append(r_test)
         qm_errors.append(rel_recon_error_qm_test)
-        cm_errors.append(rel_recon_error_qm_test_3)
+        # cm_errors.append(rel_recon_error_qm_test_3)
         pod_errors.append(rel_recon_error_pod_test)
         sparse_errors.append(rel_recon_error_sparse_test)
     
@@ -320,16 +323,16 @@ if __name__ == "__main__":
     
     ax.semilogy(mode_counts, qm_errors, 'g-^', label='Quadratic Manifold', 
                 markersize=10, linewidth=4)
-    ax.semilogy(mode_counts, cm_errors, 'y--', label='Cubic Manifold',
-                markersize=10, linewidth=4)
+    # ax.semilogy(mode_counts, cm_errors, 'y--', label='Cubic Manifold',
+    #             markersize=10, linewidth=4)
     ax.semilogy(mode_counts, pod_errors, 'b-o', label='POD (leading-r)', 
                 markersize=10, linewidth=4)
     
     # Only plot valid SparseModesNet errors
-    # valid_sparse_errors = [err for err in sparse_errors if not np.isnan(err)]
-    # valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_errors) if not np.isnan(err)]
-    # ax.semilogy(valid_mode_counts, valid_sparse_errors, 'r-s', label='SparseModesNet', 
-    #             markersize=10, linewidth=4)
+    valid_sparse_errors = [err for err in sparse_errors if not np.isnan(err)]
+    valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_errors) if not np.isnan(err)]
+    ax.semilogy(valid_mode_counts, valid_sparse_errors, 'r-s', label='SparseModesNet', 
+                markersize=10, linewidth=4)
     
     ax.set_xlabel('Number of Modes', fontsize=16)
     ax.set_ylabel('Relative Reconstruction Error', fontsize=16)

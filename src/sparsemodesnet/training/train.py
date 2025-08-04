@@ -35,7 +35,7 @@ def train_sparsemodesnet(model: SparseModesNet,
         optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, 
                               nesterov=False, weight_decay=model.gamma)
     else:
-        raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
+        raise ValueError("Unsupported optimizer. Use 'Adam', 'AdamW', or 'SGD'.")
     
     # Using MSE loss for loss function
     mse_loss = nn.MSELoss()
@@ -86,7 +86,7 @@ def train_sparsemodesnet(model: SparseModesNet,
         epoch_l1  /= n_samples
         history['loss'].append(epoch_loss)
         history['l1_b'].append(epoch_l1)
-        
+
         with torch.no_grad():
             omega_ = model.omega.detach().cpu().numpy()
             history['omegas'].append(omega_)
@@ -142,7 +142,7 @@ def train_statedecoder(model: StateDecoder,
             model.parameters(), lr=lr, momentum=momentum, 
             weight_decay=model.gamma, nesterov=True)
     else:
-        raise ValueError("Unsupported optimizer. Use 'Adam' or 'SGD'.")
+        raise ValueError("Unsupported optimizer. Use 'Adam', 'AdamW', or 'SGD'.")
     
     # Using MSE loss for loss function
     mse_loss = nn.MSELoss()
@@ -161,29 +161,28 @@ def train_statedecoder(model: StateDecoder,
 
         model.train()
         for z_batch, x_batch in dataloader:
-            z_batch = z_batch.to(device)  # (batch, s)
+            z_batch = z_batch.to(device)  # (batch, r)
             x_batch = x_batch.to(device)  # (batch, d)
 
             optimizer.zero_grad()
-            x_hat_batch = model(z_batch)  # (batch, d)
+            x_hat_batch, _, _ = model(z_batch)  # (batch, d)
             loss = mse_loss(x_hat_batch, x_batch)
-            
             loss.backward()
             optimizer.step()
 
             batch_size = x_batch.shape[0]
             epoch_loss += loss.item() * batch_size
             n_samples += batch_size
-            
+
+        # Print every 10 epochs or first:
         epoch_loss /= n_samples
         loss_history.append(epoch_loss)
 
         lr_schedule.step(loss)  # Update learning rate
         lr_new = optimizer.param_groups[0]['lr']
 
-        # Print every 10 epochs or first:
         if (epoch % 10 == 0) or (epoch == 1):
             print(f"  Epoch {epoch:3d} | lr={lr_new:.4e} | "
-              f"Recon MSE={epoch_loss:.6e}")
-
+            f"Recon MSE={epoch_loss:.6e}")
+    
     return loss_history

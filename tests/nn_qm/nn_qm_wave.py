@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # Add parent directory to path
 import sys
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from examples.pulse import generate_advecting_pulse
 
@@ -498,6 +498,16 @@ if __name__ == "__main__":
         n_space_samples=n_grids
     )
     
+    U, S, Vt = np.linalg.svd(X_pulse, full_matrices=False)
+    np.savez("X_pulse_svd.npz", U=U, S=S, Vt=Vt)
+
+    selected_modes = np.array([0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67])
+    np.save("selected_modes.npy", selected_modes)
+
+    Z = U[:, selected_modes].T @ X_pulse  
+    np.save('Z_pulse.npy', Z)
+
+    #%%
     print(f"X_pulse shape: {X_pulse.shape}")
     print(f"X_pulse dtype: {X_pulse.dtype}")
     

@@ -81,6 +81,7 @@ class SparseModesNetConfig:
     # Core parameters
     s: int # total number of modes used
     r: int # number of modes selected for decoder r <= s
+    p: int # nonlinear mapping output dimension
     
     # Configuration groups
     network: NetworkConfig

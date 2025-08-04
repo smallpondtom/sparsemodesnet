@@ -29,7 +29,7 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
     # Initialize the SparseModesNet model 
     SPN = SparseModesNet(
         pod_basis       = U_tensor,
-        input_dim       = config.s,
+        mapping_dim     = config.p,
         hidden_units    = config.network.hidden_units,
         M               = config.sparsity.M,
         lam             = lam,
@@ -117,9 +117,9 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
 
     # Select the modes with the highest final weights
     if config.sparsity.selection_method == 'weight':
-        I_nn = np.argsort(omegas[:, -1])[::-1][:config.r]
+        I_nn = np.argsort(np.abs(omegas[:, -1]))[::-1][:config.r]
     elif config.sparsity.selection_method == 'leading':
-        I_nn = np.where(omegas[:, -1] > 0)[0][:config.r]
+        I_nn = np.where(np.abs(omegas[:, -1]) > 0)[0][:config.r]
     else:
         raise ValueError(f"Unknown selection method: " 
                          f"{config.sparsity.selection_method}."

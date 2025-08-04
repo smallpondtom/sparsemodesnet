@@ -114,7 +114,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                       else torch.float32
             )
 
-        if config.network.network_type == 'QM' and config.training.analytical:
+        if config.network.network_type == 'QM':
             residual = X_pp - U_np @ Z_pp
             Z_quad_pp = _quadratic_mapping_numpy(Z_pp.T).T 
             W_nn_T, _ = lstsq_l2(Z_quad_pp.T, residual.T, 
@@ -122,7 +122,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             W_nn = W_nn_T.T
             X_hat_np = U_np @ Z_pp + W_nn @ Z_quad_pp
             decoder = lambda z: U_np @ z + W_nn @ _quadratic_mapping_numpy(z.T).T
-        elif config.network.network_type == 'CM' and config.training.analytical:
+        elif config.network.network_type == 'CM':
             residual = X_pp - U_np @ Z_pp
             Z_cubic_pp = _cubic_mapping_numpy(Z_pp.T).T
             W_nn_T, _ = lstsq_l2(Z_cubic_pp.T, residual.T,
@@ -134,7 +134,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             print(f"\n→ Training decoder model with {r} selected modes ...") 
             decoder = StateDecoder(
                 pod_basis      = U_tensor, 
-                input_dim      = r, 
+                mapping_dim    = config.p, 
                 hidden_units   = config.network.hidden_units,
                 gamma          = config.training.gamma, 
                 weight_scale   = config.training.weight_scale,
@@ -158,18 +158,22 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             )
             
             train_statedecoder(
-                model       = decoder, 
-                dataloader  = dataloader_full, 
-                num_epochs  = config.training.decoder_epochs, 
-                lr          = config.training.decoder_lr, 
-                lr_patience = config.training.decoder_lr_patience,
-                lr_factor   = config.training.decoder_lr_factor, 
-                momentum    = config.training.decoder_momentum, 
-                optimizer   = config.training.decoder_optimizer, 
-                device      = config.training.device,
+                model         = decoder, 
+                dataloader    = dataloader_full, 
+                num_epochs    = config.training.decoder_epochs, 
+                lr            = config.training.decoder_lr, 
+                lr_patience   = config.training.decoder_lr_patience,
+                lr_factor     = config.training.decoder_lr_factor, 
+                momentum      = config.training.decoder_momentum, 
+                optimizer     = config.training.decoder_optimizer, 
+                device        = config.training.device,
             )
-            
-            # Evaluate final model
+
+            X_pp_tensor = torch.from_numpy(X_pp.T).to(
+                config.training.device,
+                dtype=torch.float64 if config.training.device == 'cpu' 
+                      else torch.float32
+            )
             Z_pp_tensor = torch.from_numpy(Z_pp.T).to(
                 config.training.device,
                 dtype=torch.float64 if config.training.device == 'cpu' 
@@ -177,7 +181,14 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             )
             decoder.eval()
             with torch.no_grad():
-                X_hat_tensor = decoder(Z_pp_tensor)
+                # Retrain the weight of the nonlinear mapping
+                _, X_hat_lin_tensor, fnn_out_tensor = decoder(Z_pp_tensor)
+                resid = X_pp_tensor - X_hat_lin_tensor
+                decoder.update_nonlinear_weight(resid, fnn_out_tensor, 
+                                                config.training.reg_param)
+            
+                # Evaluate the final model
+                X_hat_tensor, _, _ = decoder(Z_pp_tensor)
                 X_hat_np = X_hat_tensor.cpu().numpy().T 
 
         X_eval = config.preprocessing.backward(X_hat_np) 
