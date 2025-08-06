@@ -205,7 +205,7 @@ if __name__ == "__main__":
         'M': 12.0,
         'lasso_batch_size': 200,
         'lasso_optimizer': 'Adam',
-        'lasso_bias': False,
+        'lasso_bias': True,
         'device': device,
         'max_no_change': 50,
         'alpha': 1.0,
@@ -216,7 +216,7 @@ if __name__ == "__main__":
         'decoder_batch_size': 200,
         'decoder_optimizer': 'Adam',
         'decoder_momentum': 0.9,
-        'decoder_bias': False,
+        'decoder_bias': True,
         # General training
         'skip_sparse': False,
         'weight_scale': 1.0,
