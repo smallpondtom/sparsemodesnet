@@ -77,13 +77,13 @@ def _cubic_mapping_numpy(x):
 
 #%% %============================= Main Script ================================%
 if __name__ == "__main__":
-    # Device selection: CUDA > MPS (Apple Silicon) > CPU
-    if torch.cuda.is_available():
-        device = 'cuda'
-    elif torch.backends.mps.is_available():
-        device = 'mps'
-    else:
-        device = 'cpu'
+    # # Device selection: CUDA > MPS (Apple Silicon) > CPU
+    # if torch.cuda.is_available():
+    #     device = 'cuda'
+    # elif torch.backends.mps.is_available():
+    #     device = 'mps'
+    # else:
+    #     device = 'cpu'
     device = 'cpu'
     print("Using device:", device)
 
@@ -184,15 +184,15 @@ if __name__ == "__main__":
         # Preprocessing
         'normalize_data': True,
         'center': True,
-        'whiten': True,
+        'whiten': False,
         'normalize_type': 'minmax',
         # Architecture
-        'hidden_units': [200, 200],
-        # 'hidden_units': [32, 7, 64, 128, 256, 512],
-        # 'hidden_units': [32, 128],
-        # 'hidden_units': [r, 500, p],
-        'network_type': 'MLP',
-        'poly_order': 3,
+        # 'hidden_units': [400, 400, 400],  # MLP
+        # 'hidden_units': [32, 5, 64, 128],  # CNN
+        # 'hidden_units': [64, 256],  # UNET
+        'hidden_units': [r, 500, p],  # PiNet
+        'network_type': 'PiNetCCP',
+        'poly_order': 2,
         'num_polys': 1,
         'drop_linear': False,
         'drop_constant': False,
@@ -204,7 +204,8 @@ if __name__ == "__main__":
         'lasso_epochs': 100,
         'M': 12.0,
         'lasso_batch_size': 200,
-        'lasso_optimizer': 'AdamW',
+        'lasso_optimizer': 'Adam',
+        'lasso_bias': False,
         'device': device,
         'max_no_change': 50,
         'alpha': 1.0,
@@ -215,13 +216,14 @@ if __name__ == "__main__":
         'decoder_batch_size': 200,
         'decoder_optimizer': 'Adam',
         'decoder_momentum': 0.9,
-        'normalize_layer': 'last',
+        'decoder_bias': False,
         # General training
         'skip_sparse': False,
         'weight_scale': 1.0,
         'gamma': 1e-8,
         'reg_param': 1e-15,
-        'I_nn': [29, 13,  1, 15,  3, 35,  2, 18, 34, 30, 24, 14, 33, 12, 31],
+        'normalize_layer': 'last',
+        # 'I_nn': [29, 13,  1, 15,  3, 35,  2, 18, 34, 30, 24, 14, 33, 12, 31],
         # 'I_nn': [0, 2, 3, 4, 6, 9, 11,14, 19, 22, 27, 37, 38, 47, 67],
         'device': device,
         # Experiment Setup
@@ -243,7 +245,6 @@ if __name__ == "__main__":
     # Collect reconstruction errors for different numbers of modes
     mode_counts = []
     qm_errors = []
-    cm_errors = []
     pod_errors = []
     sparse_errors = []
 
@@ -251,13 +252,6 @@ if __name__ == "__main__":
         config.preprocessing.forward(X), full_matrices=False
     )[0][:, :s]
 
-    regs = [
-        1e-2, 1e-2, 1e-1, 1e2, 1e2,
-        1e2, 1e4, 1e4, 1e4, 1e4,
-        1e4, 1e4, 1e2, 1e2, 1e-14
-    ]
-
-    ct = 0 
     # Test different numbers of modes
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
         # Quadratic Manifold with r_test modes
@@ -270,18 +264,6 @@ if __name__ == "__main__":
         recon_error_qm_test = np.linalg.norm(
             X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
         rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
-
-        # # Cubic Manifold with r_test modes
-        # V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-        #     X, r_test, s, regs[ct], np.array([], dtype=int), 
-        #     feature_map=_cubic_mapping_jax)
-        # ct += 1
-
-        # Z_qm_test_3 = V_test_3.T @ (X - shift_test)
-        # Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
-        # recon_error_qm_test_3 = np.linalg.norm(
-        #     X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
-        # rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
         
         # Leading-r POD reconstruction
         X_proc_test = config.preprocessing.forward(X)
@@ -302,9 +284,15 @@ if __name__ == "__main__":
                     X_sparse_recon_test, _, _ = model(V_tmp.T @ X_proc_test)
                 else:
                     model.eval()
-                    # Create a temporary model with fewer output features for this test
+                    # Retrain the weight matrix
+                    X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
+                    _, X_sparse_lin, N_sparse_out = model(Z_input_test)
+                    resid = X_proc_test_tensor.T - X_sparse_lin
+                    model.update_nonlinear_weight(resid, N_sparse_out, 
+                                                  config.training.reg_param)
                     X_sparse_recon_tensor_test, _, _ = model(Z_input_test)
-                    X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T 
+                    X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T
+
                 X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
             
             recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
@@ -314,24 +302,21 @@ if __name__ == "__main__":
         
         mode_counts.append(r_test)
         qm_errors.append(rel_recon_error_qm_test)
-        # cm_errors.append(rel_recon_error_qm_test_3)
         pod_errors.append(rel_recon_error_pod_test)
         sparse_errors.append(rel_recon_error_sparse_test)
-    
+
     # Plot reconstruction errors
     fig, ax = plt.subplots(1, 1, figsize=(10, 6))
     
-    ax.semilogy(mode_counts, qm_errors, 'g-^', label='Quadratic Manifold', 
+    ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
                 markersize=10, linewidth=4)
-    # ax.semilogy(mode_counts, cm_errors, 'y--', label='Cubic Manifold',
-    #             markersize=10, linewidth=4)
-    ax.semilogy(mode_counts, pod_errors, 'b-o', label='POD (leading-r)', 
+    ax.semilogy(mode_counts, pod_errors, '-o', label='POD (leading-r)', 
                 markersize=10, linewidth=4)
     
     # Only plot valid SparseModesNet errors
     valid_sparse_errors = [err for err in sparse_errors if not np.isnan(err)]
     valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_errors) if not np.isnan(err)]
-    ax.semilogy(valid_mode_counts, valid_sparse_errors, 'r-s', label='SparseModesNet', 
+    ax.semilogy(valid_mode_counts, valid_sparse_errors, '-s', label='SparseModesNet', 
                 markersize=10, linewidth=4)
     
     ax.set_xlabel('Number of Modes', fontsize=16)
@@ -342,7 +327,7 @@ if __name__ == "__main__":
     ax.legend(fontsize=14)
     ax.set_xlim(left=0)
     plt.tight_layout()
-    plt.savefig('figures/pulse/reconstruction_errors_3.png', dpi=300)
+    plt.savefig('figures/pulse/reconstruction_errors_pi2net.png', dpi=300)
     plt.show()
     plt.close(fig)
     
@@ -368,14 +353,14 @@ if __name__ == "__main__":
     
     # Fix: Convert numpy array to tensor and move to correct device
     Z_input = torch.from_numpy(
-        (V[:, I_nn].T @ X_proc).T.astype(np.float32)).to(device)
+        (V[:, I_nn].T @ X_proc).T).to(device)
     with torch.no_grad():
         if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
             # Use analytical decoder
             X_sparse_recon = model(V[:, I_nn].T @ X_proc)
         else:
             model.eval()
-            X_sparse_recon_tensor = model(Z_input)
+            X_sparse_recon_tensor, _, _ = model(Z_input)
             X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T 
         X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
     
@@ -465,7 +450,7 @@ if __name__ == "__main__":
     plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, 
                         wspace=0.3, hspace=0.3)
     plt.suptitle('Reconstruction Comparison', fontsize=19, y=0.98)
-    # plt.savefig('figures/pulse/pulse_comparison.png', dpi=300)
+    plt.savefig('figures/pulse/pulse_comparison_pi2net.png', dpi=300)
     plt.show()
     plt.close(fig)
 
@@ -497,14 +482,14 @@ if __name__ == "__main__":
 
     # SparseModesNet reconstruction
     Z_input = torch.from_numpy(
-        (V[:, I_nn].T @ X_proc).T.astype(np.float32)).to(device)
+        (V[:, I_nn].T @ X_proc).T).to(device)
     with torch.no_grad():
         if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
             # Use analytical decoder
             X_sparse_recon = model(V[:, I_nn].T @ X_proc)
         else:
             model.eval()
-            X_sparse_recon_tensor = model(Z_input)
+            X_sparse_recon_tensor, _, _ = model(Z_input)
             X_sparse_recon = X_sparse_recon_tensor.cpu().numpy().T
         X_sparse_recon = config.preprocessing.backward(X_sparse_recon)
 
@@ -516,13 +501,13 @@ if __name__ == "__main__":
         ax.plot(xspan, X[:, t_idx], 'k-', linewidth=3, 
                 label='Original', alpha=0.9)
         # Plot leading-r POD reconstruction
-        ax.plot(xspan, X_pod_recon[:, t_idx], 'b--', 
+        ax.plot(xspan, X_pod_recon[:, t_idx], '--', 
                 linewidth=2, label=f'POD (r={r})', alpha=0.8)
         # Plot Quadratic Manifold reconstruction
-        ax.plot(xspan, X_qm_recon[:, t_idx], 'g-.', 
+        ax.plot(xspan, X_qm_recon[:, t_idx], '-.', 
                 linewidth=2, label='Quadratic Manifold', alpha=0.8)
         # Plot SparseModesNet reconstruction
-        ax.plot(xspan, X_sparse_recon[:, t_idx], 'r:', 
+        ax.plot(xspan, X_sparse_recon[:, t_idx], ':', 
                 linewidth=2, label='SparseModesNet', alpha=0.8)
         
         ax.set_xlabel('Space (x)', fontsize=14)
@@ -534,8 +519,9 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.suptitle('Wave Profiles at Different Time Points', fontsize=19, y=1.02)
-    # plt.savefig('figures/pulse/wave_profiles_comparison.png', dpi=300)
+    plt.savefig('figures/pulse/wave_profiles_comparison_pi2net.png', dpi=300)
     plt.show()
     plt.close(fig)
+
 
 # %%

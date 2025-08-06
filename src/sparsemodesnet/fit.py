@@ -144,6 +144,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                 drop_linear    = config.network.drop_linear,
                 drop_constant  = config.network.drop_constant,
                 normalize      = config.network.normalize_layer,
+                bias           = config.training.decoder_bias,
                 dtype          = torch.float64 if config.training.device == 'cpu' 
                                  else torch.float32,
             )

@@ -41,6 +41,7 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
         drop_linear     = config.network.drop_linear,
         drop_constant   = config.network.drop_constant,
         normalize       = config.network.normalize_layer,
+        bias            = config.training.lasso_bias,
         dtype           = torch.float64 if config.training.device == 'cpu' 
                          else torch.float32,
     )
@@ -116,10 +117,25 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
             break
 
     # Select the modes with the highest final weights
+    # Find the last index where nonzero count >= config.r (loop from end)
+    last_valid_idx = -1
+    for i in range(omegas.shape[1] - 1, -1, -1):
+        nonzero_count = np.count_nonzero(omegas[:, i])
+        if nonzero_count >= config.r:
+            last_valid_idx = i
+            break
+
+    if last_valid_idx == -1:
+        # If no column has enough nonzero values, use the last column
+        last_valid_idx = omegas.shape[1] - 1
+        print(f"Warning: No column has >= {config.r} nonzero values." 
+              " Using last column.")
+
+    # Select modes based on the identified column
     if config.sparsity.selection_method == 'weight':
-        I_nn = np.argsort(np.abs(omegas[:, -1]))[::-1][:config.r]
+        I_nn = np.argsort(np.abs(omegas[:, last_valid_idx]))[::-1][:config.r]
     elif config.sparsity.selection_method == 'leading':
-        I_nn = np.where(np.abs(omegas[:, -1]) > 0)[0][:config.r]
+        I_nn = np.where(np.abs(omegas[:, last_valid_idx]) > 0)[0][:config.r]
     else:
         raise ValueError(f"Unknown selection method: " 
                          f"{config.sparsity.selection_method}."

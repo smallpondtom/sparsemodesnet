@@ -24,6 +24,7 @@ class TrainingConfig:
     lasso_batch_size: int = 32
     lasso_optimizer: str = 'AdamW'
     lasso_momentum: float = 0.9
+    lasso_bias: bool = False
     gamma: float = 1e-6
     max_no_change: int = 50
     extra_modes: int = 0
@@ -35,6 +36,7 @@ class TrainingConfig:
     decoder_batch_size: int = 32
     decoder_optimizer: str = 'AdamW'
     decoder_momentum: float = 0.9
+    decoder_bias: bool = False
     # General
     device: str = 'cpu'
     I_nn: Optional[np.ndarray] = None

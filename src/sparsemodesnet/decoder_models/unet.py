@@ -46,8 +46,7 @@ class UNET(AbstractDecoder):
         spatial_size = min(output_dim, 512)  # Reasonable spatial resolution
         
         # Linear projection: r POD modes -> spatial features
-        self.input_projection = nn.Linear(input_dim, spatial_size, bias=self.bias)
-        self.first_layer = self.input_projection
+        self.first_layer = nn.Linear(input_dim, spatial_size, bias=self.bias)
         
         # 1D convolutions on spatial dimension
         self.conv1 = nn.Conv1d(1, self.c1, kernel_size=3, padding=1, bias=self.bias)
@@ -74,7 +73,7 @@ class UNET(AbstractDecoder):
             Spatial field of shape (batch_size, d)
         """
         # Project to spatial representation
-        x = self.input_projection(z)  # (batch, spatial_size)
+        x = self.first_layer(z)  # (batch, spatial_size)
         
         # Reshape for 1D convolution: treat as single channel spatial signal
         x = x.unsqueeze(1)  # (batch, 1, spatial_size)

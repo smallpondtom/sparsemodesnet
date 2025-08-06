@@ -36,7 +36,7 @@ class SparseModesNet(nn.Module):
                  network_type: str = 'FF', weight_scale: float = 1e-12, 
                  poly_order: int = 2, num_polys: int = 1, 
                  drop_linear: bool = False, drop_constant: bool = False, 
-                 normalize: str | None = None, 
+                 normalize: str | None = None, bias: bool = False,
                  dtype: torch.dtype = torch.float32):
         """
         Initialize SparseModesNet.
@@ -80,7 +80,7 @@ class SparseModesNet(nn.Module):
         
         if network_type == 'MLP': 
             # Build the feedforward network mapping from R^s to R^d
-            self.mlp = MLP(hidden_units=hidden_units, bias=False,
+            self.mlp = MLP(hidden_units=hidden_units, bias=bias,
                            weight_scale=weight_scale)
             self.mlp.initialize(input_dim=self.s, output_dim=self.p)
             self.first_layer = self.mlp.first_layer
@@ -101,7 +101,7 @@ class SparseModesNet(nn.Module):
             self.first_layer.weight.data.fill_(0.1)  # Initialize weights
 
             # Spatial CNN decoder
-            self.cnn = SpatialCNN(hidden_units=hidden_units)
+            self.cnn = SpatialCNN(hidden_units=hidden_units, bias=bias)
             self.cnn.initialize(input_dim=self.s, output_dim=self.p)
 
             # Output projection
@@ -110,12 +110,10 @@ class SparseModesNet(nn.Module):
             )
 
         elif network_type == 'UNET':
-            # First layer for proximal operations
-            self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
-            self.first_layer.weight.data.fill_(0.1)  # Initialize weights
-
-            self.unet = UNET(conv1=hidden_units[0], conv2=hidden_units[1])
+            self.unet = UNET(conv1=hidden_units[0], conv2=hidden_units[1],
+                             bias=bias)
             self.unet.initialize(input_dim=self.s, output_dim=self.p)
+            self.first_layer = self.unet.first_layer
 
             # Output projection
             self.W = nn.Parameter(
@@ -134,9 +132,7 @@ class SparseModesNet(nn.Module):
                     state dimension {self.p}."
             
             # First layer (used in proximal step)
-            self.first_layer = nn.Linear(self.s, in_dim, bias=False)
-            # self.first_layer = MaskedLayer(self.s, in_dim, torch.eye(self.s))
-            # self.first_layer.weight.data.fill_(0.1)  # Initialize weights
+            self.first_layer = nn.Linear(self.s, in_dim, bias=bias)
             
             # Pi-Net blocks
             if num_polys == 1:  # A single Pi-Net block
@@ -206,8 +202,7 @@ class SparseModesNet(nn.Module):
             h        = self.cnn(h)                      # (batch, p)
             x_hat_nn = h @ self.W                       # (batch, d)
         elif self.network_type == 'UNET':
-            h        = self.first_layer(z_hat)          # (batch, s)
-            h        = self.unet(h)                     # (batch, p)
+            h        = self.unet(z_hat)                 # (batch, p)
             x_hat_nn = h @ self.W                       # (batch, d)
         elif 'PiNet' in self.network_type:
             h        = self.first_layer(z_hat)          # (batch, inter_dim)
@@ -233,10 +228,12 @@ class SparseModesNet(nn.Module):
     def orthogonalize_W(self):
         """Apply Gram-Schmidt orthogonalization to ensure projection ⊥ Ur"""
         with torch.no_grad():
-            # Project out the POD basis components
-            # P_orth = P - U_s @ (U_s.T @ P)
-            proj_on_Us = (self.W @ self.U_s) @ (self.U_s.T)  
-            self.W.data = self.W - proj_on_Us
+            # Project out the POD basis components not selected by current omega
+            # P_orth = P - U_idx @ (U_idx.T @ P)
+            idx = torch.nonzero(self.omega.data).squeeze(1)
+            U_idx = self.U_s[:, idx]
+            proj_on_Uidx = (self.W @ U_idx) @ (U_idx.T)  
+            self.W.data = self.W - proj_on_Uidx
 
 
     def proximal_step(self, lam):
@@ -322,6 +319,7 @@ class StateDecoder(nn.Module):
                  network_type: str, poly_order: int, 
                  num_polys: int, drop_linear: bool, 
                  drop_constant: bool, normalize: str | None = None,
+                 bias: bool = False,
                  dtype: torch.dtype = torch.float32):
         super(StateDecoder, self).__init__()
         
@@ -348,7 +346,7 @@ class StateDecoder(nn.Module):
         
         if network_type == 'MLP': 
             # Build the feedforward network mapping from R^r to R^d
-            self.mlp = MLP(hidden_units=hidden_units, bias=False,
+            self.mlp = MLP(hidden_units=hidden_units, bias=bias,
                            weight_scale=weight_scale)
             self.mlp.initialize(input_dim=self.r, output_dim=self.p)
 
@@ -364,7 +362,7 @@ class StateDecoder(nn.Module):
                "CNN requires at least 2 values: [num_filters, kernel_size, ...]"
             
             # Spatial CNN decoder
-            self.cnn = SpatialCNN(hidden_units=hidden_units, bias=False)
+            self.cnn = SpatialCNN(hidden_units=hidden_units, bias=bias)
             self.cnn.initialize(input_dim=self.r, output_dim=self.p)
 
             # Output projection
@@ -374,7 +372,7 @@ class StateDecoder(nn.Module):
 
         elif network_type == 'UNET':
             # Spatial UNET decoder
-            self.unet = UNET(conv1=hidden_units[0], conv2=hidden_units[1], bias=False)
+            self.unet = UNET(conv1=hidden_units[0], conv2=hidden_units[1], bias=bias)
             self.unet.initialize(input_dim=self.r, output_dim=self.p)
 
             # Output projection
@@ -397,7 +395,7 @@ class StateDecoder(nn.Module):
                     state dimension {self.p}."
                     
             # First layer (used in proximal step)
-            self.first_layer = nn.Linear(self.r, in_dim, bias=True)
+            self.first_layer = nn.Linear(self.r, in_dim, bias=bias)
             
             # Pi-Net blocks
             if num_polys == 1:  # A single Pi-Net block
@@ -466,9 +464,9 @@ class StateDecoder(nn.Module):
 
         return x_hat, x_hat_lin, h
     
-    def update_nonlinear_weight(self, residual, fnn_out, reg_):
-        self.projection.data.copy_(lstsq_l2_torch(
-            fnn_out, residual, reg_magnitude=reg_
+    def update_nonlinear_weight(self, residual, N_out, reg_):
+        self.W.data.copy_(lstsq_l2_torch(
+            N_out, residual, reg_magnitude=reg_
         )[0])
         return None
     
