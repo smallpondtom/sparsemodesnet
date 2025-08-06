@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
 
 #%% %=======================Plot the omega evolutions =========================%
-    smn.omega_evolve(omegas, I_nn, config.s, save=False, 
+    smn.omega_evolve(omegas, I_nn, config.s, save=True, 
                      filename='figures/pulse/omega_evolution.png')
 
 #%% #===================== Plot Reconstruction Errors =========================#
