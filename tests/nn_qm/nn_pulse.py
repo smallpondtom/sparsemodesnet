@@ -110,9 +110,15 @@ if __name__== "__main__":
     Ur = U[:, selected_modes]                       # reduced POD basis (d, r)
     Z = np.load('Z_pulse.npy')                      # reduced data (r, n)
 
-    # # Generating the data instead
+    # # Generating the data instead and preprocessing (centering + normalizing)
     # X, xspan, tspan = generate_advecting_pulse()
-    # U = np.linalg.svd(X, full_matrices=False)[0] 
+    # X_mean = np.mean(X, axis=1, keepdims=True)
+    # X = X - X_mean  # Centering
+    # X_max = np.max(X, axis=1, keepdims=True)
+    # X_min = np.min(X, axis=1, keepdims=True)
+    # X = (X - X_min) / (X_max - X_min)  # Normalization to [0,1]
+    # U = np.linalg.svd(X, full_matrices=False)[0]
+    # selected_modes = np.load('selected_modes.npy')  
     # Ur = U[:, selected_modes]
     # Z = Ur.T @ X
 
@@ -122,7 +128,7 @@ if __name__== "__main__":
 
     # Initialize MLP
     d, r = Ur.shape
-    mlp = MLP(hidden_units=[2000, 2000], dropout=0.0, bias=True)
+    mlp = MLP(hidden_units=[200, 200], dropout=0.0, bias=True)
     mlp.initialize(input_dim=r, output_dim=d)
 
     # Train MLP
@@ -158,9 +164,9 @@ if __name__== "__main__":
     # Compute reconstruction error 
     mlp.eval()
     with torch.no_grad():
-        fnn_output = mlp(torch.tensor(Z.T, dtype=torch.float64))
+        fnn_output = mlp(Z_tensor)
         fnn_output = fnn_output.numpy() 
-    recon_err = np.linalg.norm(fnn_output - B.T, ord='fro') / np.linalg.norm(X, ord='fro')
+    recon_err = np.linalg.norm(B - fnn_output.T, ord='fro') / np.linalg.norm(X, ord='fro')
     print("\n")
-    print(f"Reconstruction error: {recon_err:.6e}")
-    print("GreedyQM reconstruction error is on the order of 1e-9 ~ 1e-8.")
+    print(f"Relative reconstruction error: {recon_err:.6e}")
+    print("GreedyQM's relative reconstruction error is on the order of 1e-9 ~ 1e-8.")

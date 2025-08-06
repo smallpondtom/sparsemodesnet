@@ -497,6 +497,15 @@ if __name__ == "__main__":
         n_time_samples=1000,
         n_space_samples=n_grids
     )
+
+
+    X_mean = np.mean(X_pulse, axis=1, keepdims=True)
+    X_pulse = X_pulse - X_mean  # Centering
+    X_max = np.max(X_pulse, axis=1, keepdims=True)
+    X_min = np.min(X_pulse, axis=1, keepdims=True)
+    X_pulse = (X_pulse - X_min) / (X_max - X_min)  # Normalization to [0,1]
+
+    np.save("X_pulse.npy", X_pulse)
     
     U, S, Vt = np.linalg.svd(X_pulse, full_matrices=False)
     np.savez("X_pulse_svd.npz", U=U, S=S, Vt=Vt)
