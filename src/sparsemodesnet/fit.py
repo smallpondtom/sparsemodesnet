@@ -182,9 +182,9 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             decoder.eval()
             with torch.no_grad():
                 # Retrain the weight of the nonlinear mapping
-                _, X_hat_lin_tensor, fnn_out_tensor = decoder(Z_pp_tensor)
+                _, X_hat_lin_tensor, N_out_tensor = decoder(Z_pp_tensor)
                 resid = X_pp_tensor - X_hat_lin_tensor
-                decoder.update_nonlinear_weight(resid, fnn_out_tensor, 
+                decoder.update_nonlinear_weight(resid, N_out_tensor, 
                                                 config.training.reg_param)
             
                 # Evaluate the final model

@@ -86,7 +86,7 @@ class SparseModesNet(nn.Module):
             self.first_layer = self.mlp.first_layer
 
             # Output projection
-            self.projection = nn.Parameter(
+            self.W = nn.Parameter(
                 torch.ones(self.p, self.d) * weight_scale 
             )
 
@@ -105,7 +105,7 @@ class SparseModesNet(nn.Module):
             self.cnn.initialize(input_dim=self.s, output_dim=self.p)
 
             # Output projection
-            self.projection = nn.Parameter(
+            self.W = nn.Parameter(
                 torch.ones(self.p, self.d) * weight_scale 
             )
 
@@ -118,7 +118,7 @@ class SparseModesNet(nn.Module):
             self.unet.initialize(input_dim=self.s, output_dim=self.p)
 
             # Output projection
-            self.projection = nn.Parameter(
+            self.W = nn.Parameter(
                 torch.ones(self.p, self.d) * weight_scale 
             )
 
@@ -161,7 +161,7 @@ class SparseModesNet(nn.Module):
                 )
 
             # Output projection
-            self.projection = nn.Parameter(
+            self.W = nn.Parameter(
                 torch.ones(self.p, self.d) * weight_scale 
             )
 
@@ -169,13 +169,13 @@ class SparseModesNet(nn.Module):
             self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
             self.first_layer.weight.data.fill_(0.1)  
             self.nonlin_map = _quadratic_mapping_vectorized
-            self.projection = nn.Parameter(
+            self.W = nn.Parameter(
                 torch.ones(self.s * (self.s + 1) // 2, self.d))
         elif network_type == 'CM':
             self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
             self.first_layer.weight.data.fill_(0.1)  
             self.nonlin_map = _cubic_mapping_vectorized
-            self.projection = nn.Parameter(
+            self.W = nn.Parameter(
                 torch.ones(self.s * (self.s + 1) * (self.s + 2) // 6, self.d))
             
     
@@ -200,24 +200,24 @@ class SparseModesNet(nn.Module):
         if self.network_type == 'MLP': 
             # Apply the NN to the reduced states 
             h        = self.mlp(z_hat)                  # (batch, p)
-            x_hat_nn = h @ self.projection              # (batch, d)
+            x_hat_nn = h @ self.W                       # (batch, d)
         elif self.network_type == 'CNN':
             h        = self.first_layer(z_hat)          # (batch, s)
             h        = self.cnn(h)                      # (batch, p)
-            x_hat_nn = h @ self.projection              # (batch, d)
+            x_hat_nn = h @ self.W                       # (batch, d)
         elif self.network_type == 'UNET':
             h        = self.first_layer(z_hat)          # (batch, s)
             h        = self.unet(h)                     # (batch, p)
-            x_hat_nn = h @ self.projection              # (batch, d)
+            x_hat_nn = h @ self.W                       # (batch, d)
         elif 'PiNet' in self.network_type:
             h        = self.first_layer(z_hat)          # (batch, inter_dim)
             h        = self.pinet(h)                    # (batch, p)
-            x_hat_nn = h @ self.projection              # (batch, d)
+            x_hat_nn = h @ self.W                       # (batch, d)
         else:
             # Apply the quadratic mapping
             h        = self.first_layer(z_hat)          
             z_quad   = self.nonlin_map(h)               # (batch, g(r))
-            x_hat_nn = z_quad @ self.projection         # (batch, d)
+            x_hat_nn = z_quad @ self.W                  # (batch, d)
 
         # --- Reconstruct x_hat ---
         x_hat = x_hat_lin + x_hat_nn
@@ -228,6 +228,15 @@ class SparseModesNet(nn.Module):
     def l1_norm_omega(self):
         """Return ℓ₁-norm of ω."""
         return self.omega.abs().sum()
+
+
+    def orthogonalize_W(self):
+        """Apply Gram-Schmidt orthogonalization to ensure projection ⊥ Ur"""
+        with torch.no_grad():
+            # Project out the POD basis components
+            # P_orth = P - U_s @ (U_s.T @ P)
+            proj_on_Us = (self.W @ self.U_s) @ (self.U_s.T)  
+            self.W.data = self.W - proj_on_Us
 
 
     def proximal_step(self, lam):
@@ -344,7 +353,7 @@ class StateDecoder(nn.Module):
             self.mlp.initialize(input_dim=self.r, output_dim=self.p)
 
             # Output projection
-            self.projection = torch.nn.Parameter(
+            self.W = torch.nn.Parameter(
                 torch.ones(self.p, self.d, dtype=dtype) * weight_scale
             )
 
@@ -359,7 +368,7 @@ class StateDecoder(nn.Module):
             self.cnn.initialize(input_dim=self.r, output_dim=self.p)
 
             # Output projection
-            self.projection = torch.nn.Parameter(
+            self.W = torch.nn.Parameter(
                 torch.ones(self.p, self.d, dtype=dtype) * weight_scale
             )
 
@@ -369,7 +378,7 @@ class StateDecoder(nn.Module):
             self.unet.initialize(input_dim=self.r, output_dim=self.p)
 
             # Output projection
-            self.projection = torch.nn.Parameter(
+            self.W = torch.nn.Parameter(
                 torch.ones(self.p, self.d, dtype=dtype) * weight_scale
             )
             
@@ -413,19 +422,19 @@ class StateDecoder(nn.Module):
                 )
 
             # Output projection
-            self.projection = torch.nn.Parameter(
+            self.W = torch.nn.Parameter(
                 torch.ones(self.p, self.d, dtype=dtype) * weight_scale
             )
 
         elif network_type == 'QM':
             self.nonlin_map = _quadratic_mapping_vectorized
-            self.projection = torch.nn.Parameter(
+            self.W = torch.nn.Parameter(
                 torch.ones(
                 self.r * (self.r + 1) // 2, self.d, dtype=dtype) * weight_scale
             )
         elif network_type == 'CM':
             self.nonlin_map = _cubic_mapping_vectorized
-            self.projection = torch.nn.Parameter(
+            self.W = torch.nn.Parameter(
             torch.ones(self.r * (self.r + 1) * (self.r + 2) // 6, self.d,
                 dtype=dtype) * weight_scale
             )
@@ -445,13 +454,12 @@ class StateDecoder(nn.Module):
         elif 'PiNet' in self.network_type:
             h = self.first_layer(z_batch)           # (batch, inter_dim)
             h = self.pinet(h)                       # (batch, p)
-            # h = self.pinet(z_batch)                       # (batch, p)
         else:
             # Apply the quadratic or cubic mapping
             h = self.nonlin_map(z_batch)            # (batch, g(r))
 
         # Project output to the original space
-        x_hat_nn = h @ self.projection              # (batch, d)
+        x_hat_nn = h @ self.W                       # (batch, d)
 
         # --- Reconstruct x_hat ---
         x_hat = x_hat_lin + x_hat_nn
@@ -463,6 +471,15 @@ class StateDecoder(nn.Module):
             fnn_out, residual, reg_magnitude=reg_
         )[0])
         return None
+    
+    def orthogonalize_W(self):
+        """Apply Gram-Schmidt orthogonalization to ensure projection ⊥ Ur"""
+        with torch.no_grad():
+            # Project out the POD basis components
+            # P_orth = P - U_r @ (U_r.T @ P)
+            proj_on_Ur = (self.W @ self.U_r) @ (self.U_r.T)  
+            self.W.data = self.W - proj_on_Ur
+
 
 def _quadratic_mapping_vectorized(x):
     """

@@ -74,6 +74,8 @@ def train_sparsemodesnet(model: SparseModesNet,
 
             model.proximal_step(model.lam * lr_new)
 
+            model.orthogonalize_W()
+
             batch_size  = x_batch.shape[0]
             epoch_loss += loss.item() * batch_size
             epoch_l1   += model.l1_norm_omega().item() * batch_size
@@ -169,6 +171,8 @@ def train_statedecoder(model: StateDecoder,
             loss = mse_loss(x_hat_batch, x_batch)
             loss.backward()
             optimizer.step()
+
+            model.orthogonalize_W()
 
             batch_size = x_batch.shape[0]
             epoch_loss += loss.item() * batch_size
