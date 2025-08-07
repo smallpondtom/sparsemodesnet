@@ -593,7 +593,7 @@ if __name__ == "__main__":
         ax.plot(xspan, U_orig[:, i], 'k-', linewidth=3, label='Original', alpha=0.9)
         ax.plot(xspan, U_pod[:, i], '--', linewidth=2, label='POD', alpha=0.8)
         ax.plot(xspan, U_qm[:, i], '-.', linewidth=2, label='GreedyQM', alpha=0.8)
-        ax.plot(xspan, U_sparse[:, i], ':', linewidth=2, label='SPN', alpha=0.8)
+        ax.plot(xspan, U_sparse[:, i], ':', linewidth=2, label='SMN', alpha=0.8)
 
         # Remove all labels and ticks
         ax.set_xlabel('')
