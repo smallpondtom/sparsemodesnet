@@ -192,7 +192,7 @@ if __name__ == "__main__":
         # 'hidden_units': [64, 256],  # UNET
         'hidden_units': [r, 500, p],  # PiNet
         'network_type': 'PiNetCCP',
-        'poly_order': 2,
+        'poly_order': 3,
         'num_polys': 1,
         'drop_linear': False,
         'drop_constant': False,
@@ -238,7 +238,7 @@ if __name__ == "__main__":
 
 
 #%% %=======================Plot the omega evolutions =========================%
-    smn.omega_evolve(omegas, I_nn, config.s, save=True, 
+    smn.omega_evolve(omegas, I_nn, config.s, save=False, 
                      filename='figures/pulse/omega_evolution.png')
 
 #%% #===================== Plot Reconstruction Errors =========================#
@@ -327,7 +327,7 @@ if __name__ == "__main__":
     ax.legend(fontsize=14)
     ax.set_xlim(left=0)
     plt.tight_layout()
-    plt.savefig('figures/pulse/reconstruction_errors_pi2net.png', dpi=300)
+    # plt.savefig('figures/pulse/reconstruction_errors_pi2net.png', dpi=300)
     plt.show()
     plt.close(fig)
     
@@ -450,7 +450,7 @@ if __name__ == "__main__":
     plt.subplots_adjust(left=0.05, right=0.9, top=0.92, bottom=0.1, 
                         wspace=0.3, hspace=0.3)
     plt.suptitle('Reconstruction Comparison', fontsize=19, y=0.98)
-    plt.savefig('figures/pulse/pulse_comparison_pi2net.png', dpi=300)
+    # plt.savefig('figures/pulse/pulse_comparison_pi2net.png', dpi=300)
     plt.show()
     plt.close(fig)
 
@@ -524,4 +524,135 @@ if __name__ == "__main__":
     plt.close(fig)
 
 
+#%% %===================== Additional Plotting and Analysis ===================%
+    # Plot the first 20 singular values and modes of the original data and 
+    # reconstructed data via POD, Greedy Quadratic Manifold, and SparseModesNet
+    # Compute SVD for all datasets
+    U_orig, S_orig, _ = np.linalg.svd(X, full_matrices=False)
+    U_pod, S_pod, _ = np.linalg.svd(X_pod_recon, full_matrices=False)
+    U_qm, S_qm, _ = np.linalg.svd(X_qm_recon, full_matrices=False)
+    U_sparse, S_sparse, _ = np.linalg.svd(X_sparse_recon, full_matrices=False)
+    
+    # Plot singular values comparison
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Left plot: Singular values
+    n_sv = min(20, len(S_orig))
+    modes_range = range(1, n_sv + 1)
+    
+    axes[0].semilogy(modes_range, S_orig[:n_sv], 'k-o', linewidth=3, markersize=8, 
+                     label='Original Data', alpha=0.9)
+    axes[0].semilogy(modes_range, S_pod[:n_sv], '--s', linewidth=2, markersize=6,
+                     label=f'POD Reconstruction (r={r})', alpha=0.8)
+    axes[0].semilogy(modes_range, S_qm[:n_sv], '-.^', linewidth=2, markersize=6,
+                     label='Greedy Quadratic Manifold', alpha=0.8)
+    axes[0].semilogy(modes_range, S_sparse[:n_sv], ':d', linewidth=2, markersize=6,
+                     label='SparseModesNet', alpha=0.8)
+    
+    axes[0].set_xlabel('Mode Number', fontsize=14)
+    axes[0].set_ylabel('Singular Value', fontsize=14)
+    axes[0].set_title('Singular Values Comparison', fontsize=16)
+    axes[0].grid(True, alpha=0.3)
+    axes[0].legend(fontsize=18)
+    axes[0].tick_params(axis='both', which='major', labelsize=12)
+    
+    # Right plot: Relative singular value errors
+    sv_error_pod = np.abs(S_pod[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
+    sv_error_qm = np.abs(S_qm[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
+    sv_error_sparse = np.abs(S_sparse[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
+    
+    axes[1].semilogy(modes_range, sv_error_pod, '--s', linewidth=2, markersize=6,
+                     label=f'POD Reconstruction (r={r})', alpha=0.8)
+    axes[1].semilogy(modes_range, sv_error_qm, '-.^', linewidth=2, markersize=6,
+                     label='Greedy Quadratic Manifold', alpha=0.8)
+    axes[1].semilogy(modes_range, sv_error_sparse, ':d', linewidth=2, markersize=6,
+                     label='SparseModesNet', alpha=0.8)
+    
+    axes[1].set_xlabel('Mode Number', fontsize=14)
+    axes[1].set_ylabel('Relative Error in Singular Values', fontsize=14)
+    axes[1].set_title('Singular Value Reconstruction Errors', fontsize=16)
+    axes[1].grid(True, alpha=0.3)
+    axes[1].tick_params(axis='both', which='major', labelsize=12)
+    
+    plt.tight_layout()
+    plt.savefig('figures/pulse/singular_values_comparison.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig)
+
+    #%% 
+
+    # Plot the first 8 spatial modes comparison
+    n_modes = min(20, U_orig.shape[1])
+    fig, axes = plt.subplots(5, 4, figsize=(22, 15))
+    axes = axes.flatten()
+    
+    for i in range(n_modes):
+        ax = axes[i]
+        
+        # Plot spatial modes
+        ax.plot(xspan, U_orig[:, i], 'k-', linewidth=3, label='Original', alpha=0.9)
+        ax.plot(xspan, U_pod[:, i], '--', linewidth=2, label='POD', alpha=0.8)
+        ax.plot(xspan, U_qm[:, i], '-.', linewidth=2, label='GreedyQM', alpha=0.8)
+        ax.plot(xspan, U_sparse[:, i], ':', linewidth=2, label='SPN', alpha=0.8)
+
+        # Remove all labels and ticks
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        
+        ax.set_title(f'Mode {i+1} (σ = {S_orig[i]:.2e})', fontsize=14)
+        ax.grid(True, alpha=0.3)
+        
+        if i == n_modes - 1:
+            ax.legend(fontsize=18, ncols=2)
+    
+    plt.tight_layout()
+    plt.suptitle('Spatial Modes Comparison', fontsize=18, y=1.02)
+    plt.savefig('figures/pulse/spatial_modes_comparison.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig)
+
+    #%%
+    
+    # Plot energy spectrum comparison
+    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+    
+    # Cumulative energy
+    energy_orig = np.cumsum(S_orig**2) / np.sum(S_orig**2)
+    energy_pod = np.cumsum(S_pod**2) / np.sum(S_pod**2)
+    energy_qm = np.cumsum(S_qm**2) / np.sum(S_qm**2)
+    energy_sparse = np.cumsum(S_sparse**2) / np.sum(S_sparse**2)
+    
+    n_plot = min(50, len(S_orig))
+    mode_range = range(1, n_plot + 1)
+    
+    ax.plot(mode_range, energy_orig[:n_plot], 'k-o', linewidth=3, markersize=6,
+            label='Original Data', alpha=0.9)
+    ax.plot(mode_range, energy_pod[:n_plot], '--s', linewidth=2, markersize=4,
+            label=f'POD Reconstruction (r={r})', alpha=0.8)
+    ax.plot(mode_range, energy_qm[:n_plot], '-.^', linewidth=2, markersize=4,
+            label='Greedy Quadratic Manifold', alpha=0.8)
+    ax.plot(mode_range, energy_sparse[:n_plot], ':d', linewidth=2, markersize=4,
+            label='SparseModesNet', alpha=0.8)
+    
+    # Add horizontal lines for energy thresholds
+    ax.axhline(y=0.99, color='gray', linestyle='--', alpha=0.5, label='99% Energy')
+    ax.axhline(y=0.999, color='gray', linestyle=':', alpha=0.5, label='99.9% Energy')
+    
+    ax.set_xlabel('Mode Number', fontsize=14)
+    ax.set_ylabel('Cumulative Energy Fraction', fontsize=14)
+    ax.set_title('Energy Spectrum Comparison', fontsize=16)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=15)
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.set_ylim([0.8, 1.001])
+    
+    plt.tight_layout()
+    plt.savefig('figures/pulse/energy_spectrum_comparison.png', dpi=300, bbox_inches='tight')
+    plt.show()
+    plt.close(fig)
+    
 # %%
