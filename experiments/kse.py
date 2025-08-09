@@ -737,4 +737,3 @@ if __name__ == "__main__":
     plt.savefig('figures/kse/energy_spectrum_comparison.png', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig)
-# %%
