@@ -160,6 +160,50 @@ if __name__ == "__main__":
     plt.savefig('figures/pulse/pulse_pod_mode_vs_recon.png', dpi=200)
     plt.show()
 
+    # Plot the singular value vs the retained energy
+    fig, ax = plt.subplots(figsize=(10, 6))
+    cumulative_energy = np.cumsum(S**2) / np.sum(S**2)
+    # Plot up to s modes
+    mode_range = np.arange(1, len(S)+1)
+    ax.plot(mode_range, cumulative_energy, 'b-o', linewidth=3, markersize=8)
+    # Add horizontal lines for common energy thresholds
+    ax.axhline(y=0.8, color='blue', linestyle='--', alpha=0.7, label='80% Energy')
+    ax.axhline(y=0.9, color='red', linestyle='--', alpha=0.7, label='90% Energy')
+    ax.axhline(y=0.95, color='orange', linestyle='--', alpha=0.7, label='95% Energy')
+    ax.axhline(y=0.99, color='green', linestyle='--', alpha=0.7, label='99% Energy')
+    ax.axhline(y=0.999, color='purple', linestyle='--', alpha=0.7, label='99.9% Energy')
+    # Find modes corresponding to energy thresholds
+    modes_80 = np.argmax(cumulative_energy >= 0.8) + 1
+    modes_90 = np.argmax(cumulative_energy >= 0.9) + 1
+    modes_95 = np.argmax(cumulative_energy >= 0.95) + 1
+    # modes_99 = np.argmax(cumulative_energy >= 0.99) + 1
+    # modes_999 = np.argmax(cumulative_energy >= 0.999) + 1
+    # Add vertical lines at these points
+    ax.axvline(x=modes_80, color='blue', linestyle=':', alpha=0.5)
+    ax.axvline(x=modes_90, color='red', linestyle=':', alpha=0.5)
+    ax.axvline(x=modes_95, color='orange', linestyle=':', alpha=0.5)
+    # ax.axvline(x=modes_99, color='green', linestyle=':', alpha=0.5)
+    # ax.axvline(x=modes_999, color='purple', linestyle=':', alpha=0.5)
+    # Add text annotations
+    ax.text(modes_80 + 2, 0.75, f'{modes_80} modes', fontsize=12, color='blue')
+    ax.text(modes_90 + 2, 0.84, f'{modes_90} modes', fontsize=12, color='red')
+    # ax.text(modes_95 + 2, 0.92, f'{modes_95} modes', fontsize=12, color='orange')
+    # ax.text(modes_99 + 2, 0.98, f'{modes_99} modes', fontsize=12, color='green')
+    # ax.text(modes_999 + 2, 0.991, f'{modes_999} modes', fontsize=12, color='purple')
+    ax.set_xlabel('Number of POD Modes', fontsize=14)
+    ax.set_ylabel('Cumulative Energy Fraction', fontsize=14)
+    ax.set_title('POD Energy Content vs Number of Modes', fontsize=16)
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=12)
+    ax.set_xlim([0, 100])
+    ax.set_ylim([0.1, 1.005])
+    plt.yscale('log')
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    plt.tight_layout()
+    plt.savefig('figures/pulse/pulse_energy_vs_modes.png', dpi=200)
+    plt.show()
+    plt.close(fig)
+    
 
 #%% #======================= Greedy Quadratic Manifold ========================#
     print("\n" + "="*60)

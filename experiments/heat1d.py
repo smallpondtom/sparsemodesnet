@@ -9,8 +9,6 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.heat1d import generate_heat_data
-from sparsemodesnet import run_sparsemodesnet
-from sparsemodesnet.linalg.pod import compute_pod_basis
 
 #%%
 if __name__ == "__main__":
@@ -62,6 +60,38 @@ if __name__ == "__main__":
         plt.savefig('../figures/heat_data.png', dpi=300)
         plt.show()
         plt.close(fig)
+
+    # Plot the singular value vs the retained energy
+    U, S, _ = np.linalg.svd(X_heat, full_matrices=False)
+    fig, ax = plt.subplots(figsize=(10, 6))
+    cumulative_energy = np.cumsum(S**2) / np.sum(S**2)
+    # Plot up to s modes
+    mode_range = np.arange(1, len(S)+1)
+    ax.plot(mode_range, cumulative_energy, 'b-o', linewidth=3, markersize=8)
+    # Add horizontal lines for common energy thresholds
+    ax.axhline(y=0.99, color='green', linestyle='--', alpha=0.7, label='99% Energy')
+    ax.axhline(y=0.999, color='purple', linestyle='--', alpha=0.7, label='99.9% Energy')
+    # Find modes corresponding to energy thresholds
+    modes_99 = np.argmax(cumulative_energy >= 0.99) + 1
+    modes_999 = np.argmax(cumulative_energy >= 0.999) + 1
+    # Add vertical lines at these points
+    ax.axvline(x=modes_99, color='green', linestyle=':', alpha=0.5)
+    ax.axvline(x=modes_999, color='purple', linestyle=':', alpha=0.5)
+    # Add text annotations
+    ax.text(modes_999 + 2, 0.9976, f'{modes_999} modes', fontsize=12, color='purple')
+    ax.set_xlabel('Number of POD Modes', fontsize=14)
+    ax.set_ylabel('Cumulative Energy Fraction', fontsize=14)
+    ax.set_title('POD Energy Content vs Number of Modes', fontsize=16)
+    plt.yscale('log')
+    ax.grid(True, alpha=0.3)
+    ax.legend(fontsize=12)
+    ax.set_xlim([0, 10])
+    ax.set_ylim([0.985, 1.005])
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    plt.tight_layout()
+    plt.savefig('figures/heat/energy_vs_modes.png', dpi=200)
+    plt.show()
+    plt.close(fig)
 
     #%% Train
     model_heat, info_heat, selected_h, freq_tab = run_sparsemodesnet(
