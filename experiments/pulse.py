@@ -185,8 +185,8 @@ if __name__ == "__main__":
     # ax.axvline(x=modes_99, color='green', linestyle=':', alpha=0.5)
     # ax.axvline(x=modes_999, color='purple', linestyle=':', alpha=0.5)
     # Add text annotations
-    ax.text(modes_80 + 2, 0.75, f'{modes_80} modes', fontsize=12, color='blue')
-    ax.text(modes_90 + 2, 0.84, f'{modes_90} modes', fontsize=12, color='red')
+    ax.text(modes_80 + 2, 0.76, f'{modes_80} modes', fontsize=12, color='blue')
+    ax.text(modes_90 + 2, 0.85, f'{modes_90} modes', fontsize=12, color='red')
     # ax.text(modes_95 + 2, 0.92, f'{modes_95} modes', fontsize=12, color='orange')
     # ax.text(modes_99 + 2, 0.98, f'{modes_99} modes', fontsize=12, color='green')
     # ax.text(modes_999 + 2, 0.991, f'{modes_999} modes', fontsize=12, color='purple')
@@ -197,7 +197,6 @@ if __name__ == "__main__":
     ax.legend(fontsize=12)
     ax.set_xlim([0, 100])
     ax.set_ylim([0.1, 1.005])
-    plt.yscale('log')
     ax.tick_params(axis='both', which='major', labelsize=12)
     plt.tight_layout()
     plt.savefig('figures/pulse/pulse_energy_vs_modes.png', dpi=200)
