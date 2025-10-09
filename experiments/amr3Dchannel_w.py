@@ -1,5 +1,5 @@
 """
-AMR-Wind 3D Channel Flow (u-velocity) simulation experiment using SparseModesNet.
+AMR-Wind 3D Channel Flow (w-velocity) simulation experiment using SparseModesNet.
 """
 
 #%% Load modules
