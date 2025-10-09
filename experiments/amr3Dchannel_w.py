@@ -73,7 +73,7 @@ if __name__ == "__main__":
     print("GREEDY QUADRATIC MANIFOLD")
     
     V_qm, W_qm, mu_qm, I_qm = quadmani_greedy(
-        X, r, s, 1e-12, np.array([], dtype=int))
+        X, r, s, 1e-2, np.array([], dtype=int))
     mu_qm = mu_qm.reshape(-1, 1)  
 
     # Print the selected modes
@@ -239,7 +239,7 @@ if __name__ == "__main__":
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
         # Quadratic Manifold with r_test modes
         V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
-            X, r_test, s, 1e-12, np.array([], dtype=int))
+            X, r_test, s, 1e-2, np.array([], dtype=int))
         shift_test = shift_test.reshape(-1, 1)
         Z_qm_test = V_test.T @ (X - shift_test)
         Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
