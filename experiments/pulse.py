@@ -925,7 +925,7 @@ if __name__ == "__main__":
                      np.abs(sparse_error_2).max(), np.abs(sparse_error_3).max())
     error_vmin = -error_vmax
     
-    fig, axes = plt.subplots(2, 5, figsize=(25, 10))
+    fig, axes = plt.subplots(2, 4, figsize=(22, 11))
     
     # Row 1: Reconstructions
     # (1,1) Original data
@@ -933,36 +933,46 @@ if __name__ == "__main__":
         X, aspect='auto', cmap='viridis', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,0].set_ylabel('Space (x)', fontsize=14)
-    axes[0,0].set_title('Original Data', fontsize=15)
+    axes[0,0].set_ylabel('Space (x)', fontsize=22)
+    axes[0,0].set_title('Original Data', fontsize=28)
+    axes[0,0].set_xticks([])
+    axes[0,0].set_yticks([])
     
     # (1,2) Leading-r POD reconstruction
     im2 = axes[0,1].imshow(
         X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,1].set_title(f'POD Reconstruction (r={r})', fontsize=15)
+    axes[0,1].set_title(f'POD (r={r})', fontsize=28)
+    axes[0,1].set_xticks([])
+    axes[0,1].set_yticks([])
     
     # (1,3) Quadratic Manifold reconstruction
     im3 = axes[0,2].imshow(
         X_qm_recon, aspect='auto', cmap='viridis', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,2].set_title('Quadratic Manifold', fontsize=15)
+    axes[0,2].set_title('GreedyQM', fontsize=28)
+    axes[0,2].set_xticks([])
+    axes[0,2].set_yticks([])
     
     # (1,4) SparseModesNet Pi2Net reconstruction
     im4 = axes[0,3].imshow(
         X_sparse_recon_2, aspect='auto', cmap='viridis', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,3].set_title('SparseModesNet (Pi2Net)', fontsize=15)
+    axes[0,3].set_title(r'SMN $\Pi_2$-Net (leading-r)', fontsize=28)
+    axes[0,3].set_xticks([])
+    axes[0,3].set_yticks([])
 
-    # (1,5) SparseModesNet Pi3Net reconstruction
-    im5 = axes[0,4].imshow(
-        X_sparse_recon_3, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,4].set_title('SparseModesNet (Pi3Net)', fontsize=15)
+    # # (1,5) SparseModesNet Pi3Net reconstruction
+    # im5 = axes[0,4].imshow(
+    #     X_sparse_recon_3, aspect='auto', cmap='viridis', origin='lower',
+    #     extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    #     vmin=recon_vmin, vmax=recon_vmax)
+    # axes[0,4].set_title('SparseModesNet (Pi3Net)', fontsize=15)
+    # axes[0,4].set_xticks([])
+    # axes[0,4].set_yticks([])
     
     # Row 2: Errors
     # (2,1) Empty - no error for original data
@@ -973,49 +983,54 @@ if __name__ == "__main__":
         pod_error, aspect='auto', cmap='RdBu', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=error_vmin, vmax=error_vmax)
-    axes[1,1].set_xlabel('Time', fontsize=14)
-    axes[1,1].set_ylabel('Space (x)', fontsize=14)
-    axes[1,1].set_title('POD Error', fontsize=15)
+    axes[1,1].set_xlabel('Time', fontsize=22)
+    axes[1,1].set_ylabel('Space (x)', fontsize=22)
+    axes[1,1].set_xticks([])
+    axes[1,1].set_yticks([])
     
     # (2,3) Quadratic Manifold error
     im7 = axes[1,2].imshow(
         qm_error, aspect='auto', cmap='RdBu', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=error_vmin, vmax=error_vmax)
-    axes[1,2].set_xlabel('Time', fontsize=14)
-    axes[1,2].set_title('Quadratic Manifold Error', fontsize=15)
+    axes[1,2].set_xlabel('Time', fontsize=22)
+    axes[1,2].set_xticks([])
+    axes[1,2].set_yticks([])
     
     # (2,4) SparseModesNet Pi2Net error
     im8 = axes[1,3].imshow(
         sparse_error_2, aspect='auto', cmap='RdBu', origin='lower',
         extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
         vmin=error_vmin, vmax=error_vmax)
-    axes[1,3].set_xlabel('Time', fontsize=14)
-    axes[1,3].set_title('SparseModesNet (Pi2Net) Error', fontsize=15)
+    axes[1,3].set_xlabel('Time', fontsize=22)
+    axes[1,3].set_xticks([])
+    axes[1,3].set_yticks([])
 
-    # (2,5) SparseModesNet Pi3Net error
-    im9 = axes[1,4].imshow(
-        sparse_error_3, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=error_vmin, vmax=error_vmax)
-    axes[1,4].set_xlabel('Time', fontsize=14)
-    axes[1,4].set_title('SparseModesNet (Pi3Net) Error', fontsize=15)
+    # # (2,5) SparseModesNet Pi3Net error
+    # im9 = axes[1,4].imshow(
+    #     sparse_error_3, aspect='auto', cmap='RdBu', origin='lower',
+    #     extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
+    #     vmin=error_vmin, vmax=error_vmax)
+    # axes[1,4].set_xlabel('Time', fontsize=14)
+    # axes[1,4].set_title('SparseModesNet (Pi3Net) Error', fontsize=15)
+    # axes[1,4].set_xticks([])
+    # axes[1,4].set_yticks([])
     
     # Add unified colorbars
-    cax1 = fig.add_axes([0.92, 0.57, 0.015, 0.35])
-    cbar1 = plt.colorbar(im5, cax=cax1)
-    cbar1.set_label('u(x,t)', fontsize=15)
-    cbar1.ax.tick_params(labelsize=14)
+    cax1 = fig.add_axes([0.91, 0.515, 0.015, 0.385])
+    cbar1 = plt.colorbar(im4, cax=cax1)
+    cbar1.set_label('u(x,t)', fontsize=23)
+    cbar1.ax.tick_params(labelsize=20)
     
-    cax2 = fig.add_axes([0.92, 0.11, 0.015, 0.35])
-    cbar2 = plt.colorbar(im9, cax=cax2)
-    cbar2.set_label('Error', fontsize=15)
-    cbar2.ax.tick_params(labelsize=14)
+    cax2 = fig.add_axes([0.91, 0.1, 0.015, 0.385])
+    cbar2 = plt.colorbar(im8, cax=cax2)
+    cbar2.set_label('Error', fontsize=23)
+    cbar2.ax.tick_params(labelsize=20)
 
-    plt.subplots_adjust(left=0.04, right=0.9, top=0.92, bottom=0.1, 
-                        wspace=0.25, hspace=0.3)
-    plt.suptitle('Flow Field Reconstruction Comparison', fontsize=19, y=0.98)
-    plt.savefig('figures/pulse/pulse_comparison.png', dpi=300, bbox_inches='tight')
+    plt.subplots_adjust(left=0.04, right=0.9, top=0.9, bottom=0.1, 
+                        wspace=0.05, hspace=0.075)
+    plt.suptitle('Flow Field Reconstruction Comparison', fontsize=29, y=0.98)
+    plt.savefig('figures/pulse/pulse_comparison.pdf', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig)
 

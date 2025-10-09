@@ -35,6 +35,7 @@ class ChannelDataSource:
             self.x = f["x"][()][::self.subsample[0]]
             self.y = f["y"][()][::self.subsample[1]]
             self.z = f["z"][()][::self.subsample[2]]
+            self.t = f["times"][()]
         self.dim_order = ["times", "fields", "x", "y", "z"]
         self.n_snapshots = self.shape[0]
 

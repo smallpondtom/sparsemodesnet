@@ -5,7 +5,7 @@ def omega_evolve(omegas, I_nn, s, filename='omega_evolution.png',
                  title=r'$\omega$ Evolution',
                  y_limits=(1e-6, 1e-2, 6),
                  legend_loc='upper right',
-                 save=True):
+                 save=True, show=True):
     # Create figure with subplots
     fig, ax = plt.subplots(1, 1, figsize=(11, 6))
     plt.rcParams.update({
@@ -49,7 +49,8 @@ def omega_evolve(omegas, I_nn, s, filename='omega_evolution.png',
     plt.tight_layout()
     if save:
         plt.savefig(filename, dpi=200)
-    plt.show()
+    if show:
+        plt.show()
 
     # Final omega values
     final_omegas = np.abs(omegas[:, -1])
