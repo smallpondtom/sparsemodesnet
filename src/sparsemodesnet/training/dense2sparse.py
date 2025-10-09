@@ -15,7 +15,7 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
     # Create the dataset and dataloader
     dataset_full = PODReconDataset(Z_np=Z_np, X_np=X_np, 
                                    type='float64' 
-                                        if config.training.device == 'cpu' 
+                                        if config.training.device in ['cpu', 'cuda']
                                         else 'float32')
     dataloader_full = DataLoader(
         dataset_full, batch_size=config.training.lasso_batch_size, shuffle=True, 
@@ -42,7 +42,8 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
         drop_constant   = config.network.drop_constant,
         normalize       = config.network.normalize_layer,
         bias            = config.training.lasso_bias,
-        dtype           = torch.float64 if config.training.device == 'cpu' 
+        full_z          = config.training.full_z,
+        dtype           = torch.float64 if config.training.device in ['cpu', 'cuda']
                          else torch.float32,
     )
 
@@ -69,6 +70,7 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
             optimizer     = config.training.lasso_optimizer,
             momentum      = config.training.lasso_momentum,
             max_num_modes = config.r,
+            l1_only       = config.training.l1_only,
             extra_modes   = config.training.extra_modes,
             device        = config.training.device,
         )

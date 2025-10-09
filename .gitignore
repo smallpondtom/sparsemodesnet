@@ -2,8 +2,25 @@
 .pixi
 *.egg-info
 
+# Images 
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.tiff
+*.bmp
+*.svg
+*.ico
+*.psd
+*.ai
+*.eps
+*.pdf
+*.ps
+
 # Data
 /data
+*.npy
+*.npz
 
 # Mac
 .DS_Store

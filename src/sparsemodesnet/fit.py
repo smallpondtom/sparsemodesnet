@@ -76,7 +76,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             Z_np = U_np.T.dot(X_proc)
             U_tensor = torch.from_numpy(U_np).to(
                     config.training.device,
-                    dtype=torch.float64 if config.training.device == 'cpu'
+                    dtype=torch.float64 if config.training.device in ['cpu', 'cuda']
                           else torch.float32
                 )
 
@@ -100,7 +100,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
         Z_pp = U_np.T.dot(X_pp)
         
         # Ensure consistent data types based on device
-        target_dtype = np.float64 if config.training.device == 'cpu' else np.float32
+        target_dtype = np.float64 if config.training.device in ['cpu', 'cuda'] else np.float32
         if U_np.dtype != target_dtype:
             U_np = U_np.astype(target_dtype)
         if X_pp.dtype != target_dtype:
@@ -110,7 +110,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
         
         U_tensor = torch.from_numpy(U_np).to(
                 config.training.device,
-                dtype=torch.float64 if config.training.device == 'cpu'
+                dtype=torch.float64 if config.training.device in ['cpu', 'cuda']
                       else torch.float32
             )
 
@@ -145,13 +145,13 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
                 drop_constant  = config.network.drop_constant,
                 normalize      = config.network.normalize_layer,
                 bias           = config.training.decoder_bias,
-                dtype          = torch.float64 if config.training.device == 'cpu' 
+                dtype          = torch.float64 if config.training.device in ['cpu', 'cuda']
                                  else torch.float32,
             )
             
             dataset_full = PODReconDataset(Z_np=Z_pp, X_np=X_pp, 
                                            type='float64' 
-                                                if config.training.device == 'cpu' 
+                                                if config.training.device in ['cpu', 'cuda']
                                                 else 'float32')
             dataloader_full = DataLoader(
                 dataset_full, batch_size=config.training.decoder_batch_size, 
@@ -172,12 +172,12 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
 
             X_pp_tensor = torch.from_numpy(X_pp.T).to(
                 config.training.device,
-                dtype=torch.float64 if config.training.device == 'cpu' 
+                dtype=torch.float64 if config.training.device in ['cpu', 'cuda']
                       else torch.float32
             )
             Z_pp_tensor = torch.from_numpy(Z_pp.T).to(
                 config.training.device,
-                dtype=torch.float64 if config.training.device == 'cpu' 
+                dtype=torch.float64 if config.training.device in ['cpu', 'cuda']
                       else torch.float32
             )
             decoder.eval()
@@ -218,7 +218,7 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
             logger.info(f"Selected modes indices: {I_nn.tolist()}")
             logger.info(f"Final relative error: {rel_error:.6e}")
             
-        return decoder, I_nn, omegas, path_history
+        return decoder, I_nn, omegas, path_history, rel_error
         
     finally:
         # Note: logging cleanup would happen here if needed

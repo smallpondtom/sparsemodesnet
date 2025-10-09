@@ -178,7 +178,15 @@ def greedy_step_fast(idx_in_pre, idx_out_pre, sigma, VT, imax, nonlinear_map,
 
     n_consider = jnp.minimum(imax, len(idx_out_pre))
     errors = jnp.zeros(shape=(n_consider,))
-    idx_consider = idx_out_pre[:n_consider]
+
+    ### !!! MY CHANGE !!! ###
+    # This keeps length(idx_consider) == n_consider constant 
+    # which I don't want because idx_consider should be <= imax
+    idx_consider = idx_out_pre[:n_consider] 
+    # Limit idx_consider to be at most imax
+    idx_consider = idx_consider[idx_consider < imax]
+    ### !!! END OF MY CHANGE !!! ###
+
     errors = fori_loop(0, len(errors), body_fun, errors)
     idx = jnp.argmin(errors)
     idx_in_next = jnp.hstack((idx_in_pre, idx_out_pre[idx]))

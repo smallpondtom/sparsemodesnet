@@ -37,7 +37,7 @@ class SparseModesNet(nn.Module):
                  poly_order: int = 2, num_polys: int = 1, 
                  drop_linear: bool = False, drop_constant: bool = False, 
                  normalize: str | None = None, bias: bool = False,
-                 dtype: torch.dtype = torch.float32):
+                 full_z: bool = False, dtype: torch.dtype = torch.float32):
         """
         Initialize SparseModesNet.
         
@@ -58,6 +58,7 @@ class SparseModesNet(nn.Module):
         self.lam = lam
         self.gamma = gamma
         self.alpha = alpha
+        self.full_z = full_z
         torch.set_default_dtype(dtype)
 
         # Skip‐weights ω ∈ R^s
@@ -97,8 +98,9 @@ class SparseModesNet(nn.Module):
                "CNN requires at least 2 values: [num_filters, kernel_size, ...]"
             
             # First layer for proximal operations
-            self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
-            self.first_layer.weight.data.fill_(0.1)  # Initialize weights
+            self.first_layer = nn.Linear(self.s, self.s, bias=bias)
+            # self.first_layer = MaskedLayer(self.s, self.s, torch.eye(self.s))
+            # self.first_layer.weight.data.fill_(0.1)  # Initialize weights
 
             # Spatial CNN decoder
             self.cnn = SpatialCNN(hidden_units=hidden_units, bias=bias)
@@ -188,9 +190,14 @@ class SparseModesNet(nn.Module):
         """
         # --- Projection Skip Connection --- 
         # Compute the reduced states with sparsity 
-        z_hat = z_batch * self.omega.unsqueeze(0)       # (batch, s)
-        # Reconstruct the linear part via projection
-        x_hat_lin = z_hat @ self.U_s.T                  # (batch, d)
+        if self.full_z:
+            z_hat = z_batch
+            # Reconstruct linear part via projection    # (batch, d)
+            x_hat_lin = (z_batch * self.omega.unsqueeze(0)) @ self.U_s.T 
+        else:
+            z_hat = z_batch * self.omega.unsqueeze(0)   # (batch, s)
+            # Reconstruct linear part via projection    # (batch, d)
+            x_hat_lin = z_hat @ self.U_s.T              
         
         # --- MLP or MLP + Π-net hybrid ---
         if self.network_type == 'MLP': 
@@ -234,6 +241,15 @@ class SparseModesNet(nn.Module):
             U_idx = self.U_s[:, idx]
             proj_on_Uidx = (self.W @ U_idx) @ (U_idx.T)  
             self.W.data = self.W - proj_on_Uidx
+
+
+    def soft_thresholding(self, threshold):
+        """
+        Applies the soft-thresholding operator for L1 regularization.
+        """
+        omega_new = torch.sign(self.omega) * torch.relu(
+            torch.abs(self.omega) - threshold)
+        self.omega.data.copy_(omega_new)
 
 
     def proximal_step(self, lam):
@@ -362,6 +378,7 @@ class StateDecoder(nn.Module):
                "CNN requires at least 2 values: [num_filters, kernel_size, ...]"
             
             # Spatial CNN decoder
+            self.first_layer = nn.Linear(self.r, self.r, bias=bias)
             self.cnn = SpatialCNN(hidden_units=hidden_units, bias=bias)
             self.cnn.initialize(input_dim=self.r, output_dim=self.p)
 
@@ -446,6 +463,7 @@ class StateDecoder(nn.Module):
             # Apply the NN to the reduced states 
             h = self.mlp(z_batch)                   # (batch, p)
         elif self.network_type == 'CNN':
+            h = self.first_layer(z_batch)           # (batch, r)
             h = self.cnn(z_batch)                   # (batch, p)
         elif self.network_type == 'UNET':
             h = self.unet(z_batch)                  # (batch, p)

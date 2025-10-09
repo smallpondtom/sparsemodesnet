@@ -15,6 +15,7 @@ def train_sparsemodesnet(model: SparseModesNet,
                          optimizer: str,
                          momentum: float,
                          max_num_modes: int,
+                         l1_only: bool,
                          extra_modes: int,
                          device: str):
     """
@@ -72,7 +73,10 @@ def train_sparsemodesnet(model: SparseModesNet,
             loss.backward()
             optimizer.step()
 
-            model.proximal_step(model.lam * lr_new)
+            if l1_only:
+                model.soft_thresholding(model.lam * lr_new) 
+            else:
+                model.proximal_step(model.lam * lr_new)
 
             model.orthogonalize_W()
 

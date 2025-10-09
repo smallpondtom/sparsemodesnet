@@ -28,6 +28,8 @@ class TrainingConfig:
     gamma: float = 1e-6
     max_no_change: int = 50
     extra_modes: int = 0
+    l1_only: bool = False
+    full_z: bool = False
     # Decoder part
     decoder_lr: float = 1e-3
     decoder_lr_patience: int = 100
