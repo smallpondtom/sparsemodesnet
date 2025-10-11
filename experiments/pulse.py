@@ -284,16 +284,16 @@ if __name__ == "__main__":
         'device': device,
         # Experiment Setup
         'label': "Advecting Pulse",
-        'enable_logging': False
+        'enable_logging': True
     }
     config = smn.SparseModesNetConfig.from_dict(config_dict)
 
 
 #%% %======================== Training SparseModesNet =========================%
     model_2, I_nn_2, omegas_2, path_history, re = smn.fit(X, config)
-    torch.save(model_2, "results/pulse/sparsemodesnet_model_pi2net.pth")
-    np.save("results/pulse/I_nn_pi2net.npy", I_nn_2)
-    np.save("results/pulse/omegas_pi2net.npy", omegas_2)
+    # torch.save(model_2, "results/pulse/sparsemodesnet_model_pi2net.pth")
+    # np.save("results/pulse/I_nn_pi2net.npy", I_nn_2)
+    # np.save("results/pulse/omegas_pi2net.npy", omegas_2)
 
 #%% Or load models
     model_2 = torch.load("results/pulse/sparsemodesnet_model_pi2net.pth", weights_only=False)
