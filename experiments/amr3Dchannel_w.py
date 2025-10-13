@@ -4,7 +4,6 @@ AMR-Wind 3D Channel Flow (w-velocity) simulation experiment using SparseModesNet
 
 #%% Load modules
 import numpy as np
-import scipy.linalg.interpolative as sli
 import torch
 import matplotlib.pyplot as plt
 
@@ -13,7 +12,7 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from QM.quadmani import quadmani_greedy
+from QM.quadmani import quadmani_greedy, _make_cubic_mapping_jax_fixed
 import sparsemodesnet as smn
 from utils.channel_data_source import ChannelDataSource
 
@@ -31,6 +30,50 @@ def quadratic_mapping_numpy(x):
         i_indices, j_indices = np.tril_indices(n)
         result = x[:, i_indices] * x[:, j_indices]
         return result
+
+
+def _cubic_mapping_numpy(x):
+    """
+    Fast vectorized computation of unique cubic terms x ⊗ x ⊗ x (NumPy version).
+    Uses meshgrid for efficient index generation.
+    
+    Args:
+        x: np.ndarray of shape (batch_size, n) or (n,)
+        
+    Returns:
+        np.ndarray of shape (batch_size, n*(n+1)*(n+2)//6) or (n*(n+1)*(n+2)//6,)
+    """
+    if x.ndim == 1:
+        n = x.shape[0]
+        # Create meshgrid for all combinations
+        i_range = np.arange(n)
+        i_grid, j_grid, k_grid = np.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products
+        result = x[i_indices] * x[j_indices] * x[k_indices]
+        return result
+    else:
+        batch_size, n = x.shape
+        # Create meshgrid for all combinations
+        i_range = np.arange(n)
+        i_grid, j_grid, k_grid = np.meshgrid(i_range, i_range, i_range, indexing='ij')
+        
+        # Keep only upper triangular combinations (i ≤ j ≤ k)
+        mask = (i_grid <= j_grid) & (j_grid <= k_grid)
+        i_indices = i_grid[mask]
+        j_indices = j_grid[mask]
+        k_indices = k_grid[mask]
+        
+        # Compute cubic products for all batches
+        result = x[:, i_indices] * x[:, j_indices] * x[:, k_indices]
+        return result
+
 
 
 #%% %============================= Main Script ================================%
@@ -68,17 +111,18 @@ if __name__ == "__main__":
     r = 20
     p = int(r**2)
 
-#%% #======================= Greedy Quadratic Manifold ========================#
+#%% #========================= Greedy Cubic Manifold ==========================#
     print("\n" + "="*60)
-    print("GREEDY QUADRATIC MANIFOLD")
+    print("GREEDY CUBIC MANIFOLD")
+    V_cm, W_cm, mu_cm, I_cm = quadmani_greedy(
+        X, r, s, 1e-2, np.array([], dtype=int), 
+        feature_map=_make_cubic_mapping_jax_fixed(max_r=r))
     
-    V_qm, W_qm, mu_qm, I_qm = quadmani_greedy(
-        X, r, s, 1e-2, np.array([], dtype=int))
-    mu_qm = mu_qm.reshape(-1, 1)  
-
     # Print the selected modes
-    print("Selected modes (I_qm):", I_qm.sort())
-    np.save("results/amr3Dchannel/w/I_qm.npy", I_qm)
+    print("Selected modes (I_cm):", I_cm)
+    np.save("results/amr3Dchannel/w/I_cm.npy", I_cm)
+
+
 
 #%% %================= Configuration of SparseModesNet Pi3Net =================%
 
@@ -227,36 +271,27 @@ if __name__ == "__main__":
     X_proc = config.preprocessing.forward(X)
     V_all = np.linalg.svd(X_proc, full_matrices=False)[0][:, :s]
 
-    # regs = [
-    #     1e3, 1e4, 1e4, 1e6, 1e6,
-    #     1e6, 1e7, 1e7, 1e7, 1e7,
-    #     1e6, 1e6, 1e4, 1e4, 1e-14
-    # ]
-    
-    ct = 0  # Initialize counter for regs
-
     # Test different numbers of modes
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
-        # Quadratic Manifold with r_test modes
-        V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
-            X, r_test, s, 1e-2, np.array([], dtype=int))
-        shift_test = shift_test.reshape(-1, 1)
-        Z_qm_test = V_test.T @ (X - shift_test)
-        Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
-        recon_error_qm_test = np.linalg.norm(
-            X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
-        rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
+        # # Quadratic Manifold with r_test modes
+        # V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
+        #     X, r_test, s, 1e-2, np.array([], dtype=int))
+        # shift_test = shift_test.reshape(-1, 1)
+        # Z_qm_test = V_test.T @ (X - shift_test)
+        # Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
+        # recon_error_qm_test = np.linalg.norm(
+        #     X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
+        # rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
 
-        # # Cubic Manifold with r_test modes
-        # V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-        #     X, r_test, s, regs[ct], np.array([], dtype=int), 
-        #     feature_map=_cubic_mapping_jax)
-        # ct += 1
-        # Z_qm_test_3 = V_test_3.T @ (X - shift_test)
-        # Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
-        # recon_error_qm_test_3 = np.linalg.norm(
-        #     X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
-        # rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
+        # Cubic Manifold with r_test modes
+        V_test_3, W_test_3, shift_test, I_qm_test_3 = quadmani_greedy(
+            X, r_test, s, 1e-2, np.array([], dtype=int), 
+            feature_map=_make_cubic_mapping_jax_fixed(max_r=r_test))
+        Z_qm_test_3 = V_test_3.T @ (X - shift_test)
+        Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
+        recon_error_qm_test_3 = np.linalg.norm(
+            X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
+        rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
         
         # Leading-r POD reconstruction
         X_proc_test = config.preprocessing.forward(X)
@@ -369,8 +404,8 @@ if __name__ == "__main__":
         rel_recon_error_sparse_3p_test = recon_error_sparse_test_3p / np.linalg.norm(X, ord='fro')
         
         mode_counts.append(r_test)
-        qm_errors.append(rel_recon_error_qm_test)
-        # cm_errors.append(rel_recon_error_qm_test_3)
+        # qm_errors.append(rel_recon_error_qm_test)
+        cm_errors.append(rel_recon_error_qm_test_3)
         pod_errors.append(rel_recon_error_pod_test)
         # sparse_2_errors.append(rel_recon_error_sparse_2_test)
         sparse_3_errors.append(rel_recon_error_sparse_3_test)
@@ -380,8 +415,8 @@ if __name__ == "__main__":
     np.savez(
         "results/amr3Dchannel/w/reconstruction_errors.npz",
         mode_counts=mode_counts,
-        qm_errors=qm_errors,
-        # cm_errors=cm_errors,
+        # qm_errors=qm_errors,
+        cm_errors=cm_errors,
         pod_errors=pod_errors,
         # sparse_2_errors=sparse_2_errors,
         sparse_3_errors=sparse_3_errors,
@@ -397,18 +432,18 @@ if __name__ == "__main__":
 #%% #======================= Plot reconstruction errors =======================#
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
     
-    ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
-                markersize=8, linewidth=3)
+    # ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
+    #             markersize=8, linewidth=3)
     ax.semilogy(mode_counts, cm_errors, '--v', label='Greedy Cubic Manifold',
                 markersize=8, linewidth=3)
     ax.semilogy(mode_counts, pod_errors, '-o', label='POD (leading-r)', 
                 markersize=8, linewidth=3)
     
     # Only plot valid SparseModesNet errors (selected modes)
-    valid_sparse_2_errors = [err for err in sparse_2_errors if not np.isnan(err)]
-    valid_mode_counts_2 = [mode_counts[i] for i, err in enumerate(sparse_2_errors) if not np.isnan(err)]
-    ax.semilogy(valid_mode_counts_2, valid_sparse_2_errors, '-s', label=r'SparseModesNet $\Pi_2$-Net (selected)', 
-                markersize=8, linewidth=3)
+    # valid_sparse_2_errors = [err for err in sparse_2_errors if not np.isnan(err)]
+    # valid_mode_counts_2 = [mode_counts[i] for i, err in enumerate(sparse_2_errors) if not np.isnan(err)]
+    # ax.semilogy(valid_mode_counts_2, valid_sparse_2_errors, '-s', label=r'SparseModesNet $\Pi_2$-Net (selected)', 
+    #             markersize=8, linewidth=3)
 
     valid_sparse_3_errors = [err for err in sparse_3_errors if not np.isnan(err)]
     valid_mode_counts_3 = [mode_counts[i] for i, err in enumerate(sparse_3_errors) if not np.isnan(err)]
@@ -416,8 +451,8 @@ if __name__ == "__main__":
                 markersize=10, linewidth=3)
     
     # Plot SparseModesNet with leading modes
-    ax.semilogy(mode_counts, sparse_2p_errors, ':s', label=r'SparseModesNet $\Pi_2$-Net (leading-r)', 
-                markersize=8, linewidth=3, alpha=0.8)
+    # ax.semilogy(mode_counts, sparse_2p_errors, ':s', label=r'SparseModesNet $\Pi_2$-Net (leading-r)', 
+    #             markersize=8, linewidth=3, alpha=0.8)
     ax.semilogy(mode_counts, sparse_3p_errors, ':x', label=r'SparseModesNet $\Pi_3$-Net (leading-r)', 
                 markersize=10, linewidth=3, alpha=0.8)
     
@@ -440,10 +475,15 @@ if __name__ == "__main__":
     xsnap = X[:, snapshot_idx]
     xsnap_proc = X_proc[:, snapshot_idx]
 
-    # Quadratic Manifold reconstruction
-    Z_qm = V_qm.T @ (xsnap - mu_qm)
-    Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
-    X_qm_recon = V_qm @ Z_qm + W_qm @ Z_quad_qm + mu_qm
+    # # Quadratic Manifold reconstruction
+    # Z_qm = V_qm.T @ (xsnap - mu_qm)
+    # Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
+    # X_qm_recon = V_qm @ Z_qm + W_qm @ Z_quad_qm + mu_qm
+
+    # Cubic Manifold reconstruction
+    Z_cm = V_cm.T @ (xsnap - mu_cm)
+    Z_quad_cm = _cubic_mapping_numpy(Z_cm.T).T
+    X_cm_recon = V_cm @ Z_cm + W_cm @ Z_quad_cm + mu_cm
 
     # Leading-r POD reconstruction (using top r modes)
     V_leading_r = V_all[:, :r]
@@ -476,7 +516,8 @@ if __name__ == "__main__":
     
     # Calculate errors
     # pod_error = xsnap - X_pod_recon
-    qm_error = xsnap - X_qm_recon
+    # qm_error = xsnap - X_qm_recon
+    cm_error = xsnap - X_cm_recon
     # sparse_error_2 = xsnap - X_sparse_recon_2
     sparse_error_3 = xsnap - X_sparse_recon_3
     sparse_error_3p = xsnap - X_sparse_recon_3p
@@ -487,14 +528,16 @@ if __name__ == "__main__":
     zlen = ds.shape[4]
 
     xsnap = xsnap.reshape((xlen, ylen, zlen), order='C')
-    X_qm_recon = X_qm_recon.reshape((xlen, ylen, zlen), order='C')
+    # X_qm_recon = X_qm_recon.reshape((xlen, ylen, zlen), order='C')
+    X_cm_recon = X_cm_recon.reshape((xlen, ylen, zlen), order='C')
     # X_pod_recon = X_pod_recon.reshape((xlen, ylen, zlen), order='C')
     # X_sparse_recon_2 = X_sparse_recon_2.reshape((xlen, ylen, zlen), order='C')
     X_sparse_recon_3 = X_sparse_recon_3.reshape((xlen, ylen, zlen), order='C')
     X_sparse_recon_3p = X_sparse_recon_3p.reshape((xlen, ylen, zlen), order='C')
 
     # pod_error = pod_error.reshape((xlen, ylen, zlen), order='C')
-    qm_error = qm_error.reshape((xlen, ylen, zlen), order='C')
+    # qm_error = qm_error.reshape((xlen, ylen, zlen), order='C')
+    cm_error = cm_error.reshape((xlen, ylen, zlen), order='C')
     # sparse_error_2 = sparse_error_2.reshape((xlen, ylen, zlen), order='C')
     sparse_error_3 = sparse_error_3.reshape((xlen, ylen, zlen), order='C')
     sparse_error_3p = sparse_error_3p.reshape((xlen, ylen, zlen), order='C')
@@ -502,26 +545,28 @@ if __name__ == "__main__":
     # Slice 
     zslice_idx = zlen // 2  # Middle slice in z-direction
     xsnap_ = xsnap[:, :, zslice_idx]
-    X_qm_recon_ = X_qm_recon[:, :, zslice_idx]
+    # X_qm_recon_ = X_qm_recon[:, :, zslice_idx]
+    X_cm_recon_ = X_cm_recon[:, :, zslice_idx]
     # X_pod_recon_ = X_pod_recon[:, :, zslice_idx
     # X_sparse_recon_2_ = X_sparse_recon_2[:, :, zslice_idx]
     X_sparse_recon_3_ = X_sparse_recon_3[:, :, zslice_idx]
     X_sparse_recon_3p_ = X_sparse_recon_3p[:, :, zslice_idx]
 
     # pod_error_ = pod_error[:, :, zslice_idx]
-    qm_error_ = qm_error[:, :, zslice_idx]
+    # qm_error_ = qm_error[:, :, zslice_idx]
+    cm_error_ = cm_error[:, :, zslice_idx]
     # sparse_error_2_ = sparse_error_2[:, :, zslice_idx]
     sparse_error_3_ = sparse_error_3[:, :, zslice_idx]
     sparse_error_3p_ = sparse_error_3p[:, :, zslice_idx]
 
     # Set consistent color scales for reconstructions
-    recon_vmin = min(xsnap_.min(), X_qm_recon_.min(), # X_pod_recon_.min(), 
+    recon_vmin = min(xsnap_.min(), X_cm_recon.min(), # X_qm_recon_.min(), X_pod_recon_.min(), 
                      X_sparse_recon_3_.min(), X_sparse_recon_3p_.min())
-    recon_vmax = max(xsnap_.max(), X_qm_recon_.max(), # X_pod_recon_.max(),
+    recon_vmax = max(xsnap_.max(), X_cm_recon.min(), # X_qm_recon_.max(), X_pod_recon_.max(),
                      X_sparse_recon_3_.max(), X_sparse_recon_3p_.max())
     
     # Set consistent color scales for errors
-    error_vmax = max(np.abs(qm_error_).max(), # np.abs(pod_error_).max(), 
+    error_vmax = max(np.abs(cm_error_).max(), # np.abs(qm_error_).max(), np.abs(pod_error_).max(), 
                      np.abs(sparse_error_3_).max(), np.abs(sparse_error_3p_).max())
     error_vmin = -error_vmax
     
@@ -547,12 +592,12 @@ if __name__ == "__main__":
     # axes[0,1].set_xticks([])
     # axes[0,1].set_yticks([])
     
-    # (1,2) Quadratic Manifold reconstruction
+    # (1,2) Cubic Manifold reconstruction
     im2 = axes[0,1].imshow(
-        X_qm_recon_, aspect='auto', cmap='viridis', origin='lower',
+        X_cm_recon_, aspect='auto', cmap='viridis', origin='lower',
         extent=[ds.x[0], ds.x[-1], ds.y[0], ds.y[-1]],
         vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,1].set_title('GreedyQM', fontsize=28)
+    axes[0,1].set_title('GreedyCM', fontsize=28)
     axes[0,1].set_xticks([])
     axes[0,1].set_yticks([])
     
@@ -587,9 +632,9 @@ if __name__ == "__main__":
     # axes[1,1].set_ylabel('Space (x)', fontsize=14)
     # axes[1,1].set_title('POD Error', fontsize=15)
     
-    # (2,2) Quadratic Manifold error
+    # (2,2) Cubic Manifold error
     im7 = axes[1,1].imshow(
-        qm_error_, aspect='auto', cmap='RdBu', origin='lower',
+        cm_error_, aspect='auto', cmap='RdBu', origin='lower',
         extent=[ds.x[0], ds.x[-1], ds.y[0], ds.y[-1]],
         vmin=error_vmin, vmax=error_vmax)
     axes[1,1].set_xlabel(r'$\xi_1$', fontsize=22)

@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.pulse import generate_advecting_pulse
-from QM.quadmani import quadmani_greedy, _cubic_mapping_jax
+from QM.quadmani import quadmani_greedy, _make_cubic_mapping_jax_fixed
 import sparsemodesnet as smn
 
 def quadratic_mapping_numpy(x):
@@ -217,17 +217,6 @@ if __name__ == "__main__":
     np.save("results/pulse/I_qm.npy", I_qm)
 
 
-#%% #========================= Greedy Cubic Manifold ==========================#
-    print("\n" + "="*60)
-    print("GREEDY CUBIC MANIFOLD")
-    V_cm, W_cm, _, I_cm = quadmani_greedy(
-        X, r, s, 1e-15, np.array([], dtype=int), 
-        feature_map=_cubic_mapping_jax)
-    
-    # Print the selected modes
-    print("Selected modes (I_cm):", I_cm)
-    np.save("results/kse/I_cm.npy", I_cm)
-
 
 #%% %================= Configuration of SparseModesNet Pi2Net =================%
 
@@ -284,16 +273,16 @@ if __name__ == "__main__":
         'device': device,
         # Experiment Setup
         'label': "Advecting Pulse",
-        'enable_logging': True
+        'enable_logging': False
     }
     config = smn.SparseModesNetConfig.from_dict(config_dict)
 
 
 #%% %======================== Training SparseModesNet =========================%
     model_2, I_nn_2, omegas_2, path_history, re = smn.fit(X, config)
-    # torch.save(model_2, "results/pulse/sparsemodesnet_model_pi2net.pth")
-    # np.save("results/pulse/I_nn_pi2net.npy", I_nn_2)
-    # np.save("results/pulse/omegas_pi2net.npy", omegas_2)
+    torch.save(model_2, "results/pulse/sparsemodesnet_model_pi2net.pth")
+    np.save("results/pulse/I_nn_pi2net.npy", I_nn_2)
+    np.save("results/pulse/omegas_pi2net.npy", omegas_2)
 
 #%% Or load models
     model_2 = torch.load("results/pulse/sparsemodesnet_model_pi2net.pth", weights_only=False)
@@ -301,9 +290,10 @@ if __name__ == "__main__":
     omegas_2 = np.load("results/pulse/omegas_pi2net.npy")
 
 #%% %=======================Plot the omega evolutions =========================%
-    smn.omega_evolve(omegas_2, I_nn_2, config.s, save=False, 
+    smn.omega_evolve(omegas_2, I_nn_2, config.s, save=True, 
+                     title=r"$\omega$ Evolution ($\Pi_2$-Net)",
                      legend_loc='lower left',
-                     filename='figures/pulse/omega_evolution_pi2net.png')
+                     filename='figures/pulse/omega_evolution_pi2net.pdf')
 
 #%% %==================== Configuration of SparseModesNet =====================%
 
@@ -312,7 +302,7 @@ if __name__ == "__main__":
         # Number of modes
         's': s,
         'r': r,
-        'p': p,
+        'p': 400,
         # Preprocessing
         'normalize_data': True,
         'center': True,
@@ -322,7 +312,7 @@ if __name__ == "__main__":
         # 'hidden_units': [400, 400, 400],  # MLP
         # 'hidden_units': [32, 5, 64, 128],  # CNN
         # 'hidden_units': [64, 256],  # UNET
-        'hidden_units': [r, 500, p],  # PiNet
+        'hidden_units': [50, 600, 400],  # PiNet
         'network_type': 'PiNetCCP',
         'poly_order': 3,
         'num_polys': 1,
@@ -377,8 +367,9 @@ if __name__ == "__main__":
     omegas_3 = np.load("results/pulse/omegas_pi3net.npy")
 
 #%% %=======================Plot the omega evolutions =========================%
-    smn.omega_evolve(omegas_3, I_nn_3, config.s, save=False, 
-                     legend_loc='lower left',
+    smn.omega_evolve(omegas_3, I_nn_3, config.s, save=True, 
+                     title=r"$\omega$ Evolution ($\Pi_3$-Net)",
+                     legend_loc='lower center',
                      filename='figures/pulse/omega_evolution_pi3net.png')
     
 #%% %==================== Configuration of SparseModesNet =====================%
@@ -457,7 +448,7 @@ if __name__ == "__main__":
         # Number of modes
         's': s,
         'r': r,
-        'p': p,
+        'p': 400,
         # Preprocessing
         'normalize_data': True,
         'center': True,
@@ -467,7 +458,7 @@ if __name__ == "__main__":
         # 'hidden_units': [400, 400, 400],  # MLP
         # 'hidden_units': [32, 5, 64, 128],  # CNN
         # 'hidden_units': [64, 256],  # UNET
-        'hidden_units': [r, 500, p],  # PiNet
+        'hidden_units': [50, 600, 400],  # PiNet
         'network_type': 'PiNetCCP',
         'poly_order': 3,
         'num_polys': 1,
@@ -534,14 +525,6 @@ if __name__ == "__main__":
         config.preprocessing.forward(X), full_matrices=False
     )[0][:, :s]
 
-    regs = [
-        1e3, 1e4, 1e4, 1e6, 1e6,
-        1e6, 1e7, 1e7, 1e7, 1e7,
-        1e6, 1e6, 1e4, 1e4, 1e-14
-    ]
-    
-    ct = 0  # Initialize counter for regs
-
     # Test different numbers of modes
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
         # Quadratic Manifold with r_test modes
@@ -556,9 +539,8 @@ if __name__ == "__main__":
 
         # Cubic Manifold with r_test modes
         V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-            X, r_test, s, regs[ct], np.array([], dtype=int), 
-            feature_map=_cubic_mapping_jax)
-        ct += 1
+            X, r_test, s, 1e-12, np.array([], dtype=int), 
+            feature_map=_make_cubic_mapping_jax_fixed(max_r=r_test))
         Z_qm_test_3 = V_test_3.T @ (X - shift_test)
         Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
         recon_error_qm_test_3 = np.linalg.norm(
@@ -687,7 +669,7 @@ if __name__ == "__main__":
     #%% Plot reconstruction errors
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
     
-    ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
+    ax.semilogy(mode_counts, qm_errors, '--^', label='Greedy Quadratic Manifold', 
                 markersize=8, linewidth=3)
     ax.semilogy(mode_counts, cm_errors, '--v', label='Greedy Cubic Manifold',
                 markersize=8, linewidth=3)

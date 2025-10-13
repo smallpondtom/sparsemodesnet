@@ -100,7 +100,12 @@ def quadmani_greedy(
         shift_value = jnp.mean(data_points, axis=1)
     else:
         shift_value = jnp.zeros(data_points.shape[0])
-    phi, sigma, psit = jnp.linalg.svd(shift_data(data_points, shift_value))
+
+    ### !!! CHANGE TO DEFAULT CPU !!! ###
+    with jax.default_device(jax.devices('cpu')[0]):
+        phi, sigma, psit = jnp.linalg.svd(shift_data(data_points, shift_value))
+    ### !!! END OF CHANGE !!! ###
+    
     shifted_svd = ShiftedSVD(phi, sigma, psit, shift_value)
     return quadmani_greedy_from_svd(
         shifted_svd,
@@ -157,7 +162,12 @@ def quadmani_greedy_from_svd(
 def lstsq_l2(A, B, reg_magnitude=None):
     if reg_magnitude is None:
         reg_magnitude = REG_MAGNITUDE.value
-    phi, sigma, psi_t = jnp.linalg.svd(A, full_matrices=False)
+
+    ### !!! CHANGE TO DEFAULT CPU !!! ###
+    with jax.default_device(jax.devices('cpu')[0]):
+        phi, sigma, psi_t = jnp.linalg.svd(A, full_matrices=False)
+    ### !!! END OF CHANGE !!! ###
+    
     sinv = sigma / (sigma**2 + reg_magnitude**2)
     x = psi_t.T * sinv @ (phi.T @ B)
     B_estimate = A @ x

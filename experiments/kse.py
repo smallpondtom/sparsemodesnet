@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from examples.kse import generate_kse_data
-from QM.quadmani import quadmani_greedy, _cubic_mapping_jax
+from QM.quadmani import quadmani_greedy, _make_cubic_mapping_jax_fixed
 import sparsemodesnet as smn
 
 def quadratic_mapping_numpy(x):
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     print("GREEDY CUBIC MANIFOLD")
     V_cm, W_cm, _, I_cm = quadmani_greedy(
         X, r, s, 1e-15, np.array([], dtype=int), 
-        feature_map=_cubic_mapping_jax)
+        feature_map=_make_cubic_mapping_jax_fixed(max_r=r))
     # Print the selected modes
     print("Selected modes (I_cm):", I_cm)
     np.save("results/kse/I_cm.npy", I_cm)
@@ -489,14 +489,6 @@ if __name__ == "__main__":
         config.preprocessing.forward(X), full_matrices=False
     )[0][:, :s]
 
-    regs = [
-        1e3, 1e4, 1e4, 1e6, 1e6,
-        1e6, 1e7, 1e7, 1e7, 1e7,
-        1e6, 1e6, 1e4, 1e4, 1e-14
-    ]
-    
-    ct = 0  # Initialize counter for regs
-
     # Test different numbers of modes
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
         # Quadratic Manifold with r_test modes
@@ -511,9 +503,8 @@ if __name__ == "__main__":
 
         # Cubic Manifold with r_test modes
         V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-            X, r_test, s, regs[ct], np.array([], dtype=int), 
-            feature_map=_cubic_mapping_jax)
-        ct += 1
+            X, r_test, s, 1e-12, np.array([], dtype=int), 
+            feature_map=_make_cubic_mapping_jax_fixed(max_r=r_test))
         Z_qm_test_3 = V_test_3.T @ (X - shift_test)
         Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
         recon_error_qm_test_3 = np.linalg.norm(
@@ -642,7 +633,7 @@ if __name__ == "__main__":
     #%% Plot reconstruction errors
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
     
-    ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
+    ax.semilogy(mode_counts, qm_errors, '--^', label='Greedy Quadratic Manifold', 
                 markersize=8, linewidth=3)
     ax.semilogy(mode_counts, cm_errors, '--v', label='Greedy Cubic Manifold',
                 markersize=8, linewidth=3)
