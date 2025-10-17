@@ -92,13 +92,14 @@ if __name__ == "__main__":
     # Load the data source
     ds = ChannelDataSource(
         hfname="../../Data/nrel/channel_5200_data_0_10000.h5",
-        subsample=[2, 2, 1],
+        subsample=[1, 1, 1],
+        z_slice=16,
         no_pressure=True,
         which_velocity="u"
     )
 
     # Data parameters
-    n_snapshots = 500
+    n_snapshots = 1000
 
     # Load the data
     X = ds.get_matrix(snapshot_range=slice(0, n_snapshots))
