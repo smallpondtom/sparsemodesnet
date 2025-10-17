@@ -7,12 +7,14 @@ class ChannelDataSource:
         hfname="../../Data/nrel/channel_5200_data_0_10000.h5",
         subsample=None,
         no_pressure=False,
+        y_slice=None,
         z_slice=None,
         which_velocity="uvw"
     ):
         self.hfname = hfname
         self.subsample = subsample if subsample is not None else [1, 1, 1]
         self.no_pressure = no_pressure
+        self.y_slice = y_slice  # Store y_slice
         self.z_slice = z_slice  # Store z_slice
 
         # Select specific velocity components indvidually or all
@@ -35,7 +37,10 @@ class ChannelDataSource:
             self.fields = f["fields"][()][self.field_indices]
             # Apply subsampling to coordinate arrays
             self.x = f["x"][()][::self.subsample[0]]
-            self.y = f["y"][()][::self.subsample[1]]
+            if y_slice is None:
+                self.y = f["y"][()][::self.subsample[1]]
+            else:
+                self.y = f["y"][()][y_slice]
             if z_slice is None:
                 self.z = f["z"][()][::self.subsample[2]]
             else:
@@ -52,6 +57,12 @@ class ChannelDataSource:
         with h5py.File(self.hfname, "r") as f:
             dset = f["data"]
             assert isinstance(dset, h5py.Dataset)
+
+            # Determine y-dimension slice
+            if self.y_slice is not None:
+                y_dim_slice = self.y_slice
+            else:
+                y_dim_slice = slice(None, None, self.subsample[1])
             
             # Determine z-dimension slice
             if self.z_slice is not None:
@@ -65,27 +76,27 @@ class ChannelDataSource:
                 # (key, field_indices, ::subsample[0], ::subsample[1], z_slice or ::subsample[2])
                 full_key = (key, self.field_indices, 
                            slice(None, None, self.subsample[0]),
-                           slice(None, None, self.subsample[1]), 
+                           y_dim_slice,
                            z_dim_slice)
             elif isinstance(key, slice):
                 # Multiple snapshots: 
                 # (key, field_indices, ::subsample[0], ::subsample[1], z_slice or ::subsample[2])
                 full_key = (key, self.field_indices,
                            slice(None, None, self.subsample[0]),
-                           slice(None, None, self.subsample[1]),
+                           y_dim_slice,
                            z_dim_slice)
             else:
                 # Handle other key types (tuple, list, etc.)
                 if isinstance(key, tuple):
                     # Extend the key tuple with field selection and subsampling
                     spatial_slices = (slice(None, None, self.subsample[0]),
-                                    slice(None, None, self.subsample[1]),
-                                    z_dim_slice)
+                                      y_dim_slice,
+                                      z_dim_slice)
                     full_key = (key[0], self.field_indices) + spatial_slices
                 else:
                     full_key = (key, self.field_indices,
                                slice(None, None, self.subsample[0]),
-                               slice(None, None, self.subsample[1]),
+                               y_dim_slice,
                                z_dim_slice)
             
             data = np.array(dset[full_key])

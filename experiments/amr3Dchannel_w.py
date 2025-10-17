@@ -94,12 +94,13 @@ if __name__ == "__main__":
     ds = ChannelDataSource(
         hfname="../../Data/nrel/channel_5200_data_0_10000.h5",
         subsample=[1, 1, 1],
+        y_slice=96,
         no_pressure=True,
         which_velocity="w" # <- select 'w' velocity
     )
 
     # Data parameters
-    n_snapshots = 100
+    n_snapshots = 1000
 
     # Load the data
     X = ds.get_matrix(snapshot_range=slice(0, n_snapshots))

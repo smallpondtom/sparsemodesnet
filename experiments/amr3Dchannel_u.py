@@ -93,7 +93,7 @@ if __name__ == "__main__":
     ds = ChannelDataSource(
         hfname="../../Data/nrel/channel_5200_data_0_10000.h5",
         subsample=[1, 1, 1],
-        z_slice=16,
+        y_slice=96,
         no_pressure=True,
         which_velocity="u"
     )
