@@ -196,6 +196,8 @@ if __name__ == "__main__":
         model_2, I_nn_2, omegas_2, path_history, rel_error = smn.fit(X, config)
         I_nn_standard.append(I_nn_2)
         re_standard.append(rel_error)
+
+    #%%
     np.savez(
         "results/ablation/ablation_results_standard.npz", 
         I_nn=I_nn_standard, re=re_standard
@@ -268,6 +270,8 @@ if __name__ == "__main__":
         model_2, I_nn_2, omegas_2, path_history, rel_error = smn.fit(X, config)
         I_nn_l1_only.append(I_nn_2)
         re_l1_only.append(rel_error)
+    
+    #%%
     np.savez(
         "results/ablation/ablation_results_l1_only.npz", 
         I_nn=I_nn_l1_only, re=re_l1_only
@@ -340,6 +344,8 @@ if __name__ == "__main__":
         model_2, I_nn_2, omegas_2, path_history, rel_error = smn.fit(X, config)
         I_nn_full_z.append(I_nn_2)
         re_full_z.append(rel_error)
+    
+    #%%
     np.savez(
         "results/ablation/ablation_results_full_z.npz", 
         I_nn=I_nn_full_z, re=re_full_z
@@ -363,6 +369,8 @@ if __name__ == "__main__":
     import os
     os.makedirs('figures/ablation', exist_ok=True)
 
+    
+    #%%
     plt.rcParams.update({
         "text.usetex": True,
         "font.family": "sans-serif",
@@ -500,4 +508,56 @@ if __name__ == "__main__":
         print(f"  Most frequently selected index: {np.argmax(freq) + 1} ({int(np.max(freq))} times)")
         print(f"  Average selection frequency: {np.mean(freq[freq > 0]):.2f}")
         print()
-# %%
+
+# %% Demonstration of smooth mode elimination for single training instance
+    fig, ax = plt.subplots(3, 1, figsize=(10, 8))
+    with open("results/ablation/mode_elimination.csv", 'r') as f:
+        lines = f.readlines()
+    dat_smn = [int(val) for val in lines[0].strip().split(',') if val]
+    dat_l1only = [int(val) for val in lines[1].strip().split(',') if val]
+    dat_nomask = [int(val) for val in lines[2].strip().split(',') if val]
+    ax[0].plot(dat_smn, label='SparseModesNet (Proposed)', linewidth=3)
+    ax[1].plot(dat_l1only, label=r'$\ell_1$ penalty only', linewidth=3)
+    ax[2].plot(dat_nomask, label='z-batch (unmasked)', linewidth=3)
+    for axi in ax:
+        axi.set_yticks([0, 25, 50, 75, 100])
+        axi.tick_params(axis='both', which='major', labelsize=19)
+        axi.grid(True, alpha=0.3)
+        # axi.set_xlim(0, len(dat_nomask))
+        if axi == ax[2]:
+            axi.set_xlabel('Entire Regularization Path Including All Epochs', fontsize=25)
+        if axi == ax[1]:
+            axi.set_ylabel(r'Number of Selected Modes ($r = 15$)', fontsize=25)
+        axi.legend(fontsize=23, frameon=False)
+    plt.tight_layout()
+    plt.savefig('figures/ablation/mode_elimination.pdf', dpi=300, bbox_inches='tight')
+    plt.show()
+
+# %% Demonstration of smooth mode elimination for single training instance (bar plot)
+    fig, ax = plt.subplots(3, 1, figsize=(10, 8))
+    with open("results/ablation/mode_elimination.csv", 'r') as f:
+        lines = f.readlines()
+    dat_smn = [int(val) for val in lines[0].strip().split(',') if val]
+    dat_l1only = [int(val) for val in lines[1].strip().split(',') if val]
+    dat_nomask = [int(val) for val in lines[2].strip().split(',') if val]
+    
+    ax[0].bar(range(len(dat_smn)), dat_smn, label='SparseModesNet (Proposed)', 
+              color='lightblue', alpha=0.9)
+    ax[1].bar(range(len(dat_l1only)), dat_l1only, label=r'$\ell_1$ penalty only', 
+              color='lightgreen', alpha=0.9)
+    ax[2].bar(range(len(dat_nomask)), dat_nomask, label='z-batch (unmasked)', 
+              color='lightcoral', alpha=0.9)
+    
+    for axi in ax:
+        axi.tick_params(axis='both', which='major', labelsize=19)
+        axi.grid(True, alpha=0.3)
+        axi.set_yticks([0, 25, 50, 75, 100])
+        # axi.set_xlim(0, len(dat_nomask))
+        if axi == ax[2]:
+            axi.set_xlabel('Entire Regularization Path Including All Epochs', fontsize=25)
+        if axi == ax[1]:
+            axi.set_ylabel(r'Number of Selected Modes ($r = 15$)', fontsize=25)
+        axi.legend(fontsize=23, frameon=False)
+    plt.tight_layout()
+    plt.savefig('figures/ablation/mode_elimination_bar.pdf', dpi=300, bbox_inches='tight')
+    plt.show()

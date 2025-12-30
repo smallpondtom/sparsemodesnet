@@ -43,6 +43,7 @@ class TrainingConfig:
     device: str = 'cpu'
     I_nn: Optional[np.ndarray] = None
     reg_param: float = 1e-15
+    activation: str = 'identity'
     weight_scale: float = 1e-12
     analytical: bool = False
 

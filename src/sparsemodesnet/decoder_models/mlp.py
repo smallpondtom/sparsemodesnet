@@ -2,7 +2,6 @@ from .abstract_decoder import AbstractDecoder
 from .rational import Rational
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 """
 Reference: https://github.com/pyshred-dev/pyshred/blob/main/pyshred/models/decoder_models/mlp_model.py
@@ -17,6 +16,7 @@ class MLP(AbstractDecoder):
     """
 
     def __init__(self, hidden_units=[350, 400], dropout=0.1, bias=False,
+                 activation='identity',
                  weight_scale=1e-12):
         """
         Parameters:
@@ -34,6 +34,15 @@ class MLP(AbstractDecoder):
         self.layers = None
         self.first_layer = None  # Expose first layer for proximal operations
         self.dropout = nn.Dropout(self.dropout_prob)
+        if activation == 'rational':
+            self.activation = Rational()
+        elif activation == 'relu':
+                self.activation = nn.ReLU()
+        else:
+            if activation != 'identity':
+                print(f"Warning: Activation '{activation}' not recognized." \
+                       " Using Identity.")
+            self.activation = nn.Identity()
 
     def initialize(self, input_dim, output_dim):
         """
@@ -82,7 +91,7 @@ class MLP(AbstractDecoder):
             x = layer(x)
             # Apply activation & dropout for all but the final layer
             if i < len(self.layers) - 1:
-                x = F.relu(x)
+                x = self.activation(x)
                 x = self.dropout(x)
         return x
 

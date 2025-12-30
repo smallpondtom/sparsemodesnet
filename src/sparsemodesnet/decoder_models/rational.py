@@ -22,7 +22,7 @@ class Rational(torch.nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        self.coeffs.data = torch.Tensor([[1.1915, 0.0],
+        self.coeffs.data = torch.tensor([[1.1915, 0.0],
                                          [1.5957, 2.383],
                                          [0.5, 0.0],
                                          [0.0218, 1.0]])

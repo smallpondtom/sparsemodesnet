@@ -133,20 +133,21 @@ def fit(X_np: np.ndarray, config: SparseModesNetConfig) -> tuple:
         else:
             print(f"\n→ Training decoder model with {r} selected modes ...") 
             decoder = StateDecoder(
-                pod_basis      = U_tensor, 
-                mapping_dim    = config.p, 
-                hidden_units   = config.network.hidden_units,
-                gamma          = config.training.gamma, 
-                weight_scale   = config.training.weight_scale,
-                network_type   = config.network.network_type, 
-                poly_order     = config.network.poly_order,
-                num_polys      = config.network.num_polys, 
-                drop_linear    = config.network.drop_linear,
-                drop_constant  = config.network.drop_constant,
-                normalize      = config.network.normalize_layer,
-                bias           = config.training.decoder_bias,
-                dtype          = torch.float64 if config.training.device in ['cpu', 'cuda']
-                                 else torch.float32,
+                pod_basis     = U_tensor, 
+                mapping_dim   = config.p, 
+                hidden_units  = config.network.hidden_units,
+                gamma         = config.training.gamma, 
+                weight_scale  = config.training.weight_scale,
+                network_type  = config.network.network_type, 
+                poly_order    = config.network.poly_order,
+                num_polys     = config.network.num_polys, 
+                drop_linear   = config.network.drop_linear,
+                drop_constant = config.network.drop_constant,
+                normalize     = config.network.normalize_layer,
+                bias          = config.training.decoder_bias,
+                activation    = config.training.activation,
+                dtype         = torch.float64 if config.training.device in ['cpu', 'cuda']
+                                else torch.float32,
             )
             
             dataset_full = PODReconDataset(Z_np=Z_pp, X_np=X_pp, 

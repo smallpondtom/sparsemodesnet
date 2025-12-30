@@ -28,23 +28,24 @@ def dense2sparse(X_np: np.ndarray, Z_np: np.ndarray, U_tensor: torch.tensor,
 
     # Initialize the SparseModesNet model 
     SPN = SparseModesNet(
-        pod_basis       = U_tensor,
-        mapping_dim     = config.p,
-        hidden_units    = config.network.hidden_units,
-        M               = config.sparsity.M,
-        lam             = lam,
-        gamma           = config.training.gamma,
-        alpha           = config.sparsity.alpha,
-        network_type    = config.network.network_type,
-        poly_order      = config.network.poly_order,
-        num_polys       = config.network.num_polys,
-        drop_linear     = config.network.drop_linear,
-        drop_constant   = config.network.drop_constant,
-        normalize       = config.network.normalize_layer,
-        bias            = config.training.lasso_bias,
-        full_z          = config.training.full_z,
-        dtype           = torch.float64 if config.training.device in ['cpu', 'cuda']
-                         else torch.float32,
+        pod_basis     = U_tensor,
+        mapping_dim   = config.p,
+        hidden_units  = config.network.hidden_units,
+        M             = config.sparsity.M,
+        lam           = lam,
+        gamma         = config.training.gamma,
+        alpha         = config.sparsity.alpha,
+        network_type  = config.network.network_type,
+        poly_order    = config.network.poly_order,
+        num_polys     = config.network.num_polys,
+        drop_linear   = config.network.drop_linear,
+        drop_constant = config.network.drop_constant,
+        normalize     = config.network.normalize_layer,
+        bias          = config.training.lasso_bias,
+        activation    = config.training.activation,
+        full_z        = config.training.full_z,
+        dtype         = torch.float64 if config.training.device in ['cpu', 'cuda']
+                        else torch.float32,
     )
 
     # Define the storage for omegas

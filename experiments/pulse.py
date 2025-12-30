@@ -214,8 +214,22 @@ if __name__ == "__main__":
 
     # Print the selected modes
     print("Selected modes (I_qm):", I_qm.sort())
+
+    #%% Save the selected modes
     np.save("results/pulse/I_qm.npy", I_qm)
 
+
+#%% #========================= Greedy Cubic Manifold ==========================#
+    print("\n" + "="*60)
+    print("GREEDY CUBIC MANIFOLD")
+    V_cm, W_cm, _, I_cm = quadmani_greedy(
+        X, r, s, 1e-15, np.array([], dtype=int), 
+        feature_map=_make_cubic_mapping_jax_fixed(max_r=r))
+    # Print the selected modes
+    print("Selected modes (I_cm):", I_cm)
+
+    #%% Save the selected modes
+    np.save("results/pulse/I_cm.npy", I_cm)
 
 
 #%% %================= Configuration of SparseModesNet Pi2Net =================%
@@ -525,7 +539,7 @@ if __name__ == "__main__":
         config.preprocessing.forward(X), full_matrices=False
     )[0][:, :s]
 
-    # Test different numbers of modes
+    #%% Test different numbers of modes
     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
         # Quadratic Manifold with r_test modes
         V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
@@ -667,38 +681,44 @@ if __name__ == "__main__":
         sparse_3p_errors.append(rel_recon_error_sparse_3p_test)
 
     #%% Plot reconstruction errors
-    fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+    fig, ax = plt.subplots(1, 1, figsize=(27, 9))
     
-    ax.semilogy(mode_counts, qm_errors, '--^', label='Greedy Quadratic Manifold', 
-                markersize=8, linewidth=3)
-    ax.semilogy(mode_counts, cm_errors, '--v', label='Greedy Cubic Manifold',
-                markersize=8, linewidth=3)
     ax.semilogy(mode_counts, pod_errors, '-o', label='POD (leading-r)', 
-                markersize=8, linewidth=3)
-    
+                markersize=20, linewidth=10, c='black')
+    ax.semilogy(mode_counts, qm_errors, '--^', label='Greedy Quadratic Manifold', 
+                markersize=20, linewidth=10)
+    ax.semilogy(mode_counts, cm_errors, '--v', label='Greedy Cubic Manifold',
+                markersize=20, linewidth=10)
+
     # Only plot valid SparseModesNet errors (selected modes)
     valid_sparse_2_errors = [err for err in sparse_2_errors if not np.isnan(err)]
     valid_mode_counts_2 = [mode_counts[i] for i, err in enumerate(sparse_2_errors) if not np.isnan(err)]
     ax.semilogy(valid_mode_counts_2, valid_sparse_2_errors, '-s', label=r'SparseModesNet $\Pi_2$-Net (selected)', 
-                markersize=8, linewidth=3)
+                markersize=20, linewidth=10)
 
     valid_sparse_3_errors = [err for err in sparse_3_errors if not np.isnan(err)]
     valid_mode_counts_3 = [mode_counts[i] for i, err in enumerate(sparse_3_errors) if not np.isnan(err)]
     ax.semilogy(valid_mode_counts_3, valid_sparse_3_errors, '-x', label=r'SparseModesNet $\Pi_3$-Net (selected)', 
-                markersize=10, linewidth=3)
+                markersize=20, linewidth=10, mew=5)
     
     # Plot SparseModesNet with leading modes
     ax.semilogy(mode_counts, sparse_2p_errors, ':s', label=r'SparseModesNet $\Pi_2$-Net (leading-r)', 
-                markersize=8, linewidth=3, alpha=0.8)
+                markersize=20, linewidth=10, alpha=0.8)
     ax.semilogy(mode_counts, sparse_3p_errors, ':x', label=r'SparseModesNet $\Pi_3$-Net (leading-r)', 
-                markersize=10, linewidth=3, alpha=0.8)
+                markersize=20, linewidth=10, alpha=0.8, mew=5)
     
-    ax.set_xlabel(r'Number of Modes $r$', fontsize=25)
-    ax.set_ylabel('Relative Reconstruction Error', fontsize=25)
-    ax.set_title('Reconstruction Error vs. Number of Modes', fontsize=30)
-    ax.tick_params(axis='both', which='major', labelsize=20)
+    # Hide the top and right spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    
+    ax.set_xlabel(r'Number of Modes $r$', fontsize=40)
+    ax.set_ylabel('Relative Reconstruction Error', fontsize=40)
+    # ax.set_title('Reconstruction Error vs. Number of Modes', fontsize=30)
+    ax.tick_params(axis='both', which='major', labelsize=36)
     ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=22, loc='lower left')
+    # ax.legend(fontsize=22, loc='lower left')
+    ax.legend(fontsize=36, loc='center left', bbox_to_anchor=(1.005, 0.5), 
+              frameon=False, handlelength=3)
     ax.set_xlim(left=0)
     plt.tight_layout()
     plt.savefig('figures/pulse/reconstruction_errors.pdf', 
@@ -707,153 +727,7 @@ if __name__ == "__main__":
     plt.close(fig)
 
 
-# #%% #===================== Plot Reconstruction Errors =========================#
-#     # Collect reconstruction errors for different numbers of modes
-#     mode_counts = []
-#     qm_errors = []
-#     cm_errors = []
-#     pod_errors = []
-#     sparse_2_errors = []
-#     sparse_3_errors = []
-
-#     V_all = np.linalg.svd(
-#         config.preprocessing.forward(X), full_matrices=False
-#     )[0][:, :s]
-
-#     regs = [
-#         1e3, 1e4, 1e4, 1e6, 1e6,
-#         1e6, 1e7, 1e7, 1e7, 1e7,
-#         1e6, 1e6, 1e4, 1e4, 1e-14
-#     ]
-
-#     # Test different numbers of modes
-#     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
-#         # Quadratic Manifold with r_test modes
-#         V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
-#             X, r_test, s, 1e-15, np.array([], dtype=int))
-#         shift_test = shift_test.reshape(-1, 1)
-#         Z_qm_test = V_test.T @ (X - shift_test)
-#         Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
-#         recon_error_qm_test = np.linalg.norm(
-#             X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
-#         rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
-
-#         # Cubic Manifold with r_test modes
-#         V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-#             X, r_test, s, regs[ct], np.array([], dtype=int), 
-#             feature_map=_cubic_mapping_jax)
-#         ct += 1
-#         Z_qm_test_3 = V_test_3.T @ (X - shift_test)
-#         Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
-#         recon_error_qm_test_3 = np.linalg.norm(
-#             X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
-#         rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
-        
-#         # Leading-r POD reconstruction
-#         X_proc_test = config.preprocessing.forward(X)
-#         V_leading_test = np.linalg.svd(X_proc_test, full_matrices=False)[0][:, :r_test]
-#         X_pod_recon_test = V_leading_test @ V_leading_test.T @ X_proc_test
-#         X_pod_recon_test = config.preprocessing.backward(X_pod_recon_test)
-#         recon_error_pod_test = np.linalg.norm(X - X_pod_recon_test, ord='fro')
-#         rel_recon_error_pod_test = recon_error_pod_test / np.linalg.norm(X, ord='fro')
-
-#         # SparseModesNet (pi2net) with first r_test modes from selected modes
-#         if len(I_nn_2) >= r_test:
-#             V_tmp = np.zeros((d, r))
-#             V_tmp[:, :r_test] = V_all[:, I_nn_2[:r_test]]
-#             Z_input_test = torch.from_numpy((V_tmp.T @ X_proc_test).T).to(device)
-#             with torch.no_grad():
-#                 if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
-#                     # Use analytical decoder
-#                     X_sparse_recon_test, _, _ = model_2(V_tmp.T @ X_proc_test)
-#                 else:
-#                     model_2.eval()
-#                     # Retrain the weight matrix
-#                     X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
-#                     _, X_sparse_lin, N_sparse_out = model_2(Z_input_test)
-#                     resid = X_proc_test_tensor.T - X_sparse_lin
-#                     model_2.update_nonlinear_weight(resid, N_sparse_out, 
-#                                                   config.training.reg_param)
-#                     X_sparse_recon_tensor_test, _, _ = model_2(Z_input_test)
-#                     X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T
-
-#                 X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
-            
-#             recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
-#             rel_recon_error_sparse_2_test = recon_error_sparse_test / np.linalg.norm(X, ord='fro')
-#         else:
-#             rel_recon_error_sparse_2_test = np.nan
-        
-#         # SparseModesNet (pi2net) with first r_test modes from selected modes
-#         if len(I_nn_3) >= r_test:
-#             V_tmp = np.zeros((d, r))
-#             V_tmp[:, :r_test] = V_all[:, I_nn_3[:r_test]]
-#             Z_input_test = torch.from_numpy((V_tmp.T @ X_proc_test).T).to(device)
-#             with torch.no_grad():
-#                 if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
-#                     # Use analytical decoder
-#                     X_sparse_recon_test, _, _ = model_3(V_tmp.T @ X_proc_test)
-#                 else:
-#                     model_3.eval()
-#                     # Retrain the weight matrix
-#                     X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
-#                     _, X_sparse_lin, N_sparse_out = model_3(Z_input_test)
-#                     resid = X_proc_test_tensor.T - X_sparse_lin
-#                     model_3.update_nonlinear_weight(resid, N_sparse_out, 
-#                                                   config.training.reg_param)
-#                     X_sparse_recon_tensor_test, _, _ = model_3(Z_input_test)
-#                     X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T
-
-#                 X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
-            
-#             recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
-#             rel_recon_error_sparse_3_test = recon_error_sparse_test / np.linalg.norm(X, ord='fro')
-#         else:
-#             rel_recon_error_sparse_3_test = np.nan
-        
-#         mode_counts.append(r_test)
-#         qm_errors.append(rel_recon_error_qm_test)
-#         cm_errors.append(rel_recon_error_qm_test_3)
-#         pod_errors.append(rel_recon_error_pod_test)
-#         sparse_2_errors.append(rel_recon_error_sparse_2_test)
-#         sparse_3_errors.append(rel_recon_error_sparse_3_test)
-
-#     # Plot reconstruction errors
-#     fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-    
-#     ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
-#                 markersize=10, linewidth=4)
-#     ax.semilogy(mode_counts, cm_errors, '--', label='Greedy Cubic Manifold',
-#                 markersize=10, linewidth=4)
-#     ax.semilogy(mode_counts, pod_errors, '-o', label='POD (leading-r)', 
-#                 markersize=10, linewidth=4)
-    
-#     # Only plot valid SparseModesNet errors
-#     valid_sparse_errors = [err for err in sparse_2_errors if not np.isnan(err)]
-#     valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_2_errors) if not np.isnan(err)]
-#     ax.semilogy(valid_mode_counts, valid_sparse_errors, '-s', label='SparseModesNet (Pi2Net)', 
-#                 markersize=10, linewidth=4)
-
-#     # Only plot valid SparseModesNet errors
-#     valid_sparse_errors = [err for err in sparse_3_errors if not np.isnan(err)]
-#     valid_mode_counts = [mode_counts[i] for i, err in enumerate(sparse_3_errors) if not np.isnan(err)]
-#     ax.semilogy(valid_mode_counts, valid_sparse_errors, '-x', label='SparseModesNet (Pi3Net)', 
-#                 markersize=10, linewidth=4)
-    
-#     ax.set_xlabel('Number of Modes', fontsize=16)
-#     ax.set_ylabel('Relative Reconstruction Error', fontsize=16)
-#     ax.set_title('Reconstruction Error vs Number of Modes', fontsize=18)
-#     ax.tick_params(axis='both', which='major', labelsize=14)
-#     ax.grid(True, alpha=0.3)
-#     ax.legend(fontsize=14)
-#     ax.set_xlim(left=0)
-#     plt.tight_layout()
-#     plt.savefig('figures/pulse/reconstruction_errors.png', dpi=300)
-#     plt.show()
-#     plt.close(fig)
-    
-
-#%% %============ Plot the reconstructed flow fields (heatmap) ================%
+#%% %========================== Reconstructed data ============================%
     X_proc = config.preprocessing.forward(X)
     V, _, _ = np.linalg.svd(X_proc, full_matrices=False)
 
@@ -861,6 +735,11 @@ if __name__ == "__main__":
     Z_qm = V_qm.T @ (X - mu_qm)
     Z_quad_qm = quadratic_mapping_numpy(Z_qm.T).T
     X_qm_recon = V_qm @ Z_qm + W_qm @ Z_quad_qm + mu_qm
+
+    # Cubic Manifold reconstruction
+    Z_cm = V_cm.T @ (X - mu_qm)
+    Z_cubic_cm = _cubic_mapping_numpy(Z_cm.T).T
+    X_cm_recon = V_cm @ Z_cm + W_cm @ Z_cubic_cm + mu_qm
 
     # Leading-r POD reconstruction (using top r modes)
     r = len(I_nn_2)  # Use Pi2Net length for consistency
@@ -890,132 +769,6 @@ if __name__ == "__main__":
             X_sparse_recon_3 = X_sparse_recon_tensor_3.cpu().numpy().T 
         X_sparse_recon_3 = config.preprocessing.backward(X_sparse_recon_3)
     
-    # Calculate errors
-    pod_error = X - X_pod_recon
-    qm_error = X - X_qm_recon
-    sparse_error_2 = X - X_sparse_recon_2
-    sparse_error_3 = X - X_sparse_recon_3
-    
-    # Set consistent color scales for reconstructions
-    recon_vmin = min(X.min(), X_pod_recon.min(), X_qm_recon.min(), 
-                     X_sparse_recon_2.min(), X_sparse_recon_3.min())
-    recon_vmax = max(X.max(), X_pod_recon.max(), X_qm_recon.max(), 
-                     X_sparse_recon_2.max(), X_sparse_recon_3.max())
-    
-    # Set consistent color scales for errors
-    error_vmax = max(np.abs(pod_error).max(), np.abs(qm_error).max(), 
-                     np.abs(sparse_error_2).max(), np.abs(sparse_error_3).max())
-    error_vmin = -error_vmax
-    
-    fig, axes = plt.subplots(2, 4, figsize=(22, 11))
-    
-    # Row 1: Reconstructions
-    # (1,1) Original data
-    im1 = axes[0,0].imshow(
-        X, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,0].set_ylabel('Space (x)', fontsize=22)
-    axes[0,0].set_title('Original Data', fontsize=28)
-    axes[0,0].set_xticks([])
-    axes[0,0].set_yticks([])
-    
-    # (1,2) Leading-r POD reconstruction
-    im2 = axes[0,1].imshow(
-        X_pod_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,1].set_title(f'POD (r={r})', fontsize=28)
-    axes[0,1].set_xticks([])
-    axes[0,1].set_yticks([])
-    
-    # (1,3) Quadratic Manifold reconstruction
-    im3 = axes[0,2].imshow(
-        X_qm_recon, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,2].set_title('GreedyQM', fontsize=28)
-    axes[0,2].set_xticks([])
-    axes[0,2].set_yticks([])
-    
-    # (1,4) SparseModesNet Pi2Net reconstruction
-    im4 = axes[0,3].imshow(
-        X_sparse_recon_2, aspect='auto', cmap='viridis', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=recon_vmin, vmax=recon_vmax)
-    axes[0,3].set_title(r'SMN $\Pi_2$-Net (leading-r)', fontsize=28)
-    axes[0,3].set_xticks([])
-    axes[0,3].set_yticks([])
-
-    # # (1,5) SparseModesNet Pi3Net reconstruction
-    # im5 = axes[0,4].imshow(
-    #     X_sparse_recon_3, aspect='auto', cmap='viridis', origin='lower',
-    #     extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-    #     vmin=recon_vmin, vmax=recon_vmax)
-    # axes[0,4].set_title('SparseModesNet (Pi3Net)', fontsize=15)
-    # axes[0,4].set_xticks([])
-    # axes[0,4].set_yticks([])
-    
-    # Row 2: Errors
-    # (2,1) Empty - no error for original data
-    axes[1,0].axis('off')
-    
-    # (2,2) POD error
-    im6 = axes[1,1].imshow(
-        pod_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=error_vmin, vmax=error_vmax)
-    axes[1,1].set_xlabel('Time', fontsize=22)
-    axes[1,1].set_ylabel('Space (x)', fontsize=22)
-    axes[1,1].set_xticks([])
-    axes[1,1].set_yticks([])
-    
-    # (2,3) Quadratic Manifold error
-    im7 = axes[1,2].imshow(
-        qm_error, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=error_vmin, vmax=error_vmax)
-    axes[1,2].set_xlabel('Time', fontsize=22)
-    axes[1,2].set_xticks([])
-    axes[1,2].set_yticks([])
-    
-    # (2,4) SparseModesNet Pi2Net error
-    im8 = axes[1,3].imshow(
-        sparse_error_2, aspect='auto', cmap='RdBu', origin='lower',
-        extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-        vmin=error_vmin, vmax=error_vmax)
-    axes[1,3].set_xlabel('Time', fontsize=22)
-    axes[1,3].set_xticks([])
-    axes[1,3].set_yticks([])
-
-    # # (2,5) SparseModesNet Pi3Net error
-    # im9 = axes[1,4].imshow(
-    #     sparse_error_3, aspect='auto', cmap='RdBu', origin='lower',
-    #     extent=[tspan[0], tspan[-1], xspan[0], xspan[-1]],
-    #     vmin=error_vmin, vmax=error_vmax)
-    # axes[1,4].set_xlabel('Time', fontsize=14)
-    # axes[1,4].set_title('SparseModesNet (Pi3Net) Error', fontsize=15)
-    # axes[1,4].set_xticks([])
-    # axes[1,4].set_yticks([])
-    
-    # Add unified colorbars
-    cax1 = fig.add_axes([0.91, 0.515, 0.015, 0.385])
-    cbar1 = plt.colorbar(im4, cax=cax1)
-    cbar1.set_label('u(x,t)', fontsize=23)
-    cbar1.ax.tick_params(labelsize=20)
-    
-    cax2 = fig.add_axes([0.91, 0.1, 0.015, 0.385])
-    cbar2 = plt.colorbar(im8, cax=cax2)
-    cbar2.set_label('Error', fontsize=23)
-    cbar2.ax.tick_params(labelsize=20)
-
-    plt.subplots_adjust(left=0.04, right=0.9, top=0.9, bottom=0.1, 
-                        wspace=0.05, hspace=0.075)
-    plt.suptitle('Flow Field Reconstruction Comparison', fontsize=29, y=0.98)
-    plt.savefig('figures/pulse/pulse_comparison.pdf', dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close(fig)
-
 
 #%% %================= Plot waves at specific time points =====================%
     # Select 3 equally spaced time points
@@ -1059,78 +812,50 @@ if __name__ == "__main__":
 
 
 #%% %===================== Additional Plotting and Analysis ===================%
+    from matplotlib import gridspec
+
     # Compute SVD for all datasets
     U_orig, S_orig, _ = np.linalg.svd(X, full_matrices=False)
     U_pod, S_pod, _ = np.linalg.svd(X_pod_recon, full_matrices=False)
     U_qm, S_qm, _ = np.linalg.svd(X_qm_recon, full_matrices=False)
+    U_cm, S_cm, _ = np.linalg.svd(X_cm_recon, full_matrices=False)
     U_sparse_2, S_sparse_2, _ = np.linalg.svd(X_sparse_recon_2, full_matrices=False)
     U_sparse_3, S_sparse_3, _ = np.linalg.svd(X_sparse_recon_3, full_matrices=False)
     
-    # Plot singular values comparison
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6))
-    
-    # Left plot: Singular values
-    n_sv = min(100, len(S_orig))
-    modes_range = range(1, n_sv + 1)
-    
-    axes[0].semilogy(modes_range, S_orig[:n_sv], 'k-o', linewidth=3, markersize=8, 
-                     label='Original Data', alpha=0.9)
-    axes[0].semilogy(modes_range, S_pod[:n_sv], '--s', linewidth=2, markersize=6,
-                     label=f'POD Reconstruction (r={r})', alpha=0.8)
-    axes[0].semilogy(modes_range, S_qm[:n_sv], '-.^', linewidth=2, markersize=6,
-                     label='Greedy Quadratic Manifold', alpha=0.8)
-    axes[0].semilogy(modes_range, S_sparse_2[:n_sv], ':d', linewidth=2, markersize=6,
-                     label='SparseModesNet (Pi2Net)', alpha=0.8)
-    axes[0].semilogy(modes_range, S_sparse_3[:n_sv], ':', linewidth=2, markersize=6,
-                     label='SparseModesNet (Pi3Net)', alpha=0.8)
-    
-    axes[0].set_xlabel('Mode Number', fontsize=14)
-    axes[0].set_ylabel('Singular Value', fontsize=14)
-    axes[0].set_title('Singular Values Comparison', fontsize=16)
-    axes[0].grid(True, alpha=0.3)
-    axes[0].legend(fontsize=18)
-    axes[0].tick_params(axis='both', which='major', labelsize=12)
-    
-    # Right plot: Relative singular value errors
-    sv_error_pod = np.abs(S_pod[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
-    sv_error_qm = np.abs(S_qm[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
-    sv_error_sparse_2 = np.abs(S_sparse_2[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
-    sv_error_sparse_3 = np.abs(S_sparse_3[:n_sv] - S_orig[:n_sv]) / S_orig[:n_sv]
-    
-    axes[1].semilogy(modes_range, sv_error_pod, '--s', linewidth=2, markersize=6,
-                     label=f'POD Reconstruction (r={r})', alpha=0.8)
-    axes[1].semilogy(modes_range, sv_error_qm, '-.^', linewidth=2, markersize=6,
-                     label='Greedy Quadratic Manifold', alpha=0.8)
-    axes[1].semilogy(modes_range, sv_error_sparse_2, ':d', linewidth=2, markersize=6,
-                     label='SparseModesNet (Pi2Net)', alpha=0.8)
-    axes[1].semilogy(modes_range, sv_error_sparse_3, ':', linewidth=2, markersize=6,
-                     label='SparseModesNet (Pi3Net)', alpha=0.8)
-    
-    axes[1].set_xlabel('Mode Number', fontsize=14)
-    axes[1].set_ylabel('Relative Error in Singular Values', fontsize=14)
-    axes[1].set_title('Singular Value Reconstructions', fontsize=16)
-    axes[1].grid(True, alpha=0.3)
-    axes[1].tick_params(axis='both', which='major', labelsize=12)
-    
-    plt.tight_layout()
-    plt.savefig('figures/pulse/singular_values_comparison.png', dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close(fig)
-
     # Plot the first 20 spatial modes comparison
-    n_modes = np.hstack([np.arange(15), [16, 24, 37, 61, 95]])
-    fig, axes = plt.subplots(5, 4, figsize=(22, 15))
-    axes = axes.flatten()
+    n_modes = np.hstack([np.arange(4), [r, 37, 61, s-1, 136]])
+    fig = plt.figure(figsize=(24, 15))
+    nrows, ncols = 5, 4
+    gs = gridspec.GridSpec(nrows=nrows, ncols=ncols)
+    axes = np.empty(nrows*ncols, dtype=object)
+    # Modes within r
+    axes[0] = fig.add_subplot(gs[0, 0])
+    axes[1] = fig.add_subplot(gs[0, 1])
+    axes[2] = fig.add_subplot(gs[0, 2])
+    axes[3] = fig.add_subplot(gs[0, 3])
+    # Lower modes beyond r but within s
+    axes[4] = fig.add_subplot(gs[1, :2])
+    axes[5] = fig.add_subplot(gs[1, 2:])
+    # Higher modes beyond r but within s
+    axes[6] = fig.add_subplot(gs[2, :2])
+    axes[7] = fig.add_subplot(gs[2, 2:])
+    # Higher modes beyond s
+    axes[8] = fig.add_subplot(gs[3, :])
+
+    # Get default colors 
+    default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     for (i, md) in enumerate(n_modes):
         ax = axes[i]
         
         # Get the original mode as reference
         mode_orig = U_orig[:, md]
+        max_val = np.max(np.abs(mode_orig))
         
         # Get modes from different methods
         mode_pod = U_pod[:, md]
         mode_qm = U_qm[:, md]
+        mode_cm = U_cm[:, md]
         mode_sparse_2 = U_sparse_2[:, md]
         mode_sparse_3 = U_sparse_3[:, md]
         
@@ -1141,6 +866,9 @@ if __name__ == "__main__":
             
         if np.corrcoef(mode_orig, mode_qm)[0, 1] < 0:
             mode_qm = -mode_qm
+
+        if np.corrcoef(mode_orig, mode_cm)[0, 1] < 0:
+            mode_cm = -mode_cm
             
         if np.corrcoef(mode_orig, mode_sparse_2)[0, 1] < 0:
             mode_sparse_2 = -mode_sparse_2
@@ -1149,11 +877,19 @@ if __name__ == "__main__":
             mode_sparse_3 = -mode_sparse_3
         
         # Plot spatial modes with corrected signs
-        ax.plot(xspan, mode_orig, 'k-', linewidth=3, label='Original', alpha=0.9)
-        ax.plot(xspan, mode_pod, '--', linewidth=2, label='POD', alpha=0.8)
-        ax.plot(xspan, mode_qm, '-.', linewidth=2, label='GreedyQM', alpha=0.8)
-        ax.plot(xspan, mode_sparse_2, ':', linewidth=2, label='SMN-Pi2', alpha=0.8)
-        ax.plot(xspan, mode_sparse_3, '-', linewidth=1.5, label='SMN-Pi3', alpha=0.8)
+        ax.plot(xspan, mode_orig, 'k-', linewidth=7, 
+                label='Original', alpha=0.9)
+        if md < r+1:
+            ax.plot(xspan, mode_pod, '--', linewidth=6, 
+                    label='POD', alpha=0.8, color=default_colors[0])
+        ax.plot(xspan, mode_qm, '-.', linewidth=5, 
+                label='GreedyQM', alpha=0.8, color=default_colors[1])
+        ax.plot(xspan, mode_sparse_2, ':', linewidth=5, 
+                label=r'SMN $\Pi_2$-Net', alpha=0.8, color=default_colors[2])
+        ax.plot(xspan, mode_cm, '-.', linewidth=4, 
+                label='GreedyCM', alpha=0.8, color=default_colors[3])
+        ax.plot(xspan, mode_sparse_3, '-', linewidth=3, 
+                label=r'SMN $\Pi_3$-Net', alpha=0.8, color=default_colors[4])
 
         # Remove all labels and ticks
         ax.set_xlabel('')
@@ -1162,275 +898,67 @@ if __name__ == "__main__":
         ax.set_yticks([])
         ax.set_xticklabels([])
         ax.set_yticklabels([])
-        
-        ax.set_title(f'Mode {md+1} (σ = {S_orig[md]:.2e})', fontsize=14)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.margins(x=0.015, y=0) 
+        ax.set_ylim([-1.2*max_val, 1.2*max_val])
+        if md == r:
+            ax.set_title(
+                rf'Mode {md+1} = r+1 ($\sigma = {S_orig[md]:.2e}$) ', 
+                fontsize=35)
+        elif md < r+1: 
+            ax.set_title(
+                rf'Mode {md+1} ($\sigma = {S_orig[md]:.2e}$)', fontsize=35)
+        elif md == s-1:
+            ax.set_title(
+                rf'Mode {md+1} = s ($\sigma = {S_orig[md]:.2e}$) ' + 
+                rf'without POD', fontsize=35)
+        else:
+            ax.set_title(
+                rf'Mode {md+1} ($\sigma = {S_orig[md]:.2e}$) ' + 
+                rf'without POD', fontsize=35)
         ax.grid(True, alpha=0.3)
-        
-        if i == 15:
-            ax.legend(fontsize=19, ncol=2)
+
+    # Replot the last high-frequency mode separately for better visibility
+    ax = fig.add_subplot(gs[4, :])
+    md = n_modes[-1]
+    ax.plot(xspan, mode_orig, 'k-', linewidth=7, 
+            label='Original', alpha=0.9)
+    ax.plot(xspan, mode_cm, '-.', linewidth=4, 
+            label='GreedyCM', alpha=0.8, color=default_colors[3])
+    ax.plot(xspan, mode_sparse_3, '-', linewidth=3, 
+            label=r'SMN $\Pi_3$-Net', alpha=0.8, color=default_colors[4])
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.margins(x=0.015, y=0) 
+    ax.set_ylim([-1.2*max_val, 1.2*max_val])
+    ax.set_title(
+        rf'Mode {md+1} ($\sigma = {S_orig[md]:.2e}$) ' + 
+        rf'without POD/GreedyQM/SMN $\Pi_2$-Net', 
+        fontsize=35
+    )
 
     plt.tight_layout()
-    plt.suptitle('Spatial Modes Comparison', fontsize=18, y=1.02)
-    plt.savefig('figures/pulse/spatial_modes_comparison.png', dpi=300, bbox_inches='tight')
+    # plt.suptitle('Linear Transport Equation POD Mode Reconstruction Comparison', fontsize=35, y=1.02)
+
+    # Add legend at the bottom outside the plot
+    handles, labels = axes[0].get_legend_handles_labels()
+    leg = fig.legend(handles, labels, loc='lower center', ncol=6, fontsize=35, 
+                     bbox_to_anchor=(0.5, -0.06), frameon=False)
+    for line in leg.get_lines():
+        line.set_linewidth(10)
+    plt.savefig('figures/pulse/spatial_modes_comparison.pdf', dpi=300, bbox_inches='tight')
     plt.show()
     plt.close(fig)
 
-    # Plot energy spectrum comparison
-    fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-    
-    # Cumulative energy
-    energy_orig = np.cumsum(S_orig**2) / np.sum(S_orig**2)
-    energy_pod = np.cumsum(S_pod**2) / np.sum(S_pod**2)
-    energy_qm = np.cumsum(S_qm**2) / np.sum(S_qm**2)
-    energy_sparse_2 = np.cumsum(S_sparse_2**2) / np.sum(S_sparse_2**2)
-    energy_sparse_3 = np.cumsum(S_sparse_3**2) / np.sum(S_sparse_3**2)
-    
-    n_plot = min(50, len(S_orig))
-    mode_range = range(1, n_plot + 1)
-    
-    ax.plot(mode_range, energy_orig[:n_plot], 'k-o', linewidth=3, markersize=6,
-            label='Original Data', alpha=0.9)
-    ax.plot(mode_range, energy_pod[:n_plot], '--s', linewidth=2, markersize=4,
-            label=f'POD Reconstruction (r={r})', alpha=0.8)
-    ax.plot(mode_range, energy_qm[:n_plot], '-.^', linewidth=2, markersize=4,
-            label='Greedy Quadratic Manifold', alpha=0.8)
-    ax.plot(mode_range, energy_sparse_2[:n_plot], ':d', linewidth=2, markersize=4,
-            label='SparseModesNet (Pi2Net)', alpha=0.8)
-    ax.plot(mode_range, energy_sparse_3[:n_plot], ':', linewidth=2, markersize=4,
-            label='SparseModesNet (Pi3Net)', alpha=0.8)
-    
-    # Add horizontal lines for energy thresholds
-    ax.axhline(y=0.99, color='gray', linestyle='--', alpha=0.5, label='99% Energy')
-    ax.axhline(y=0.999, color='gray', linestyle=':', alpha=0.5, label='99.9% Energy')
-    
-    ax.set_xlabel('Mode Number', fontsize=14)
-    ax.set_ylabel('Cumulative Energy Fraction', fontsize=14)
-    ax.set_title('Energy Spectrum Comparison: Pi2Net vs Pi3Net', fontsize=16)
-    ax.grid(True, alpha=0.3)
-    ax.legend(fontsize=18)
-    ax.tick_params(axis='both', which='major', labelsize=12)
-    ax.set_ylim([0.8, 1.001])
-    
-    plt.tight_layout()
-    plt.savefig('figures/pulse/energy_spectrum_comparison.png', dpi=300, bbox_inches='tight')
-    plt.show()
-    plt.close(fig)
-
-# #%% #=============================== Testing ==================================%
-#     # Generate a new pulse dataset for testing
-#     X, xspan, tspan = generate_advecting_pulse(
-#         pulse_width=7.5e-4,
-#         pulse_shift=0.15,
-#         speed=5.0,
-#         final_time=0.15,
-#         n_time_samples=1000,
-#         n_space_samples=n_grids
-#     )
-
-
-# #%% #===================== Plot Reconstruction Errors =========================#
-#     # Collect reconstruction errors for different numbers of modes
-#     mode_counts = []
-#     qm_errors = []
-#     cm_errors = []
-#     pod_errors = []
-#     sparse_2_errors = []
-#     sparse_3_errors = []
-#     sparse_2p_errors = []  # New: Pi2Net with leading modes
-#     sparse_3p_errors = []  # New: Pi3Net with leading modes
-
-#     V_all = np.linalg.svd(
-#         config.preprocessing.forward(X), full_matrices=False
-#     )[0][:, :s]
-
-#     regs = [
-#         1e3, 1e4, 1e4, 1e6, 1e6,
-#         1e6, 1e7, 1e7, 1e7, 1e7,
-#         1e6, 1e6, 1e4, 1e4, 1e-14
-#     ]
-    
-#     ct = 0  # Initialize counter for regs
-
-#     # Test different numbers of modes
-#     for r_test in range(1, min(r + 1, 21)):  # Test up to 20 modes or r
-#         # Quadratic Manifold with r_test modes
-#         V_test, W_test, shift_test, I_qm_test = quadmani_greedy(
-#             X, r_test, s, 1e-15, np.array([], dtype=int))
-#         shift_test = shift_test.reshape(-1, 1)
-#         Z_qm_test = V_test.T @ (X - shift_test)
-#         Z_quad_qm_test = quadratic_mapping_numpy(Z_qm_test.T).T
-#         recon_error_qm_test = np.linalg.norm(
-#             X - (V_test @ Z_qm_test + W_test @ Z_quad_qm_test + shift_test), ord='fro')
-#         rel_recon_error_qm_test = recon_error_qm_test / np.linalg.norm(X, ord='fro')
-
-#         # Cubic Manifold with r_test modes
-#         V_test_3, W_test_3, _, I_qm_test_3 = quadmani_greedy(
-#             X, r_test, s, regs[ct], np.array([], dtype=int), 
-#             feature_map=_cubic_mapping_jax)
-#         ct += 1
-#         Z_qm_test_3 = V_test_3.T @ (X - shift_test)
-#         Z_quad_qm_test_3 = _cubic_mapping_numpy(Z_qm_test_3.T).T
-#         recon_error_qm_test_3 = np.linalg.norm(
-#             X - (V_test_3 @ Z_qm_test_3 + W_test_3 @ Z_quad_qm_test_3 + shift_test), ord='fro')
-#         rel_recon_error_qm_test_3 = recon_error_qm_test_3 / np.linalg.norm(X, ord='fro')
-        
-#         # Leading-r POD reconstruction
-#         X_proc_test = config.preprocessing.forward(X)
-#         V_leading_test = np.linalg.svd(X_proc_test, full_matrices=False)[0][:, :r_test]
-#         X_pod_recon_test = V_leading_test @ V_leading_test.T @ X_proc_test
-#         X_pod_recon_test = config.preprocessing.backward(X_pod_recon_test)
-#         recon_error_pod_test = np.linalg.norm(X - X_pod_recon_test, ord='fro')
-#         rel_recon_error_pod_test = recon_error_pod_test / np.linalg.norm(X, ord='fro')
-
-#         # SparseModesNet (pi2net) with first r_test modes from selected modes
-#         if len(I_nn_2) >= r_test:
-#             V_tmp = np.zeros((d, r))
-#             V_tmp[:, :r_test] = V_all[:, I_nn_2[:r_test]]
-#             Z_input_test = torch.from_numpy((V_tmp.T @ X_proc_test).T).to(device)
-#             with torch.no_grad():
-#                 if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
-#                     # Use analytical decoder
-#                     X_sparse_recon_test, _, _ = model_2(V_tmp.T @ X_proc_test)
-#                 else:
-#                     model_2.eval()
-#                     # Retrain the weight matrix
-#                     X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
-#                     _, X_sparse_lin, N_sparse_out = model_2(Z_input_test)
-#                     resid = X_proc_test_tensor.T - X_sparse_lin
-#                     model_2.update_nonlinear_weight(resid, N_sparse_out, 
-#                                                   config.training.reg_param)
-#                     X_sparse_recon_tensor_test, _, _ = model_2(Z_input_test)
-#                     X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T
-
-#                 X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
-            
-#             recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
-#             rel_recon_error_sparse_2_test = recon_error_sparse_test / np.linalg.norm(X, ord='fro')
-#         else:
-#             rel_recon_error_sparse_2_test = np.nan
-        
-#         # SparseModesNet (pi3net) with first r_test modes from selected modes
-#         if len(I_nn_3) >= r_test:
-#             V_tmp = np.zeros((d, r))
-#             V_tmp[:, :r_test] = V_all[:, I_nn_3[:r_test]]
-#             Z_input_test = torch.from_numpy((V_tmp.T @ X_proc_test).T).to(device)
-#             with torch.no_grad():
-#                 if  config.network.network_type == 'QM' or config.network.network_type == 'CM':
-#                     # Use analytical decoder
-#                     X_sparse_recon_test, _, _ = model_3(V_tmp.T @ X_proc_test)
-#                 else:
-#                     model_3.eval()
-#                     # Retrain the weight matrix
-#                     X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
-#                     _, X_sparse_lin, N_sparse_out = model_3(Z_input_test)
-#                     resid = X_proc_test_tensor.T - X_sparse_lin
-#                     model_3.update_nonlinear_weight(resid, N_sparse_out, 
-#                                                   config.training.reg_param)
-#                     X_sparse_recon_tensor_test, _, _ = model_3(Z_input_test)
-#                     X_sparse_recon_test = X_sparse_recon_tensor_test.cpu().numpy().T
-
-#                 X_sparse_recon_test = config.preprocessing.backward(X_sparse_recon_test)
-            
-#             recon_error_sparse_test = np.linalg.norm(X - X_sparse_recon_test, ord='fro')
-#             rel_recon_error_sparse_3_test = recon_error_sparse_test / np.linalg.norm(X, ord='fro')
-#         else:
-#             rel_recon_error_sparse_3_test = np.nan
-
-#         # SparseModesNet Pi2Net with leading r_test modes (model_2p)
-#         V_tmp_2p = np.zeros((d, r))
-#         V_tmp_2p[:, :r_test] = V_all[:, :r_test]  # Use first r_test leading modes
-#         Z_input_test_2p = torch.from_numpy((V_tmp_2p.T @ X_proc_test).T).to(device)
-#         with torch.no_grad():
-#             if config.network.network_type == 'QM' or config.network.network_type == 'CM':
-#                 # Use analytical decoder
-#                 X_sparse_recon_test_2p, _, _ = model_2p(V_tmp_2p.T @ X_proc_test)
-#             else:
-#                 model_2p.eval()
-#                 # Retrain the weight matrix
-#                 X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
-#                 _, X_sparse_lin_2p, N_sparse_out_2p = model_2p(Z_input_test_2p)
-#                 resid_2p = X_proc_test_tensor.T - X_sparse_lin_2p
-#                 model_2p.update_nonlinear_weight(resid_2p, N_sparse_out_2p, 
-#                                                config.training.reg_param)
-#                 X_sparse_recon_tensor_test_2p, _, _ = model_2p(Z_input_test_2p)
-#                 X_sparse_recon_test_2p = X_sparse_recon_tensor_test_2p.cpu().numpy().T
-
-#             X_sparse_recon_test_2p = config.preprocessing.backward(X_sparse_recon_test_2p)
-        
-#         recon_error_sparse_test_2p = np.linalg.norm(X - X_sparse_recon_test_2p, ord='fro')
-#         rel_recon_error_sparse_2p_test = recon_error_sparse_test_2p / np.linalg.norm(X, ord='fro')
-
-#         # SparseModesNet Pi3Net with leading r_test modes (model_3p)
-#         V_tmp_3p = np.zeros((d, r))
-#         V_tmp_3p[:, :r_test] = V_all[:, :r_test]  # Use first r_test leading modes
-#         Z_input_test_3p = torch.from_numpy((V_tmp_3p.T @ X_proc_test).T).to(device)
-#         with torch.no_grad():
-#             if config.network.network_type == 'QM' or config.network.network_type == 'CM':
-#                 # Use analytical decoder
-#                 X_sparse_recon_test_3p, _, _ = model_3p(V_tmp_3p.T @ X_proc_test)
-#             else:
-#                 model_3p.eval()
-#                 # Retrain the weight matrix
-#                 X_proc_test_tensor = torch.from_numpy(X_proc_test).to(device)
-#                 _, X_sparse_lin_3p, N_sparse_out_3p = model_3p(Z_input_test_3p)
-#                 resid_3p = X_proc_test_tensor.T - X_sparse_lin_3p
-#                 model_3p.update_nonlinear_weight(resid_3p, N_sparse_out_3p, 
-#                                                config.training.reg_param)
-#                 X_sparse_recon_tensor_test_3p, _, _ = model_3p(Z_input_test_3p)
-#                 X_sparse_recon_test_3p = X_sparse_recon_tensor_test_3p.cpu().numpy().T
-
-#             X_sparse_recon_test_3p = config.preprocessing.backward(X_sparse_recon_test_3p)
-        
-#         recon_error_sparse_test_3p = np.linalg.norm(X - X_sparse_recon_test_3p, ord='fro')
-#         rel_recon_error_sparse_3p_test = recon_error_sparse_test_3p / np.linalg.norm(X, ord='fro')
-        
-#         mode_counts.append(r_test)
-#         qm_errors.append(rel_recon_error_qm_test)
-#         cm_errors.append(rel_recon_error_qm_test_3)
-#         pod_errors.append(rel_recon_error_pod_test)
-#         sparse_2_errors.append(rel_recon_error_sparse_2_test)
-#         sparse_3_errors.append(rel_recon_error_sparse_3_test)
-#         sparse_2p_errors.append(rel_recon_error_sparse_2p_test)
-#         sparse_3p_errors.append(rel_recon_error_sparse_3p_test)
-
-#     #%% Plot reconstruction errors
-#     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
-    
-#     ax.semilogy(mode_counts, qm_errors, '-^', label='Greedy Quadratic Manifold', 
-#                 markersize=8, linewidth=3)
-#     ax.semilogy(mode_counts, cm_errors, '--v', label='Greedy Cubic Manifold',
-#                 markersize=8, linewidth=3)
-#     ax.semilogy(mode_counts, pod_errors, '-o', label='POD (leading-r)', 
-#                 markersize=8, linewidth=3)
-    
-#     # Only plot valid SparseModesNet errors (selected modes)
-#     valid_sparse_2_errors = [err for err in sparse_2_errors if not np.isnan(err)]
-#     valid_mode_counts_2 = [mode_counts[i] for i, err in enumerate(sparse_2_errors) if not np.isnan(err)]
-#     ax.semilogy(valid_mode_counts_2, valid_sparse_2_errors, '-s', label=r'SparseModesNet $\Pi_2$ (selected)', 
-#                 markersize=8, linewidth=3)
-
-#     valid_sparse_3_errors = [err for err in sparse_3_errors if not np.isnan(err)]
-#     valid_mode_counts_3 = [mode_counts[i] for i, err in enumerate(sparse_3_errors) if not np.isnan(err)]
-#     ax.semilogy(valid_mode_counts_3, valid_sparse_3_errors, '-x', label=r'SparseModesNet $\Pi_3$ (selected)', 
-#                 markersize=10, linewidth=3)
-    
-#     # Plot SparseModesNet with leading modes
-#     ax.semilogy(mode_counts, sparse_2p_errors, ':s', label=r'SparseModesNet $\Pi_2$ (leading)', 
-#                 markersize=8, linewidth=3, alpha=0.8)
-#     ax.semilogy(mode_counts, sparse_3p_errors, ':x', label=r'SparseModesNet $\Pi_3$ (leading)', 
-#                 markersize=10, linewidth=3, alpha=0.8)
-    
-#     ax.set_xlabel('Number of Modes', fontsize=25)
-#     ax.set_ylabel('Relative Reconstruction Error', fontsize=25)
-#     ax.set_title('Training', fontsize=30)
-#     ax.tick_params(axis='both', which='major', labelsize=20)
-#     ax.grid(True, alpha=0.3)
-#     # ax.legend(fontsize=23, loc='lower left')
-#     ax.set_xlim(left=0)
-#     plt.tight_layout()
-#     # plt.savefig('figures/pulse/reconstruction_errors_test.png', 
-#     #             dpi=300, bbox_inches='tight')
-#     plt.show()
-#     plt.close(fig)
-
-# # %%
+# %%

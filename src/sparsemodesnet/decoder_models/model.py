@@ -9,7 +9,6 @@ from sparsemodesnet.decoder_models.mlp import MLP
 from sparsemodesnet.decoder_models.mask import MaskedLayer
 from sparsemodesnet.decoder_models.cnn import SpatialCNN
 from sparsemodesnet.decoder_models.unet import UNET
-from sparsemodesnet.decoder_models.rational import Rational
 from sparsemodesnet.linalg.lstsq import lstsq_l2_torch
 
 class SparseModesNet(nn.Module):
@@ -37,6 +36,7 @@ class SparseModesNet(nn.Module):
                  poly_order: int = 2, num_polys: int = 1, 
                  drop_linear: bool = False, drop_constant: bool = False, 
                  normalize: str | None = None, bias: bool = False,
+                 activation: str = 'identity',
                  full_z: bool = False, dtype: torch.dtype = torch.float32):
         """
         Initialize SparseModesNet.
@@ -66,10 +66,10 @@ class SparseModesNet(nn.Module):
         
         # Assertion for network type
         assert network_type in ['MLP', 'CNN', 'UNET', 'PiNetCCP', 'PiNetNCP', 
-                       'PiNetNCPSkip', 'QM', 'CM'], \
+                       'PiNetNCPSkip', 'QM', 'CM', 'PybridNet'], \
             f"Unsupported network type: {network_type}. " \
             "Use 'MLP', 'CNN', 'UNET', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', " \
-            "'QM', or 'CM'."
+            "'PybridNet', 'QM', or 'CM'."
         self.network_type = network_type
         
         # Pi-Net dictionary
@@ -82,7 +82,7 @@ class SparseModesNet(nn.Module):
         if network_type == 'MLP': 
             # Build the feedforward network mapping from R^s to R^d
             self.mlp = MLP(hidden_units=hidden_units, bias=bias,
-                           weight_scale=weight_scale)
+                           activation=activation, weight_scale=weight_scale)
             self.mlp.initialize(input_dim=self.s, output_dim=self.p)
             self.first_layer = self.mlp.first_layer
 
@@ -176,6 +176,70 @@ class SparseModesNet(nn.Module):
             self.W = nn.Parameter(
                 torch.ones(self.s * (self.s + 1) * (self.s + 2) // 6, self.d))
             
+        elif network_type == 'PybridNet':
+            # PybridNet: MLP + PiNetCCP + MLP hybrid
+            # Hidden units should be a list of 2 or 3 lists:
+            # The first list is for the MLP before PiNetCCP
+            # The second list is for the PiNetCCP
+            # The third list is for the MLP after PiNetCCP (optional)
+
+            if len(hidden_units) == 3:
+                mlp1_hidden_units = hidden_units[0]
+                pinet_hidden_units = hidden_units[1]
+                mlp2_hidden_units = hidden_units[2]
+
+                # First MLP
+                self.mlp1 = MLP(hidden_units=mlp1_hidden_units, bias=bias,
+                                activation=activation, weight_scale=weight_scale)
+                self.mlp1.initialize(input_dim=self.s, 
+                                    output_dim=pinet_hidden_units[0])
+                self.first_layer = self.mlp1.first_layer
+                # PiNetCCP
+                self.pinet = PiNetCCP(
+                    in_dim=pinet_hidden_units[0], out_dim=pinet_hidden_units[-1],
+                    inter_dim=pinet_hidden_units[1],
+                    poly_order=poly_order, drop_constant=drop_constant,
+                    normalize=normalize
+                )
+                # Second MLP
+                self.mlp2 = MLP(hidden_units=mlp2_hidden_units, bias=bias,
+                                activation=activation, weight_scale=weight_scale)
+                self.mlp2.initialize(input_dim=pinet_hidden_units[-1], 
+                                    output_dim=self.p)
+                # Output projection
+                self.W = nn.Parameter(
+                    torch.ones(self.p, self.d) * weight_scale 
+                )
+                self.pybrid_three_mlp = True
+            elif len(hidden_units) == 2:
+                mlp_hidden_units = hidden_units[0]
+                pinet_hidden_units = hidden_units[1]
+
+                # MLP
+                self.mlp = MLP(hidden_units=mlp_hidden_units, bias=bias,
+                               activation=activation, weight_scale=weight_scale)
+                self.mlp.initialize(input_dim=self.s, 
+                                    output_dim=pinet_hidden_units[0])
+                self.first_layer = self.mlp.first_layer
+                # PiNetCCP
+                self.pinet = PiNetCCP(
+                    in_dim=pinet_hidden_units[0], out_dim=pinet_hidden_units[-1],
+                    inter_dim=pinet_hidden_units[1],
+                    poly_order=poly_order, drop_constant=drop_constant,
+                    normalize=normalize
+                )
+                # Output projection
+                self.W = nn.Parameter(
+                    torch.ones(pinet_hidden_units[-1], self.d) * weight_scale 
+                )
+                self.pybrid_three_mlp = False
+            else:
+                raise ValueError(
+                    "Pi-brid-Net requires exactly 2 or 3 lists of hidden units: "
+                    "[MLP_hidden_units, PiNet_hidden_units] or "
+                    "[MLP1_hidden_units, PiNet_hidden_units, MLP2_hidden_units]."
+                )
+            
     
     def forward(self, z_batch):
         """
@@ -215,8 +279,18 @@ class SparseModesNet(nn.Module):
             h        = self.first_layer(z_hat)          # (batch, inter_dim)
             h        = self.pinet(h)                    # (batch, p)
             x_hat_nn = h @ self.W                       # (batch, d)
+        elif self.network_type == 'PybridNet':
+            if self.pybrid_three_mlp:
+                h1       = self.mlp1(z_hat)             # (batch, pinet_in_dim)
+                h2       = self.pinet(h1)               # (batch, pinet_out_dim)
+                h3       = self.mlp2(h2)                # (batch, p)
+                x_hat_nn = h3 @ self.W                  # (batch, d)
+            else:
+                h1       = self.mlp(z_hat)              # (batch, pinet_in_dim)
+                h2       = self.pinet(h1)               # (batch, pinet_out_dim)
+                x_hat_nn = h2 @ self.W                  # (batch, d)
         else:
-            # Apply the quadratic mapping
+            # Apply the quadratic/cubic mapping
             h        = self.first_layer(z_hat)          
             z_quad   = self.nonlin_map(h)               # (batch, g(r))
             x_hat_nn = z_quad @ self.W                  # (batch, d)
@@ -336,6 +410,7 @@ class StateDecoder(nn.Module):
                  num_polys: int, drop_linear: bool, 
                  drop_constant: bool, normalize: str | None = None,
                  bias: bool = False,
+                 activation: str = 'identity',
                  dtype: torch.dtype = torch.float32):
         super(StateDecoder, self).__init__()
         
@@ -347,10 +422,10 @@ class StateDecoder(nn.Module):
         
         # Assertion for network type
         assert network_type in ['MLP', 'CNN', 'UNET', 'PiNetCCP', 'PiNetNCP', 
-                       'PiNetNCPSkip', 'QM', 'CM'], \
+                       'PiNetNCPSkip', 'QM', 'CM', 'PybridNet'], \
             f"Unsupported network type: {network_type}. " \
             "Use 'MLP', 'CNN', 'UNET', 'PiNetCCP', 'PiNetNCP', 'PiNetNCPSkip', " \
-            "'QM', or 'CM'."
+            "'PybridNet', 'QM', or 'CM'."
         self.network_type = network_type
         
         # Pi-Net dictionary
@@ -363,7 +438,7 @@ class StateDecoder(nn.Module):
         if network_type == 'MLP': 
             # Build the feedforward network mapping from R^r to R^d
             self.mlp = MLP(hidden_units=hidden_units, bias=bias,
-                           weight_scale=weight_scale)
+                           activation=activation, weight_scale=weight_scale)
             self.mlp.initialize(input_dim=self.r, output_dim=self.p)
 
             # Output projection
@@ -453,6 +528,68 @@ class StateDecoder(nn.Module):
             torch.ones(self.r * (self.r + 1) * (self.r + 2) // 6, self.d,
                 dtype=dtype) * weight_scale
             )
+        elif network_type == 'PybridNet':
+            # PybridNet: MLP + PiNetCCP + MLP hybrid
+            # Hidden units should be a list of 2 or 3 lists:
+            # The first list is for the MLP before PiNetCCP
+            # The second list is for the PiNetCCP
+            # The third list is for the MLP after PiNetCCP (optional)
+
+            if len(hidden_units) == 3:
+                mlp1_hidden_units = hidden_units[0]
+                pinet_hidden_units = hidden_units[1]
+                mlp2_hidden_units = hidden_units[2]
+                
+                # First MLP
+                self.mlp1 = MLP(hidden_units=mlp1_hidden_units, bias=bias,
+                                activation=activation, weight_scale=weight_scale)
+                self.mlp1.initialize(input_dim=self.r, 
+                                    output_dim=pinet_hidden_units[0])
+                # PiNetCCP
+                self.pinet = PiNetCCP(
+                    in_dim=pinet_hidden_units[0], out_dim=pinet_hidden_units[-1],
+                    inter_dim=pinet_hidden_units[1],
+                    poly_order=poly_order, drop_constant=drop_constant,
+                    normalize=normalize
+                )
+                # Second MLP
+                self.mlp2 = MLP(hidden_units=mlp2_hidden_units, bias=bias,
+                                activation=activation, weight_scale=weight_scale)
+                self.mlp2.initialize(input_dim=pinet_hidden_units[-1], 
+                                    output_dim=self.p)
+                # Output projection
+                self.W = torch.nn.Parameter(
+                    torch.ones(self.p, self.d, dtype=dtype) * weight_scale
+                )
+                self.pybrid_three_mlp = True
+            elif len(hidden_units) == 2:
+                mlp_hidden_units = hidden_units[0]
+                pinet_hidden_units = hidden_units[1]
+
+                # MLP
+                self.mlp = MLP(hidden_units=mlp_hidden_units, bias=bias,
+                               activation=activation, weight_scale=weight_scale)
+                self.mlp.initialize(input_dim=self.r, 
+                                    output_dim=pinet_hidden_units[0])
+                # PiNetCCP
+                self.pinet = PiNetCCP(
+                    in_dim=pinet_hidden_units[0], out_dim=pinet_hidden_units[-1],
+                    inter_dim=pinet_hidden_units[1],
+                    poly_order=poly_order, drop_constant=drop_constant,
+                    normalize=normalize
+                )
+                # Output projection
+                self.W = torch.nn.Parameter(
+                    torch.ones(pinet_hidden_units[-1], self.d,
+                               dtype=dtype) * weight_scale
+                )
+                self.pybrid_three_mlp = False
+            else:
+                raise ValueError(
+                    "Pi-brid-Net requires exactly 2 or 3 lists of hidden units: "
+                    "[MLP_hidden_units, PiNet_hidden_units] or "
+                    "[MLP1_hidden_units, PiNet_hidden_units, MLP2_hidden_units]."
+                )
 
     def forward(self, z_batch):
         # Reconstruct the linear part via projection
@@ -470,6 +607,14 @@ class StateDecoder(nn.Module):
         elif 'PiNet' in self.network_type:
             h = self.first_layer(z_batch)           # (batch, inter_dim)
             h = self.pinet(h)                       # (batch, p)
+        elif self.network_type == 'PybridNet':
+            if self.pybrid_three_mlp:
+                h1 = self.mlp1(z_batch)             # (batch, pinet_in_dim)
+                h2 = self.pinet(h1)                 # (batch, pinet_out_dim)
+                h  = self.mlp2(h2)                  # (batch, p)
+            else:
+                h1 = self.mlp(z_batch)              # (batch, pinet_in_dim)
+                h  = self.pinet(h1)                 # (batch, pinet_out_dim)
         else:
             # Apply the quadratic or cubic mapping
             h = self.nonlin_map(z_batch)            # (batch, g(r))
