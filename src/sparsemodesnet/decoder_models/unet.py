@@ -3,7 +3,8 @@ import torch.nn as nn
 from .abstract_decoder import AbstractDecoder
 
 """
-Reference: https://github.com/pyshred-dev/pyshred/blob/main/pyshred/models/decoder_models/unet_model.py
+This was sampled from the original work of the following reference: 
+https://github.com/pyshred-dev/pyshred/blob/main/pyshred/models/decoder_models/unet_model.py
 """
 
 class UNET(AbstractDecoder):

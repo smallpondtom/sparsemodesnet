@@ -12,7 +12,9 @@ class Rational(torch.nn.Module):
     It follows:
     `f(x) = P(x) / Q(x),
     where the coefficients of P and Q are initialized to the best rational 
-    approximation of degree (3,2) to the ReLU function
+    approximation of degree (3,2) to the ReLU function. This allows for a 
+    smoother activation function that hopefully can improve the performance 
+    of the hybrid architecture given its polynomial reconstruction.
     # Reference
         - [Rational neural networks](https://arxiv.org/abs/2004.01902)
     """

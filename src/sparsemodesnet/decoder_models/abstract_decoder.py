@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 import torch.nn as nn
 
 """
-Reference: https://github.com/pyshred-dev/pyshred/blob/main/pyshred/models/decoder_models/abstract_decoder.py
+This code was sapmled from the following reference: 
+https://github.com/pyshred-dev/pyshred/blob/main/pyshred/models/decoder_models/abstract_decoder.py
 """
 
 class AbstractDecoder(ABC, nn.Module):

@@ -6,6 +6,21 @@ def omega_evolve(omegas, I_nn, s, filename='omega_evolution.png',
                  y_limits=(1e-6, 1e-2, 6),
                  legend_loc='upper right',
                  save=True, show=True):
+    """
+    Plot the evoluation of the omega element values over the regularization 
+    path.  
+    
+    :omegas: mode selector vector
+    :I_nn: set of selected modes
+    :s: the number of candidate modes
+    :filename: filename to save the plot
+    :title: title of the plot
+    :y_limits: y-axis limits
+    :legend_loc: legend location of the plot
+    :save: flag to save the plot
+    :show: display the plot
+    """    
+
     # Create figure with subplots
     fig, ax = plt.subplots(1, 1, figsize=(11, 6))
     plt.rcParams.update({

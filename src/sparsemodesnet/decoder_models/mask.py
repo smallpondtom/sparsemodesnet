@@ -1,6 +1,11 @@
 import torch
 
 class MaskedLayer(torch.nn.Linear):
+    """
+    Masked weighted layer. Used for the very first layer of the hybrid
+    architecture
+    """
+
     def __init__(
         self,
         in_features: int,    # e.g., 6
