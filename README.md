@@ -268,22 +268,18 @@ See the `experiments/` directory for complete examples:
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{sparsemodesnet2024,
-  title={Sparse Mode Selection Neural Networks for Nonlinear Reduced-Order Modeling},
-  author={Your Name},
-  journal={Journal Name},
-  year={2024}
+@article{koike2026SparseModesNet,
+  title={Sparse POD Mode Selection and Manifold Dimensionality Reduction with Neural Networks},
+  author={Tomoki Koike, Prakash Mohan, Marc T. de Henry Frahan, Elizabeth Qian, and Julia Bessac},
+  journal={Journal of Tentative},
+  year={2026}
 }
 ```
 
 ## License
 
-[Add your license here]
-
-## Contributing
-
-Contributions are welcome! Please submit pull requests or open issues for bugs and feature requests.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-[Your contact information]
+For questions, please contact [Tomoki Koike](mailto:tkoike45@gmail.com).
