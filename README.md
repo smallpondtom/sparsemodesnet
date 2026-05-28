@@ -137,7 +137,7 @@ Multiple decoder architectures are available:
 
 ## Examples
 
-See the `experiments/` directory for complete examples:
+See the `experiments/` directory for complete examples.
 
 ## Citation
 
