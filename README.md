@@ -1,4 +1,4 @@
-# Sparse Mode Selection Neural Network (SparseModesNet)
+# Sparse POD Mode selecting Neural Network (SparseModesNet)
 
 SparseModesNet is a dimensionality reduction framework that employs linear encoding via POD modes and nonlinear NN decoding. The decoder leverages [LassoNet](https://github.com/lasso-net/lassonet), a method enforcing hierarchical sparsity through residual connections with linear skip layers, to simultaneously select informative POD modes and learn a nonlinear mapping that minimizes reconstruction error.
 
